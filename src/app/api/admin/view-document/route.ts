@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
           ` as any[]
         }
 
-      if (uploadedFile && uploadedFile.length > 0) {
+        if (uploadedFile && uploadedFile.length > 0) {
         const file = uploadedFile[0]
         const fileKeyFromDb = file.filePath || file.file_path
         
@@ -89,9 +89,10 @@ export async function POST(request: NextRequest) {
             // Fall through to try with the provided fileKey
           }
         }
+        }
+      } catch (dbError) {
+        console.error('Database lookup failed:', dbError)
       }
-    } catch (dbError) {
-      console.error('Database lookup failed:', dbError)
     }
     
     // PRIORITY 1: Try Storj first (for all files that look like Storj files)
@@ -259,7 +260,7 @@ export async function GET(request: NextRequest) {
           ` as any[]
         }
 
-      if (uploadedFile && uploadedFile.length > 0) {
+        if (uploadedFile && uploadedFile.length > 0) {
         const file = uploadedFile[0]
         const fileKeyFromDb = file.filePath || file.file_path
         
@@ -733,7 +734,6 @@ export async function GET(request: NextRequest) {
         { status: 404 }
       )
     }
-
   } catch (error) {
     console.error('Error in GET /api/admin/view-document:', error)
     return NextResponse.json(
