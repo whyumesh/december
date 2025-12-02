@@ -1,9 +1,8 @@
 # Netlify Configuration for Next.js 14
 [build]
-  command = "npm install && SKIP_ENV_VALIDATION=true NEXT_TELEMETRY_DISABLED=1 npm run build"
-  # Don't set publish - @netlify/plugin-nextjs handles this automatically
+  command = "npm ci && SKIP_ENV_VALIDATION=true NEXT_TELEMETRY_DISABLED=1 npm run build"
+  publish = ".next"
   # Note: prisma generate runs automatically via postinstall hook in package.json
-  # Using npm ci for faster, reliable, reproducible builds
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
@@ -15,6 +14,10 @@
   NODE_OPTIONS = "--max-old-space-size=4096"
   # Skip type checking and linting during build for faster deployment
   SKIP_ENV_VALIDATION = "true"
+  # Fix SWC build issues
+  NETLIFY_USE_PNPM = "false"
+  NETLIFY_USE_YARN = "false"
+  NEXT_TELEMETRY_DISABLED = "1"
 
 # Optimize function size - exclude large dependencies from bundling
 # The Next.js plugin will handle bundling, and webpack externalization will prevent

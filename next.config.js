@@ -55,8 +55,6 @@ const nextConfig = {
       'isomorphic-dompurify',
       'jsdom'
     ],
-    // Prevent static generation issues
-    isrMemoryCacheSize: 0,
   },
   // Configure middleware to avoid Edge Function issues
   // Exclude jsonwebtoken from Edge Function bundling
