@@ -257,7 +257,7 @@ export default function VoterLoginPage() {
             <div className="flex items-center space-x-2 sm:space-x-4">
               <Logo size="sm" />
               <div>
-                <h1 className="text-lg sm:text-2xl font-bold text-gray-900">Election 2026: Shree Panvel Kutchi Maheshwari Mahajan</h1>
+                <h1 className="text-lg sm:text-2xl font-bold text-gray-900">KMS ELECTION 2026</h1>
               </div>
             </div>
             <Link href="/" className="w-full sm:w-auto">
@@ -358,6 +358,15 @@ export default function VoterLoginPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Footer with subtitle */}
+      <footer className="bg-gray-50 border-t mt-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <p className="text-xs text-gray-500 text-center">
+            Election 2026: Shree Panvel Kutchi Maheshwari Mahajan
+          </p>
+        </div>
+      </footer>
     </div>
   )
 }

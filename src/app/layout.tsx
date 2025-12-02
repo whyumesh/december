@@ -13,7 +13,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-    title: "Election 2026: Shree Panvel Kutchi Maheshwari Mahajan",
+    title: "KMS ELECTION 2026",
     description: "Secure Online Election Management System",
     keywords: ["election", "voting", "democracy", "secure", "online"],
     authors: [{ name: "Shree Panvel Kutchi Maheshwari Mahajan" }],

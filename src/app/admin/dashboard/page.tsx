@@ -543,7 +543,7 @@ export default function AdminDashboard() {
                             <Logo size="sm" />
                             <div>
                                 <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
-                                    Election 2026: Shree Panvel Kutchi Maheshwari Mahajan
+                                    KMS ELECTION 2026
                                 </h1>
                             </div>
                         </div>

@@ -16,7 +16,7 @@ export default function TermsAndConditionsPage() {
               <Logo size="sm" />
               <div>
                 <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
-                  Election 2026: Shree Panvel Kutchi Maheshwari Mahajan
+                  KMS ELECTION 2026
                 </h1>
               </div>
             </div>
@@ -44,7 +44,7 @@ export default function TermsAndConditionsPage() {
             <section>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">1. Election Participation</h3>
               <p className="mb-3">
-                By participating in the Election 2026: Shree Panvel Kutchi Maheshwari Mahajan, you agree to abide by all terms and conditions set forth by the election committee. All voters must be registered members of the community and meet the eligibility criteria as specified for each election category.
+                By participating in the KMS Election 2026, you agree to abide by all terms and conditions set forth by the election committee. All voters must be registered members of the community and meet the eligibility criteria as specified for each election category.
               </p>
             </section>
 
@@ -143,7 +143,10 @@ export default function TermsAndConditionsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="border-t border-gray-800 pt-6 text-center text-sm text-gray-400">
             <p>
-              &copy; 2025 Election 2026: Shree Panvel Kutchi Maheshwari Mahajan. All rights reserved.
+              <p className="text-xs text-gray-500 mb-2">
+                Election 2026: Shree Panvel Kutchi Maheshwari Mahajan
+              </p>
+              <p>&copy; 2025 KMS Election 2026. All rights reserved.</p>
             </p>
             <p className="mt-2">
               Designed & Developed by{" "}

@@ -403,12 +403,25 @@ export default function YuvaPankVotingPage() {
           router.push('/voter/dashboard')
         }, 3000)
       } else {
-        const errorData = await response.json()
-        setError(errorData.error || 'Failed to submit vote')
+        let errorMessage = 'Failed to submit vote'
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorData.message || errorMessage
+          console.error('Vote submission failed:', {
+            status: response.status,
+            error: errorData,
+            votes: selectedCandidates
+          })
+        } catch (parseError) {
+          const errorText = await response.text()
+          console.error('Failed to parse error response:', errorText)
+          errorMessage = `Server error (${response.status}): ${errorText.substring(0, 200)}`
+        }
+        setError(errorMessage)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting vote:', error)
-      setError('Failed to submit vote')
+      setError(error?.message || 'Failed to submit vote. Please check your connection and try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -557,7 +570,7 @@ export default function YuvaPankVotingPage() {
               <div className="flex items-center space-x-2 sm:space-x-4">
                 <Logo size="md" />
                 <div>
-                  <h1 className="text-lg sm:text-2xl font-bold text-gray-900">Election 2026: Shree Panvel Kutchi Maheshwari Mahajan</h1>
+                  <h1 className="text-lg sm:text-2xl font-bold text-gray-900">KMS ELECTION 2026</h1>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
@@ -704,7 +717,7 @@ export default function YuvaPankVotingPage() {
   }
 
   // Show rules and regulations page if not accepted
-  if (!rulesAccepted && !showWinners) {
+  if (!rulesAccepted) {
     return (
       <div className="min-h-screen bg-gray-50">
         <ScreenshotProtection />
@@ -714,7 +727,7 @@ export default function YuvaPankVotingPage() {
               <div className="flex items-center space-x-2 sm:space-x-4">
                 <Logo size="md" />
                 <div>
-                  <h1 className="text-lg sm:text-2xl font-bold text-gray-900">Election 2026: Shree Panvel Kutchi Maheshwari Mahajan</h1>
+                  <h1 className="text-lg sm:text-2xl font-bold text-gray-900">KMS ELECTION 2026</h1>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
@@ -828,7 +841,7 @@ export default function YuvaPankVotingPage() {
               <div className="flex items-center space-x-2 sm:space-x-4">
                 <Logo size="md" />
                 <div>
-                  <h1 className="text-lg sm:text-2xl font-bold text-gray-900">Election 2026: Shree Panvel Kutchi Maheshwari Mahajan</h1>
+                  <h1 className="text-lg sm:text-2xl font-bold text-gray-900">KMS ELECTION 2026</h1>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
@@ -1064,6 +1077,15 @@ export default function YuvaPankVotingPage() {
             </div>
           </div>
         </main>
+
+        {/* Footer with subtitle */}
+        <footer className="bg-gray-50 border-t mt-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <p className="text-xs text-gray-500 text-center">
+              Election 2026: Shree Panvel Kutchi Maheshwari Mahajan
+            </p>
+          </div>
+        </footer>
       </div>
 
       {/* Candidate Profile Modal */}

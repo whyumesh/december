@@ -36,6 +36,12 @@ export const authOptions: NextAuthOptions = {
 
         // For other users, try to connect to database (but don't fail if it doesn't work)
         try {
+          // Check if DATABASE_URL is available before attempting database operations
+          if (!process.env.DATABASE_URL) {
+            console.log('DATABASE_URL not set - skipping database authentication')
+            return null
+          }
+          
           const userEmail = credentials.email.toLowerCase()
           const user = await prisma.user.findFirst({
             where: {

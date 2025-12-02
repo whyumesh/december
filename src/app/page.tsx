@@ -44,7 +44,7 @@ export default function HomePage() {
                                 <Logo size="sm" />
                                 <div>
                                     <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
-                                        Election 2026: Shree Panvel Kutchi Maheshwari Mahajan
+                                        KMS ELECTION 2026
                                     </h1>
                                 </div>
                             </div>
@@ -411,7 +411,7 @@ export default function HomePage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
                             <div>
                                 <h3 className="text-lg font-semibold mb-4">
-                                    Election 2026: Shree Panvel Kutchi Maheshwari Mahajan
+                                    KMS ELECTION 2026
                                 </h3>
                                 <p className="text-gray-400 text-sm">
                                     A secure, transparent, and accessible digital
@@ -472,9 +472,11 @@ export default function HomePage() {
                             </div>
                         </div>
                         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
+                            <p className="text-xs text-gray-500 mb-2">
+                                Election 2026: Shree Panvel Kutchi Maheshwari Mahajan
+                            </p>
                             <p>
-                                &copy; 2025 Election 2026: Shree Panvel Kutchi Maheshwari Mahajan. All rights
-                                reserved.
+                                &copy; 2025 KMS Election 2026. All rights reserved.
                             </p>
                             <p className="mt-2">
                                 Designed & Developed by{" "}

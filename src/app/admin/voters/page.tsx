@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import {
     Users,
     Search,
@@ -69,6 +70,10 @@ export default function VoterManagementPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [showInactive, setShowInactive] = useState(false);
+    const [editingVoter, setEditingVoter] = useState<Voter | null>(null);
+    const [editName, setEditName] = useState("");
+    const [editPhone, setEditPhone] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
 
     // Move useEffect hooks before early returns
     useEffect(() => {
@@ -197,6 +202,91 @@ export default function VoterManagementPage() {
                 position: "top-right",
             });
         }
+    };
+
+    const handleEditVoter = (voter: Voter) => {
+        setEditingVoter(voter);
+        setEditName(voter.name);
+        setEditPhone(voter.phone);
+    };
+
+    const handleSaveEdit = async () => {
+        if (!editingVoter) return;
+
+        // Validate inputs
+        if (!editName.trim()) {
+            toast.error("Name is required", {
+                duration: 3000,
+                position: "top-right",
+            });
+            return;
+        }
+
+        if (!editPhone.trim() || editPhone.length !== 10) {
+            toast.error("Please enter a valid 10-digit phone number", {
+                duration: 3000,
+                position: "top-right",
+            });
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            const response = await fetch(`/api/admin/voters/${editingVoter.id}`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    name: editName.trim(),
+                    phone: editPhone.trim(),
+                }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Update local state
+                setVoters((prev) =>
+                    prev.map((voter) =>
+                        voter.id === editingVoter.id
+                            ? { ...voter, name: editName.trim(), phone: editPhone.trim() }
+                            : voter
+                    )
+                );
+                
+                // Close modal
+                setEditingVoter(null);
+                setEditName("");
+                setEditPhone("");
+                
+                // Show success toast
+                toast.success("Voter updated successfully", {
+                    duration: 3000,
+                    position: "top-right",
+                });
+            } else {
+                console.error("Failed to update voter:", data);
+                toast.error(data.error || "Failed to update voter. Please try again.", {
+                    duration: 4000,
+                    position: "top-right",
+                });
+            }
+        } catch (error) {
+            console.error("Error updating voter:", error);
+            toast.error("An error occurred while updating the voter.", {
+                duration: 4000,
+                position: "top-right",
+            });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleCancelEdit = () => {
+        setEditingVoter(null);
+        setEditName("");
+        setEditPhone("");
     };
 
     const handleDeleteVoter = async (voterId: string) => {
@@ -503,6 +593,16 @@ export default function VoterManagementPage() {
                                                         <Button
                                                             size="sm"
                                                             variant="outline"
+                                                            onClick={() => handleEditVoter(voter)}
+                                                            className="text-xs"
+                                                            title="Edit name and phone"
+                                                        >
+                                                            <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                                                            Edit
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
                                                             onClick={() => handleToggleActive(voter.id, voter.isActive)}
                                                             className="text-xs"
                                                         >
@@ -545,6 +645,80 @@ export default function VoterManagementPage() {
                     </CardContent>
                 </Card>
             </main>
+
+            {/* Edit Voter Modal */}
+            {editingVoter && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <Card className="w-full max-w-md">
+                        <CardHeader>
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <CardTitle>Edit Voter</CardTitle>
+                                    <CardDescription>
+                                        Update name and mobile number for {editingVoter.name}
+                                    </CardDescription>
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleCancelEdit}
+                                >
+                                    <XCircle className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-name">Name</Label>
+                                <Input
+                                    id="edit-name"
+                                    value={editName}
+                                    onChange={(e) => setEditName(e.target.value)}
+                                    placeholder="Enter voter name"
+                                    disabled={isSaving}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-phone">Mobile Number</Label>
+                                <Input
+                                    id="edit-phone"
+                                    type="tel"
+                                    value={editPhone}
+                                    onChange={(e) => {
+                                        // Only allow digits and limit to 10
+                                        const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
+                                        setEditPhone(digitsOnly);
+                                    }}
+                                    placeholder="Enter 10-digit mobile number"
+                                    maxLength={10}
+                                    disabled={isSaving}
+                                />
+                                <p className="text-xs text-gray-500">
+                                    Enter a 10-digit mobile number
+                                </p>
+                            </div>
+                            <div className="flex space-x-3 pt-4">
+                                <Button
+                                    onClick={handleSaveEdit}
+                                    disabled={isSaving || !editName.trim() || editPhone.length !== 10}
+                                    className="flex-1"
+                                >
+                                    {isSaving ? "Saving..." : "Save Changes"}
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={handleCancelEdit}
+                                    disabled={isSaving}
+                                    className="flex-1"
+                                >
+                                    Cancel
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+
             <Toaster />
         </div>
     );

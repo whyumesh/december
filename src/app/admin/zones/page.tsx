@@ -117,7 +117,7 @@ export default function ZonesPage() {
             <div className="flex items-center space-x-4">
               <Logo size="md" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Election 2026: Shree Panvel Kutchi Maheshwari Mahajan</h1>
+                <h1 className="text-2xl font-bold text-gray-900">KMS ELECTION 2026</h1>
               </div>
             </div>
             <Link href="/admin/dashboard">

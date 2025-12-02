@@ -16,7 +16,7 @@ export default function PrivacyPolicyPage() {
               <Logo size="sm" />
               <div>
                 <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
-                  Election 2026: Shree Panvel Kutchi Maheshwari Mahajan
+                  KMS ELECTION 2026
                 </h1>
               </div>
             </div>
@@ -44,7 +44,7 @@ export default function PrivacyPolicyPage() {
             <section>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">1. Introduction</h3>
               <p className="mb-3">
-                Election 2026: Shree Panvel Kutchi Maheshwari Mahajan ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our online voting platform.
+                KMS Election 2026 ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our online voting platform.
               </p>
             </section>
 
@@ -200,7 +200,10 @@ export default function PrivacyPolicyPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="border-t border-gray-800 pt-6 text-center text-sm text-gray-400">
             <p>
-              &copy; 2025 Election 2026: Shree Panvel Kutchi Maheshwari Mahajan. All rights reserved.
+              <p className="text-xs text-gray-500 mb-2">
+                Election 2026: Shree Panvel Kutchi Maheshwari Mahajan
+              </p>
+              <p>&copy; 2025 KMS Election 2026. All rights reserved.</p>
             </p>
             <p className="mt-2">
               Designed & Developed by{" "}

@@ -54,11 +54,21 @@ export async function POST(request: NextRequest) {
 
     const election = await prisma.election.findFirst({
       where: { type: 'YUVA_PANK' },
+      orderBy: { createdAt: 'desc' }
     })
 
     if (!election) {
-      return NextResponse.json({ error: 'Yuva Pankh election not found' }, { status: 404 })
+      console.error('Yuva Pankh election not found in database')
+      return NextResponse.json({ 
+        error: 'Yuva Pankh election not found. Please contact the administrator.' 
+      }, { status: 404 })
     }
+    
+    console.log('Found Yuva Pankh election:', {
+      id: election.id,
+      type: election.type,
+      status: election.status
+    })
 
     const existingVotes = await prisma.vote.count({
       where: {
@@ -143,11 +153,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify all selected candidates are valid and belong to the voter's Yuva Pankh zone
-    // Note: For Yuva Pankh, candidates might not have status field, so we check zone membership
+    // Check both zone membership and approval status
     const validCandidates = await prisma.yuvaPankhCandidate.findMany({
         where: {
             id: { in: allSelectedCandidateIds },
-            zoneId: voter.yuvaPankZoneId
+            zoneId: voter.yuvaPankZoneId,
+            status: 'APPROVED' // Ensure candidates are approved
         }
     })
 
@@ -157,8 +168,26 @@ export async function POST(request: NextRequest) {
           validCount: validCandidates.length,
           selectedIds: allSelectedCandidateIds,
           validIds: validCandidates.map(c => c.id),
-          voterZoneId: voter.yuvaPankZoneId
+          voterZoneId: voter.yuvaPankZoneId,
+          invalidIds: allSelectedCandidateIds.filter(id => !validCandidates.some(c => c.id === id))
         })
+        
+        // Check if candidates exist but are not approved
+        const allCandidates = await prisma.yuvaPankhCandidate.findMany({
+          where: {
+            id: { in: allSelectedCandidateIds },
+            zoneId: voter.yuvaPankZoneId
+          },
+          select: { id: true, status: true, name: true }
+        })
+        
+        const unapprovedCandidates = allCandidates.filter(c => c.status !== 'APPROVED')
+        if (unapprovedCandidates.length > 0) {
+          return NextResponse.json({ 
+            error: `One or more selected candidates are not approved: ${unapprovedCandidates.map(c => c.name).join(', ')}` 
+          }, { status: 400 })
+        }
+        
         return NextResponse.json({ 
           error: 'One or more selected candidates are invalid or do not belong to your Yuva Pankh zone.' 
         }, { status: 400 })
