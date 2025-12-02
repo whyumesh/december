@@ -41,54 +41,54 @@ export async function POST(request: NextRequest) {
         }
 
         if (uploadedFile && uploadedFile.length > 0) {
-        const file = uploadedFile[0]
-        const fileKeyFromDb = file.filePath || file.file_path
-        
-        console.log('Found file in database with fileKey:', fileKeyFromDb)
-        
-        // If file has base64 data, return it directly
-        if ((file.fileData && file.fileData.trim() !== '') || (file.file_data && file.file_data.trim() !== '')) {
-          const base64Data = file.fileData || file.file_data
-          const dataUrl = `data:${file.mimeType || file.mime_type || 'application/octet-stream'};base64,${base64Data}`
+          const file = uploadedFile[0]
+          const fileKeyFromDb = file.filePath || file.file_path
           
-          return NextResponse.json({
-            success: true,
-            downloadUrl: dataUrl,
-            permanent: true,
-            hasData: true,
-            source: 'database'
-          })
-        }
-        
-        // Otherwise, treat fileKeyFromDb as a Storj fileKey and generate URL
-        if (fileKeyFromDb && (fileKeyFromDb.includes('nominations/') || fileKeyFromDb.startsWith('nominations/'))) {
-          try {
-            // Normalize file key
-            let normalizedKey = fileKeyFromDb;
-            const bucketName = process.env.STORJ_BUCKET_NAME || 'kmselection';
-            
-            // Remove bucket prefixes
-            normalizedKey = normalizedKey.replace(/^kmselection\/kmselection\//, 'kmselection/');
-            normalizedKey = normalizedKey.replace(/^kmselection\/nominations\//, 'nominations/');
-            normalizedKey = normalizedKey.replace(/^nominations\/nominations\//, 'nominations/');
-            if (normalizedKey.startsWith(`${bucketName}/`)) {
-              normalizedKey = normalizedKey.substring(bucketName.length + 1);
-            }
-            
-            const { generateDownloadUrl } = require('@/lib/storj')
-            const downloadUrl = await generateDownloadUrl(normalizedKey, 604800)
+          console.log('Found file in database with fileKey:', fileKeyFromDb)
+          
+          // If file has base64 data, return it directly
+          if ((file.fileData && file.fileData.trim() !== '') || (file.file_data && file.file_data.trim() !== '')) {
+            const base64Data = file.fileData || file.file_data
+            const dataUrl = `data:${file.mimeType || file.mime_type || 'application/octet-stream'};base64,${base64Data}`
             
             return NextResponse.json({
               success: true,
-              downloadUrl: downloadUrl,
-              source: 'storj',
-              fileKey: normalizedKey
+              downloadUrl: dataUrl,
+              permanent: true,
+              hasData: true,
+              source: 'database'
             })
-          } catch (storjError) {
-            console.error('Failed to generate Storj URL from database fileKey:', storjError)
-            // Fall through to try with the provided fileKey
           }
-        }
+          
+          // Otherwise, treat fileKeyFromDb as a Storj fileKey and generate URL
+          if (fileKeyFromDb && (fileKeyFromDb.includes('nominations/') || fileKeyFromDb.startsWith('nominations/'))) {
+            try {
+              // Normalize file key
+              let normalizedKey = fileKeyFromDb;
+              const bucketName = process.env.STORJ_BUCKET_NAME || 'kmselection';
+              
+              // Remove bucket prefixes
+              normalizedKey = normalizedKey.replace(/^kmselection\/kmselection\//, 'kmselection/');
+              normalizedKey = normalizedKey.replace(/^kmselection\/nominations\//, 'nominations/');
+              normalizedKey = normalizedKey.replace(/^nominations\/nominations\//, 'nominations/');
+              if (normalizedKey.startsWith(`${bucketName}/`)) {
+                normalizedKey = normalizedKey.substring(bucketName.length + 1);
+              }
+              
+              const { generateDownloadUrl } = require('@/lib/storj')
+              const downloadUrl = await generateDownloadUrl(normalizedKey, 604800)
+              
+              return NextResponse.json({
+                success: true,
+                downloadUrl: downloadUrl,
+                source: 'storj',
+                fileKey: normalizedKey
+              })
+            } catch (storjError) {
+              console.error('Failed to generate Storj URL from database fileKey:', storjError)
+              // Fall through to try with the provided fileKey
+            }
+          }
         }
       } catch (dbError) {
         console.error('Database lookup failed:', dbError)
@@ -261,66 +261,67 @@ export async function GET(request: NextRequest) {
         }
 
         if (uploadedFile && uploadedFile.length > 0) {
-        const file = uploadedFile[0]
-        const fileKeyFromDb = file.filePath || file.file_path
-        
-        console.log('Found file in database with fileKey:', fileKeyFromDb)
-        
-        // If file has base64 data, serve it directly
-        if ((file.fileData && file.fileData.trim() !== '') || (file.file_data && file.file_data.trim() !== '')) {
-          console.log('Serving file from database:', file.originalName || file.original_name)
-          const fileBuffer = Buffer.from(file.fileData || file.file_data, 'base64')
-          return new NextResponse(fileBuffer as BodyInit, {
-            headers: {
-              'Content-Type': file.mimeType || file.mime_type || 'application/octet-stream',
-              'Cache-Control': 'private, max-age=31536000, immutable',
-              'Content-Disposition': `inline; filename="${file.originalName || file.original_name}"`,
-            },
-          })
-        }
-        
-        // Otherwise, treat fileKeyFromDb as a Storj fileKey and generate URL
-        if (fileKeyFromDb && (fileKeyFromDb.includes('nominations/') || fileKeyFromDb.startsWith('nominations/'))) {
-          try {
-            // Normalize file key
-            let normalizedKey = fileKeyFromDb.trim();
-            const bucketName = process.env.STORJ_BUCKET_NAME || 'kmselection';
-            
-            // Remove bucket prefixes
-            normalizedKey = normalizedKey.replace(/^kmselection\/kmselection\//, '');
-            normalizedKey = normalizedKey.replace(/^kmselection\/nominations\//, 'nominations/');
-            normalizedKey = normalizedKey.replace(/^nominations\/nominations\//, 'nominations/');
-            if (normalizedKey.startsWith(`${bucketName}/`)) {
-              normalizedKey = normalizedKey.substring(bucketName.length + 1);
-            }
-            
-            // Ensure it starts with nominations/
-            if (!normalizedKey.startsWith('nominations/')) {
-              const nominationsMatch = normalizedKey.match(/nominations\/.+/);
-              if (nominationsMatch) {
-                normalizedKey = nominationsMatch[0];
-              } else if (normalizedKey.includes('nomination_')) {
-                const parts = normalizedKey.split('/');
-                const nominationsIndex = parts.findIndex((p: string) => p.includes('nomination_'));
-                if (nominationsIndex >= 0) {
-                  normalizedKey = 'nominations/' + parts.slice(nominationsIndex).join('/');
+          const file = uploadedFile[0]
+          const fileKeyFromDb = file.filePath || file.file_path
+          
+          console.log('Found file in database with fileKey:', fileKeyFromDb)
+          
+          // If file has base64 data, serve it directly
+          if ((file.fileData && file.fileData.trim() !== '') || (file.file_data && file.file_data.trim() !== '')) {
+            console.log('Serving file from database:', file.originalName || file.original_name)
+            const fileBuffer = Buffer.from(file.fileData || file.file_data, 'base64')
+            return new NextResponse(fileBuffer as BodyInit, {
+              headers: {
+                'Content-Type': file.mimeType || file.mime_type || 'application/octet-stream',
+                'Cache-Control': 'private, max-age=31536000, immutable',
+                'Content-Disposition': `inline; filename="${file.originalName || file.original_name}"`,
+              },
+            })
+          }
+          
+          // Otherwise, treat fileKeyFromDb as a Storj fileKey and generate URL
+          if (fileKeyFromDb && (fileKeyFromDb.includes('nominations/') || fileKeyFromDb.startsWith('nominations/'))) {
+            try {
+              // Normalize file key
+              let normalizedKey = fileKeyFromDb.trim();
+              const bucketName = process.env.STORJ_BUCKET_NAME || 'kmselection';
+              
+              // Remove bucket prefixes
+              normalizedKey = normalizedKey.replace(/^kmselection\/kmselection\//, '');
+              normalizedKey = normalizedKey.replace(/^kmselection\/nominations\//, 'nominations/');
+              normalizedKey = normalizedKey.replace(/^nominations\/nominations\//, 'nominations/');
+              if (normalizedKey.startsWith(`${bucketName}/`)) {
+                normalizedKey = normalizedKey.substring(bucketName.length + 1);
+              }
+              
+              // Ensure it starts with nominations/
+              if (!normalizedKey.startsWith('nominations/')) {
+                const nominationsMatch = normalizedKey.match(/nominations\/.+/);
+                if (nominationsMatch) {
+                  normalizedKey = nominationsMatch[0];
+                } else if (normalizedKey.includes('nomination_')) {
+                  const parts = normalizedKey.split('/');
+                  const nominationsIndex = parts.findIndex((p: string) => p.includes('nomination_'));
+                  if (nominationsIndex >= 0) {
+                    normalizedKey = 'nominations/' + parts.slice(nominationsIndex).join('/');
+                  }
                 }
               }
+              
+              const { generateDownloadUrl } = require('@/lib/storj')
+              const downloadUrl = await generateDownloadUrl(normalizedKey, 604800)
+              
+              // Redirect to Storj URL
+              return NextResponse.redirect(downloadUrl)
+            } catch (storjError) {
+              console.error('Failed to generate Storj URL from database fileKey:', storjError)
+              // Fall through to try with the provided filePath
             }
-            
-            const { generateDownloadUrl } = require('@/lib/storj')
-            const downloadUrl = await generateDownloadUrl(normalizedKey, 604800)
-            
-            // Redirect to Storj URL
-            return NextResponse.redirect(downloadUrl)
-          } catch (storjError) {
-            console.error('Failed to generate Storj URL from database fileKey:', storjError)
-            // Fall through to try with the provided filePath
           }
         }
+      } catch (dbError) {
+        console.log('File not in database, trying other sources:', dbError)
       }
-    } catch (dbError) {
-      console.log('File not in database, trying other sources:', dbError)
     }
 
     // Normalize file path - remove bucket prefixes
