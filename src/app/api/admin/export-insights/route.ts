@@ -12,6 +12,17 @@ export const revalidate = 0
 
 export async function GET(request: NextRequest) {
   const startTime = Date.now()
+  let timeoutWarning: NodeJS.Timeout | undefined
+  
+  // Gracefully handle missing database URL (e.g., during build)
+  if (!process.env.DATABASE_URL) {
+    console.warn('DATABASE_URL not available, returning empty export')
+    return NextResponse.json({
+      error: 'Database not available',
+      message: 'Export functionality requires database connection'
+    }, { status: 503 })
+  }
+
   try {
     console.log('Exporting election insights...')
     console.log('Request URL:', request.url)
@@ -20,7 +31,7 @@ export async function GET(request: NextRequest) {
     console.log('Fetching fresh data from database...')
     
     // Set a timeout warning for long operations
-    const timeoutWarning = setTimeout(() => {
+    timeoutWarning = setTimeout(() => {
       console.warn('⚠️ Export operation taking longer than expected (>5 seconds)')
     }, 5000)
 
@@ -935,7 +946,7 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     // Clear timeout if it exists
-    if (typeof timeoutWarning !== 'undefined') {
+    if (timeoutWarning) {
       clearTimeout(timeoutWarning)
     }
     

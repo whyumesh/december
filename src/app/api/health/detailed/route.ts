@@ -2,7 +2,25 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { logger } from '@/lib/logger'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export async function GET(request: NextRequest) {
+  // Gracefully handle missing database URL (e.g., during build)
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({
+      status: 'unhealthy',
+      timestamp: new Date().toISOString(),
+      error: 'Database not available',
+      checks: {
+        database: { status: 'unhealthy', error: 'DATABASE_URL not configured' },
+        storage: { status: 'unknown' },
+        externalServices: { status: 'unknown' },
+        performance: { status: 'unknown' }
+      }
+    }, { status: 503 })
+  }
   const startTime = Date.now()
   
   try {
