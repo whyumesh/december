@@ -103,7 +103,7 @@ async function handler(request: NextRequest) {
     // Note: OTP table uses 'phone' field but we can store email there for email-based OTPs
     const otpIdentifier = useEmail && targetEmail 
       ? targetEmail.toLowerCase().trim() // Store email for email OTPs
-      : normalizePhone(voter.phone || phone || '')
+      : normalizePhone((voter.phone || phone || '').toString())
     
     // Store OTP in database
     await prisma.oTP.create({
