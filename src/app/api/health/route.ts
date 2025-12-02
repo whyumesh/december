@@ -11,6 +11,21 @@ export async function GET(request: NextRequest) {
   const startTime = Date.now()
   const requestId = Date.now().toString()
 
+  // Gracefully handle missing database URL (e.g., during build)
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({
+      status: 'unhealthy',
+      timestamp: new Date().toISOString(),
+      requestId,
+      responseTime: Date.now() - startTime,
+      services: {
+        database: { healthy: false, error: 'DATABASE_URL not configured' },
+        cloudinary: { healthy: false, error: 'Not configured' },
+        system: { error: 'Not available' }
+      }
+    }, { status: 503 })
+  }
+
   try {
     logger.info('Health check request started', { requestId })
 

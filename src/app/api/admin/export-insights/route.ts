@@ -911,6 +911,11 @@ export async function GET(request: NextRequest) {
     }
     votingDataSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
 
+    // Clear timeout before generating buffer
+    if (timeoutWarning) {
+      clearTimeout(timeoutWarning)
+    }
+
     // Generate Excel buffer
     console.log('Generating Excel buffer...')
     const buffer = await workbook.xlsx.writeBuffer()
