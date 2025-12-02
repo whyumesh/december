@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { generateOTP } from '@/lib/utils'
 import { sendOTP } from '@/lib/otp'
+import { sendVoterOTP } from '@/lib/mail'
 import { createRateLimitedRoute, rateLimitConfigs } from '@/lib/rate-limit'
 import { logRequest } from '@/lib/logger'
 import { buildPhoneWhereFilters, normalizePhone } from '@/lib/phone'
@@ -27,23 +28,50 @@ async function handler(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
     }
     
-    const { phone } = requestBody
+    const { phone, email } = requestBody
 
-    console.log('Send OTP request received:', { phone: phone ? '***' : 'missing' })
+    console.log('Send OTP request received:', { 
+      phone: phone ? '***' : 'missing',
+      email: email ? '***' : 'missing'
+    })
 
-    if (!phone) {
-      return NextResponse.json({ error: 'Phone number is required' }, { status: 400 })
+    if (!phone && !email) {
+      return NextResponse.json({ error: 'Phone number or email is required' }, { status: 400 })
     }
 
-    const normalizedPhone = normalizePhone(phone)
-    console.log('Normalized phone:', normalizedPhone)
-    const phoneFilters = buildPhoneWhereFilters(phone)
-    console.log('Phone filters:', phoneFilters.length)
+    // Find voter by phone or email
+    let voter
+    if (email) {
+      // Search by email
+      voter = await prisma.voter.findFirst({
+        where: {
+          email: {
+            equals: email,
+            mode: 'insensitive'
+          }
+        }
+      })
+      console.log('Voter lookup by email result:', { 
+        found: !!voter, 
+        voterId: voter?.voterId,
+        isActive: voter?.isActive 
+      })
+    } else if (phone) {
+      // Search by phone (existing logic)
+      const normalizedPhone = normalizePhone(phone)
+      console.log('Normalized phone:', normalizedPhone)
+      const phoneFilters = buildPhoneWhereFilters(phone)
+      console.log('Phone filters:', phoneFilters.length)
 
-    // Check if voter exists in the voter list (match different formats)
-    const voter = await prisma.voter.findFirst({
-      where: phoneFilters.length ? { OR: phoneFilters } : { phone }
-    })
+      voter = await prisma.voter.findFirst({
+        where: phoneFilters.length ? { OR: phoneFilters } : { phone }
+      })
+      console.log('Voter lookup by phone result:', { 
+        found: !!voter, 
+        voterId: voter?.voterId,
+        isActive: voter?.isActive 
+      })
+    }
 
     console.log('Voter lookup result:', { 
       found: !!voter, 
@@ -52,7 +80,10 @@ async function handler(request: NextRequest) {
     })
 
     if (!voter) {
-      return NextResponse.json({ error: 'Phone number not found in voter list' }, { status: 404 })
+      const errorMessage = email 
+        ? 'Email address not found in voter list' 
+        : 'Phone number not found in voter list'
+      return NextResponse.json({ error: errorMessage }, { status: 404 })
     }
 
     if (!voter.isActive) {
@@ -62,32 +93,59 @@ async function handler(request: NextRequest) {
     // Generate OTP
     const otpCode = generateOTP()
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
-    const canonicalPhone = normalizePhone(voter.phone || phone)
 
+    // Determine OTP delivery method
+    // Priority: 1) If email provided in request, use email 2) If voter has email, use email 3) Otherwise use SMS
+    const useEmail = email || (voter.email && voter.email.trim() !== '')
+    const targetEmail = email || voter.email
+    
+    // Store OTP identifier (phone for SMS, email for email OTPs)
+    // Note: OTP table uses 'phone' field but we can store email there for email-based OTPs
+    const otpIdentifier = useEmail && targetEmail 
+      ? targetEmail.toLowerCase().trim() // Store email for email OTPs
+      : normalizePhone(voter.phone || phone || '')
+    
     // Store OTP in database
     await prisma.oTP.create({
       data: {
-        phone: canonicalPhone,
+        phone: otpIdentifier, // Store phone or email as identifier
         code: otpCode,
         expiresAt
       }
     })
 
-    // Send OTP via SMS service
-    const smsTarget = voter.phone || phone
-    const smsResult = await sendOTP(smsTarget, otpCode)
+    let result
+    let message
 
-    // If SMS sending failed, return error (OTP is still stored in DB for retry scenarios)
-    if (!smsResult.success) {
+    if (useEmail && targetEmail) {
+      // Send OTP via email
+      console.log('Sending OTP via email:', targetEmail)
+      result = await sendVoterOTP(targetEmail, otpCode, voter.name)
+      message = result.message || 'OTP has been sent to your registered email address.'
+    } else {
+      // Send OTP via SMS service
+      const smsTarget = voter.phone || phone
+      if (!smsTarget) {
+        return NextResponse.json({ 
+          error: 'Phone number is required for SMS delivery' 
+        }, { status: 400 })
+      }
+      result = await sendOTP(smsTarget, otpCode)
+      message = result.message || 'OTP has been sent to your registered phone number.'
+    }
+
+    // If sending failed, return error (OTP is still stored in DB for retry scenarios)
+    if (!result.success) {
       return NextResponse.json({ 
-        error: smsResult.message || 'Failed to send OTP. Please try again.'
+        error: result.message || 'Failed to send OTP. Please try again.'
       }, { status: 500 })
     }
 
     // Return success response without exposing OTP
     const successResponse = NextResponse.json({ 
-      message: smsResult.message || 'OTP has been sent to your registered phone number.',
-      success: true
+      message: message,
+      success: true,
+      method: hasEmail ? 'email' : 'sms'
     })
     
     console.log('=== Send OTP Handler Success ===')

@@ -13,6 +13,8 @@ import Logo from '@/components/Logo'
 
 export default function VoterLoginPage() {
   const [phone, setPhone] = useState('')
+  const [email, setEmail] = useState('')
+  const [loginMethod, setLoginMethod] = useState<'phone' | 'email'>('phone')
   const [otp, setOtp] = useState('')
   const [step, setStep] = useState<'phone' | 'otp'>('phone')
   const [isLoading, setIsLoading] = useState(false)
@@ -56,15 +58,23 @@ export default function VoterLoginPage() {
     setError('')
     setSuccessMessage('')
 
-    // Validate phone number
-    if (!phone || phone.length !== 10) {
-      setError('Please enter a valid 10-digit phone number')
-      setIsLoading(false)
-      return
+    // Validate based on login method
+    if (loginMethod === 'phone') {
+      if (!phone || phone.length !== 10) {
+        setError('Please enter a valid 10-digit phone number')
+        setIsLoading(false)
+        return
+      }
+    } else {
+      if (!email || !email.includes('@')) {
+        setError('Please enter a valid email address')
+        setIsLoading(false)
+        return
+      }
     }
 
     try {
-      console.log('Sending OTP request for phone:', phone)
+      console.log(`Sending OTP request for ${loginMethod}:`, loginMethod === 'phone' ? phone : email)
       
       const response = await fetch('/api/voter/send-otp', {
         method: 'POST',
@@ -72,7 +82,10 @@ export default function VoterLoginPage() {
           'Content-Type': 'application/json',
         },
         credentials: 'include', // Important: include cookies
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ 
+          phone: loginMethod === 'phone' ? phone : null,
+          email: loginMethod === 'email' ? email : null
+        }),
       })
 
       console.log('Send OTP response status:', response.status)
@@ -103,7 +116,11 @@ export default function VoterLoginPage() {
       }
 
       if (response.ok) {
-        setSuccessMessage(data.message || 'OTP has been sent to your phone number')
+        const method = data.method === 'email' ? 'email' : 'phone'
+        const defaultMessage = method === 'email' 
+          ? 'OTP has been sent to your registered email address'
+          : 'OTP has been sent to your registered phone number'
+        setSuccessMessage(data.message || defaultMessage)
         setStep('otp')
       } else {
         // Show the actual error message from the API
@@ -138,7 +155,12 @@ export default function VoterLoginPage() {
     setError('')
 
     try {
-      console.log('Verifying OTP...', { phone, otp: otp ? '***' : 'missing' })
+      console.log('Verifying OTP...', { 
+        method: loginMethod,
+        phone: loginMethod === 'phone' ? phone : 'N/A',
+        email: loginMethod === 'email' ? email : 'N/A',
+        otp: otp ? '***' : 'missing' 
+      })
       
       const response = await fetch('/api/voter/verify-otp', {
         method: 'POST',
@@ -146,7 +168,11 @@ export default function VoterLoginPage() {
           'Content-Type': 'application/json',
         },
         credentials: 'include', // Important: include cookies
-        body: JSON.stringify({ phone, otp }),
+        body: JSON.stringify({ 
+          phone: loginMethod === 'phone' ? phone : null,
+          email: loginMethod === 'email' ? email : null,
+          otp 
+        }),
       })
 
       console.log('Verify OTP response status:', response.status)
@@ -198,7 +224,8 @@ export default function VoterLoginPage() {
         },
         credentials: 'include', // Important: include cookies
         body: JSON.stringify({ 
-          phone, 
+          phone: loginMethod === 'phone' ? phone : null,
+          email: loginMethod === 'email' ? email : null,
           otp, 
           location: {
             latitude: locationData.lat,
@@ -280,8 +307,20 @@ export default function VoterLoginPage() {
             </div>
             <CardTitle className="text-xl sm:text-2xl">Voter Login</CardTitle>
             <CardDescription className="text-sm sm:text-base">
-              {step === 'phone' && 'Enter your registered phone number'}
-              {step === 'otp' && 'Enter the OTP sent to your phone'}
+              {step === 'phone' && (
+                <>
+                  Enter your registered phone number or email address
+                  <br />
+                  <span className="text-xs text-gray-500">તમારો નોંધાયેલો ફોન નંબર અથવા ઈ-મેલ સરનામું દાખલ કરો</span>
+                </>
+              )}
+              {step === 'otp' && (
+                <>
+                  Enter the OTP sent to your phone or email
+                  <br />
+                  <span className="text-xs text-gray-500">તમારા ફોન અથવા ઈ-મેલ પર મોકલેલ OTP દાખલ કરો</span>
+                </>
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4 sm:p-6">
@@ -294,26 +333,101 @@ export default function VoterLoginPage() {
 
           {step === 'phone' && (
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => handlePhoneChange(e.target.value)}
-                  placeholder="7875XXXXXX"
-                  autoComplete="tel"
-                  maxLength={10}
-                  required
-                />
+              {/* Login Method Toggle */}
+              <div className="flex gap-2 mb-4">
+                <Button
+                  type="button"
+                  variant={loginMethod === 'phone' ? 'default' : 'outline'}
+                  onClick={() => {
+                    setLoginMethod('phone')
+                    setEmail('')
+                    setError('')
+                  }}
+                  className="flex-1"
+                >
+                  Phone / ફોન
+                </Button>
+                <Button
+                  type="button"
+                  variant={loginMethod === 'email' ? 'default' : 'outline'}
+                  onClick={() => {
+                    setLoginMethod('email')
+                    setPhone('')
+                    setError('')
+                  }}
+                  className="flex-1"
+                >
+                  Email / ઈ-મેલ
+                </Button>
               </div>
+
+              {loginMethod === 'phone' ? (
+                <div className="space-y-2">
+                  <Label htmlFor="phone">
+                    Phone Number / ફોન નંબર
+                  </Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
+                    placeholder="7875XXXXXX"
+                    autoComplete="tel"
+                    maxLength={10}
+                    required
+                  />
+                  {/* Note for Indian users */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
+                    <p className="text-xs text-blue-800 font-medium mb-1">
+                      Note / નોંધ:
+                    </p>
+                    <p className="text-xs text-blue-700 mb-1">
+                      Email service is only available for overseas users. For Indian users, please use mobile number.
+                    </p>
+                    <p className="text-xs text-blue-700">
+                      ઈ-મેલ સેવા ફક્ત વિદેશી સભ્યો માટે ઉપલબ્ધ છે. ભારતીય સભ્યો માટે, કૃપા કરીને મોબાઇલ નંબરનો ઉપયોગ કરો.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="email">
+                    Email Address / ઈ-મેલ સરનામું
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="your.email@example.com"
+                    autoComplete="email"
+                    required
+                  />
+                  {/* Note for overseas users */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
+                    <p className="text-xs text-blue-800 font-medium mb-1">
+                      Note / નોંધ:
+                    </p>
+                    <p className="text-xs text-blue-700 mb-1">
+                      Email service is only available for overseas users. For Indian users, please use mobile number.
+                    </p>
+                    <p className="text-xs text-blue-700">
+                      ઈ-મેલ સેવા ફક્ત વિદેશી સભ્યો માટે ઉપલબ્ધ છે. ભારતીય સભ્યો માટે, કૃપા કરીને મોબાઇલ નંબરનો ઉપયોગ કરો.
+                    </p>
+                  </div>
+                </div>
+              )}
               
               <Button 
                 onClick={sendOTP}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                disabled={isLoading || phone.length !== 10}
+                disabled={
+                  isLoading || 
+                  (loginMethod === 'phone' && phone.length !== 10) ||
+                  (loginMethod === 'email' && (!email || !email.includes('@')))
+                }
               >
-                {isLoading ? 'Sending OTP...' : 'Send OTP'}
+                {isLoading ? 'Sending OTP... / OTP મોકલી રહ્યા છીએ...' : 'Send OTP / OTP મોકલો'}
               </Button>
             </div>
           )}
@@ -341,7 +455,7 @@ export default function VoterLoginPage() {
                   required
                 />
                 <p className="text-xs text-gray-500">
-                  Enter the 6-digit OTP sent to your registered phone number
+                  Enter the 6-digit OTP sent to your registered phone number or email address
                 </p>
               </div>
               

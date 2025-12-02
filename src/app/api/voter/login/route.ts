@@ -14,20 +14,25 @@ async function handler(request: NextRequest) {
   try {
     logRequest(request, 'Voter login attempt')
     
-    const { phone, otp, location } = await request.json()
+    const { phone, email, otp, location } = await request.json()
 
     console.log('Login request received:', { 
-      phone: phone ? '***' : 'missing', 
+      phone: phone ? '***' : 'missing',
+      email: email ? '***' : 'missing',
       otp: otp ? '***' : 'missing', 
       location: location ? 'present' : 'missing' 
     })
 
-    if (!phone || !otp || !location) {
-      throw new ValidationError('Phone, OTP, and location are required')
+    if ((!phone && !email) || !otp || !location) {
+      throw new ValidationError('Phone or email, OTP, and location are required')
     }
 
-    const normalizedPhone = normalizePhone(phone)
-    console.log('Normalized phone:', normalizedPhone)
+    // For email OTPs, we stored the email in the phone field
+    // For phone OTPs, use normalized phone
+    const otpIdentifier = email 
+      ? email.toLowerCase().trim() // Use email for email OTPs
+      : normalizePhone(phone)
+    console.log('OTP identifier:', otpIdentifier ? '***' : 'missing')
 
     // Verify OTP - look for recently used OTP
     // Since verify-otp marks it as used, we just need to check it's used and not expired
@@ -36,7 +41,7 @@ async function handler(request: NextRequest) {
     const gracePeriod = new Date(now.getTime() - 2 * 60 * 1000)
     
     console.log('Checking OTP:', { 
-      normalizedPhone, 
+      otpIdentifier: otpIdentifier ? '***' : 'missing',
       otp: otp ? '***' : 'missing',
       now: now.toISOString(),
       gracePeriod: gracePeriod.toISOString()
@@ -45,7 +50,7 @@ async function handler(request: NextRequest) {
     // Look for OTP that was verified (marked as used) and hasn't expired (with grace period)
     const otpRecord = await prisma.oTP.findFirst({
       where: {
-        phone: normalizedPhone,
+        phone: otpIdentifier,
         code: otp,
         isUsed: true,
         expiresAt: {
@@ -68,13 +73,13 @@ async function handler(request: NextRequest) {
     })
 
     if (!otpRecord) {
-      // Check if there are any OTPs for this phone to help debug
+      // Check if there are any OTPs to help debug
       const allOtps = await prisma.oTP.findMany({
-        where: { phone: normalizedPhone },
+        where: { phone: otpIdentifier },
         orderBy: { createdAt: 'desc' },
         take: 5
       })
-      console.log('Recent OTPs for this phone:', allOtps.map(otp => ({
+      console.log('Recent OTPs:', allOtps.map(otp => ({
         code: otp.code,
         isUsed: otp.isUsed,
         createdAt: otp.createdAt.toISOString(),
@@ -84,12 +89,23 @@ async function handler(request: NextRequest) {
       throw new AuthenticationError('Invalid or expired OTP. Please verify OTP first.')
     }
 
-    const phoneFilters = buildPhoneWhereFilters(phone)
-
-    // Check if voter exists (match different stored formats)
-    const voter = await prisma.voter.findFirst({
-      where: phoneFilters.length ? { OR: phoneFilters } : { phone }
-    })
+    // Find voter by phone or email
+    let voter
+    if (email) {
+      voter = await prisma.voter.findFirst({
+        where: {
+          email: {
+            equals: email,
+            mode: 'insensitive'
+          }
+        }
+      })
+    } else {
+      const phoneFilters = buildPhoneWhereFilters(phone)
+      voter = await prisma.voter.findFirst({
+        where: phoneFilters.length ? { OR: phoneFilters } : { phone }
+      })
+    }
 
     console.log('Voter lookup result:', { phone, voter: voter ? { id: voter.id, name: voter.name, voterId: voter.voterId } : null })
 
