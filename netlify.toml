@@ -1,7 +1,9 @@
 # Netlify Configuration for Next.js 14
 [build]
-  command = "npm install && npx prisma generate && SKIP_ENV_VALIDATION=true NEXT_TELEMETRY_DISABLED=1 npm run build"
+  command = "npm install && SKIP_ENV_VALIDATION=true NEXT_TELEMETRY_DISABLED=1 npm run build"
   # Don't set publish - @netlify/plugin-nextjs handles this automatically
+  # Note: prisma generate runs automatically via postinstall hook in package.json
+  # Using npm ci for faster, reliable, reproducible builds
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
