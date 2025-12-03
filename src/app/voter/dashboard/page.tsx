@@ -211,7 +211,7 @@ export default function VoterDashboard() {
       totalVoters: 'કુલ મતદાતાઓ',
       failedToLoad: 'ચૂંટણી પરિણામો લોડ કરવામાં નિષ્ફળ',
       electionTitle: 'શ્રી કચ્છી માહેશ્વરી મધ્યસ્થ મહાજન સમિતિ - ચુંટણી વર્ષ ૨૦૨૬',
-      electionCommission: 'ચૂંટણી નિયામક : શ્રી પનવેલ કચ્છી મહેશ્વરી મહાજન',
+      electionCommission: 'ચૂંટણી નિયામક : શ્રી પનવેલ કચ્છી માહેશ્વરી મહાજન',
       yuvaPankhWinners: 'યુવા પાંખ વિજેતાઓ',
       yuvaPankhWinnersDescription: 'પૂર્ણ થયેલ વિભાગો માટે નિર્વાચિત સભ્યો',
       zone: 'વિભાગ',
@@ -228,7 +228,7 @@ export default function VoterDashboard() {
       zoneNameGujarati: 'અબડાસા, લખપત અને નખત્રાણા',
       seats: 2,
       winners: [
-        { name: 'Jigar Arvind Bhedakiya', nameGujarati: 'જિગર અરવિંદ ભેડાકિયા' }
+        { name: 'Jigar Arvind Bhedakiya', nameGujarati: 'જીગર અરવિંદ ભેડાકિયા' }
       ]
     },
     'BHUJ_ANJAR': {
@@ -257,7 +257,7 @@ export default function VoterDashboard() {
         { name: 'Keyur Chetan Navdhare', nameGujarati: 'કેયુર ચેતન નવધરે' },
         { name: 'Harsh Jaymin Mall', nameGujarati: 'હર્ષ જયમીન મલ્લ' },
         { name: 'Drashti Kiran Rathi', nameGujarati: 'દ્રષ્ટિ કિરણ રાઠી' },
-        { name: 'Vidhi Kirit Mall', nameGujarati: 'વિધિ કિરીત મલ્લ' }
+        { name: 'Vidhi Kirit Mall', nameGujarati: 'વિધિ કિરીટ મલ્લ' }
       ]
     }
   }
@@ -1022,7 +1022,7 @@ export default function VoterDashboard() {
                                     : (data.turnout > 0 
                                       ? (selectedLanguage === 'english' ? ' (In Progress)' : ' (પ્રગતિમાં)')
                                       : (selectedLanguage === 'english' ? ' (Pending)' : ' (બાકી)'));
-                                  return [`${value}%${status}`, `${uniqueVoters} ${selectedLanguage === 'english' ? 'out of' : 'માંથી'} ${totalVoters} ${selectedLanguage === 'english' ? 'voters voted' : 'મતદાતાઓએ મતદાન કર્યું'}`];
+                                  return [`${value}%${status}`, `${uniqueVoters} ${selectedLanguage === 'english' ? 'out of' : 'માંથી'} ${totalVoters} ${selectedLanguage === 'english' ? 'voters voted' : 'મતદાતાઓએ મતદાન કર્યા'}`];
                                 }}
                                 labelFormatter={(label, payload) => {
                                   if (payload && payload[0]) {
@@ -1180,7 +1180,7 @@ export default function VoterDashboard() {
                                   : (data.turnout > 0 
                                     ? (selectedLanguage === 'english' ? ' (In Progress)' : ' (પ્રગતિમાં)')
                                     : (selectedLanguage === 'english' ? ' (Pending)' : ' (બાકી)'));
-                                return [`${value}%${status}`, `${uniqueVoters} ${selectedLanguage === 'english' ? 'out of' : 'માંથી'} ${totalVoters} ${selectedLanguage === 'english' ? 'voters voted' : 'મતદાતાઓએ મતદાન કર્યું'}`];
+                                return [`${value}%${status}`, `${uniqueVoters} ${selectedLanguage === 'english' ? 'out of' : 'માંથી'} ${totalVoters} ${selectedLanguage === 'english' ? 'voters voted' : 'મતદાતાઓએ મતદાન કર્યા'}`];
                               }}
                               labelFormatter={(label, payload) => {
                                 if (payload && payload[0]) {

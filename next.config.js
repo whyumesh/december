@@ -38,9 +38,14 @@ const nextConfig = {
       '@radix-ui/react-toast'
     ],
     // Exclude unnecessary files from function bundle to reduce size
+    // NOTE: Do NOT exclude @swc/helpers - Next.js needs it at runtime
     outputFileTracingExcludes: {
       '*': [
-        'node_modules/@swc/**/*',
+        'node_modules/@swc/core-linux-x64-gnu/**/*',
+        'node_modules/@swc/core-linux-x64-musl/**/*',
+        'node_modules/@swc/core-darwin-x64/**/*',
+        'node_modules/@swc/core-darwin-arm64/**/*',
+        'node_modules/@swc/core-win32-x64/**/*',
         'node_modules/@esbuild/**/*',
         'node_modules/terser/**/*',
         'node_modules/webpack/**/*',

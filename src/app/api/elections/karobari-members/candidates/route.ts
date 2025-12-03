@@ -4,6 +4,46 @@ import { prisma } from '@/lib/db'
 // Force dynamic rendering - this route uses request.url
 export const dynamic = 'force-dynamic'
 
+// Gujarati name mappings for Karobari winners
+const CANDIDATE_NAMES_GUJARATI: Record<string, string> = {
+  // Garada-Lakhpat & Nakhatrana
+  'Deepak Ladharam Sharda': 'દિપક લાધરામ શારદા',
+  'Kishor Mangaldas Somani': 'કિશોર મંગળદાસ સોમાણી',
+  
+  // Abdasa
+  'Jayesh Jagdishbhai Ladhad': 'જયેશ જગદીશભાઈ લાધડ',
+  
+  // Bhuj
+  'Pankaj Shamji Bhedakiya': 'પંકજ શામજી ભેડાકિયા',
+  'Hitesh Mangaldas Bhutada': 'હિતેશ મંગળદાસ ભૂતડા',
+  'Jayantilal Chandrakant Mandan': 'જયંતિલાલ ચંદ્રકાંત મંડણ',
+  
+  // Anjar
+  'Gautam Damodarbhai Gagdani': 'ગૌતમ દામોદરભાઈ ગગદાની',
+  
+  // Anya Gujarat
+  'Mitaben Anil Bhutada': 'મીતાબેન અનિલ ભૂતડા',
+  'Manilal Damodar Mall': 'મણિલાલ દામોદર મલ્લ',
+  'Bhavesh Mohanbhai Bhutada': 'ભાવેશ મોહનભાઈ ભૂતડા',
+  
+  // Mumbai
+  'Nandu Bhanji Gingal': 'નંદુ ભાનજી ગિંગલ',
+  'Deepak Kishor Karwa': 'દિપક કિશોર કરવા',
+  'Jaymin Ramji Mall': 'જયમીન રામજી મલ્લ',
+  'Kiran Jamnadas Rathi': 'કિરણ જમનાદાસ રાઠી',
+  'Raghuvir Kiritbhai Zaveri': 'રઘુવીર કિરીટભાઈ ઝવેરી',
+  'Girish Jethalal Rathi': 'ગિરીશ જેઠાલાલ રાઠી',
+  
+  // Raigad
+  'Latesh Bharat Mandan': 'લતેશ ભરત મંડણ',
+  'Paresh Keshavji Karwa': 'પરેશ કેશવજી કરવા',
+  'Anjana Ashwin Bhutada': 'અંજના અશ્વિન ભૂતડા',
+  'Alpeshkumar Harilal Bhutada': 'અલ્પેશકુમાર હરિલાલ ભૂતડા',
+  
+  // Karnataka & Goa
+  'Rajnikant Hirachand Ladhad': 'રાજનીકાંત હીરાચંદ લાધડ'
+}
+
 export async function GET(request: NextRequest) {
   try {
     // Get voter's zone from query parameter (optional)
@@ -231,9 +271,19 @@ export async function GET(request: NextRequest) {
         console.log(`⚠️ Candidate ${candidate.id} (${candidate.name}): photoFileKey = null (no photo found)`)
       }
       
+      const candidateName = candidate.user?.name || candidate.name
+      const nameGujarati = CANDIDATE_NAMES_GUJARATI[candidateName] || null
+      
+      // Fix Karnataka zone nameGujarati if needed
+      let zoneNameGujarati = candidate.zone?.nameGujarati
+      if (candidate.zone?.code === 'KARNATAKA_GOA' && zoneNameGujarati !== 'કર્ણાટક અને ગોવા') {
+        zoneNameGujarati = 'કર્ણાટક અને ગોવા'
+      }
+      
       return {
         id: candidate.id,
-        name: candidate.user?.name || candidate.name,
+        name: candidateName,
+        nameGujarati: nameGujarati,
         email: candidate.user?.email || candidate.email,
         phone: candidate.user?.phone || candidate.phone,
         party: candidate.party,
@@ -266,7 +316,7 @@ export async function GET(request: NextRequest) {
         zone: candidate.zone ? {
           id: candidate.zone.id,
           name: candidate.zone.name,
-          nameGujarati: candidate.zone.nameGujarati,
+          nameGujarati: zoneNameGujarati,
           code: candidate.zone.code,
           seats: candidate.zone.seats
         } : null

@@ -18,6 +18,7 @@ import Footer from '@/components/Footer'
 interface Candidate {
   id: string
   name: string
+  nameGujarati?: string | null
   email: string
   phone: string
   position: string
@@ -188,11 +189,17 @@ export default function KarobariMembersVotingPage() {
         
         const zoneId = candidate.zone.id
         if (!zoneMap[zoneId]) {
+          // Fix Karnataka zone nameGujarati if needed
+          let zoneNameGujarati = candidate.zone.nameGujarati
+          if (candidate.zone.code === 'KARNATAKA_GOA' && zoneNameGujarati !== 'કર્ણાટક અને ગોવા') {
+            zoneNameGujarati = 'કર્ણાટક અને ગોવા'
+          }
+          
           zoneMap[zoneId] = {
             id: zoneId,
             code: candidate.zone.code,
             name: candidate.zone.name,
-            nameGujarati: candidate.zone.nameGujarati,
+            nameGujarati: zoneNameGujarati,
             seats: candidate.zone.seats,
             candidates: []
           }
@@ -704,12 +711,17 @@ export default function KarobariMembersVotingPage() {
                               {/* Candidate Info */}
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-start justify-between gap-2 mb-2">
-                                  <h4 className="font-bold text-gray-900 text-lg leading-tight">
-                                    {candidate.name}
-                                  </h4>
+                                  <div>
+                                    <h4 className="font-bold text-gray-900 text-lg leading-tight">
+                                      {selectedLanguage === 'english' ? candidate.name : (candidate.nameGujarati || candidate.name)}
+                                    </h4>
+                                    {selectedLanguage === 'gujarati' && candidate.nameGujarati && (
+                                      <p className="text-sm text-gray-600 mt-0.5">{candidate.name}</p>
+                                    )}
+                                  </div>
                                   <Badge className={`${colors.text} bg-white border-2 ${colors.border} flex-shrink-0`}>
                                     <CheckCircle className="h-3 w-3 mr-1" />
-                                    Winner
+                                    {selectedLanguage === 'english' ? 'Winner' : 'વિજેતા'}
                                   </Badge>
                           </div>
 

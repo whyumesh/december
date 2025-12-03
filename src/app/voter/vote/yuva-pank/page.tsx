@@ -76,7 +76,7 @@ export default function YuvaPankVotingPage() {
       zoneNameGujarati: 'અબડાસા, લખપત અને નખત્રાણા',
       seats: 2,
       winners: [
-        { name: 'Jigar Arvind Bhedakiya', nameGujarati: 'જિગર અરવિંદ ભેડાકિયા' }
+        { name: 'Jigar Arvind Bhedakiya', nameGujarati: 'જીગર અરવિંદ ભેડાકિયા' }
       ]
     },
     'BHUJ_ANJAR': {
@@ -105,7 +105,7 @@ export default function YuvaPankVotingPage() {
         { name: 'Keyur Chetan Navdhare', nameGujarati: 'કેયુર ચેતન નવધરે' },
         { name: 'Harsh Jaymin Mall', nameGujarati: 'હર્ષ જયમીન મલ્લ' },
         { name: 'Drashti Kiran Rathi', nameGujarati: 'દ્રષ્ટિ કિરણ રાઠી' },
-        { name: 'Vidhi Kirit Mall', nameGujarati: 'વિધિ કિરીત મલ્લ' }
+        { name: 'Vidhi Kirit Mall', nameGujarati: 'વિધિ કિરીટ મલ્લ' }
       ]
     }
   }
@@ -172,10 +172,9 @@ export default function YuvaPankVotingPage() {
       rule2: 'You must select the exact number of candidates as specified for your zone.',
       rule3: 'Once you submit your vote, it cannot be changed or modified.',
       rule4: 'Your vote is confidential and secure. No one can see who you voted for.',
-      rule5: 'You can only vote once in this election.',
-      rule6: 'If you do not select all required candidates, the remaining votes will be automatically counted as NOTA (None of the Above).',
-      rule7: 'Any attempt to manipulate or tamper with the voting process is strictly prohibited.',
-      rule8: 'By proceeding, you confirm that you have read and understood all the rules and regulations.',
+      rule5: 'If you do not select all required candidates, the remaining votes will be automatically counted as NOTA (None of the Above).',
+      rule6: 'Any attempt to manipulate or tamper with the voting process is strictly prohibited.',
+      rule7: 'By proceeding, you confirm that you have read and understood all the rules and regulations.',
       acceptAndContinue: 'I Accept and Continue',
       backToDashboard: 'Back to Dashboard',
       yuvaPankhWinners: 'Yuva Pankh Winners',
@@ -198,7 +197,7 @@ export default function YuvaPankVotingPage() {
       gender: 'લિંગ',
       zone: 'વિભાગ',
       vote: 'મત આપો',
-      selected: 'પસંદ કર્યું',
+      selected: 'પસંદ કર્યા',
       submitVote: 'મતદાન ટકાવા',
       submittingVote: 'મત સબમિટ કરી રહ્યા છીએ...',
       totalCandidatesSelected: 'કુલ પસંદ કરેલા ઉમેદવારો',
@@ -216,7 +215,7 @@ export default function YuvaPankVotingPage() {
       outOf: 'માં થી',
       requiredCandidates: 'ઉમેદવાર ને મત આપેલ છે.',
       incompleteZones: 'અપૂર્ણ વિભાગો',
-      selectedLabel: 'પસંદ કર્યું',
+      selectedLabel: 'પસંદ કર્યા',
       notaWillBeAdded: 'NOTA ઉમેરવામાં આવશે',
       remainingVotesNota: 'બાકીના મતો આપમેળે "ઉપરનામાંથી કોઈ નહીં" (NOTA) તરીકે ઉમેરવામાં આવશે.',
       proceedWithNota: 'NOTA મત સાથે આગળ વધશો',
@@ -239,10 +238,9 @@ export default function YuvaPankVotingPage() {
       rule2: 'તમારા વિસ્તાર ના ઉમેદવાર માટે જેટલી બેઠકો (સંખ્યા) ફાળવેલ છે, તેટલી બેઠકો માટે મતદાન કરવું આવશ્યક છે.',
       rule3: 'એક વાર તમારો અમુલ્ય મત સબમીટ બટન દ્વારા ક્લીક કર્યા બાદ તેમાં કોઈ પણ પ્રકારે ફેરફાર શક્ય નથી.',
       rule4: 'આપનો મત ગોપનીય અને સુરક્ષીત રહેશે. ચુંટણી સમિતિના કોઈ પણ સભ્ય ને જાણ નહી હોય કે તમે કયાં ઉમેદવાર ને મત આપેલ છે.',
-      rule5: '૩ નંબર સાથે આવરી લીધેલ છે.',
-      rule6: 'જો તમે કોઈ પણ ઉમેદવાર ને મત નથી આપતા તો તેની ગણતરી NOTA માં કરવામાં આવશે. (NOTA - None Of The Above) ઉપરોક્ત સભ્ય માથી કોઈ નહી',
-      rule7: 'ઓનલાઇન મત પ્રક્રિયા માં કોઈપણ ટેકનીકલ પ્રકારે ચેડા કરવા અથવા ગેરરીતિ આચરી શકાશે નહી.',
-      rule8: 'આ સાથે તમે પુષ્ટિ ના ટેબ પર ક્લીક કરી સહમતી દર્શાવશોજી કે તમે નિયમો અને સુચનાઓ ધ્યાન પુર્વક વાંચેલ છે.',
+      rule5: 'જો તમે કોઈ પણ ઉમેદવાર ને મત નથી આપતા તો તેની ગણતરી NOTA માં કરવામાં આવશે. (NOTA - None Of The Above) ઉપરોક્ત સભ્ય માથી કોઈ નહી',
+      rule6: 'ઓનલાઇન મત પ્રક્રિયા માં કોઈપણ ટેકનીકલ પ્રકારે ચેડા કરવા અથવા ગેરરીતિ આચરી શકાશે નહી.',
+      rule7: 'આ સાથે તમે પુષ્ટિ ના ટેબ પર ક્લીક કરી સહમતી દર્શાવશોજી કે તમે નિયમો અને સુચનાઓ ધ્યાન પુર્વક વાંચેલ છે.',
       acceptAndContinue: 'હું સ્વીકારું છું અને આગળ વધું',
       backToDashboard: 'ડેશબોર્ડ પર પાછા જાઓ',
       yuvaPankhWinners: 'યુવા પાંખ વિજેતાઓ',
@@ -904,13 +902,7 @@ export default function YuvaPankVotingPage() {
                   <div className="flex-shrink-0 w-6 h-6 bg-green-100 text-green-700 rounded-full flex items-center justify-center font-semibold text-xs mt-0.5">
                     7
                   </div>
-                  <p>{content[selectedLanguage].rule7}</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-6 h-6 bg-green-100 text-green-700 rounded-full flex items-center justify-center font-semibold text-xs mt-0.5">
-                    8
-                  </div>
-                  <p className="font-semibold text-gray-900">{content[selectedLanguage].rule8}</p>
+                  <p className="font-semibold text-gray-900">{content[selectedLanguage].rule7}</p>
                 </div>
               </div>
 
