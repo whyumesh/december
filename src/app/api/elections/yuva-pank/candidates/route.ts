@@ -52,8 +52,11 @@ export async function GET(request: NextRequest) {
           }
         }
       },
+      where: {
+        ...whereClause,
+        position: { not: 'NOTA' } // Exclude NOTA candidates from display
+      },
       orderBy: [
-        { position: 'asc' }, // NOTA candidates (position='NOTA') will come last
         { createdAt: 'desc' }
       ]
     })
@@ -231,78 +234,13 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Ensure NOTA candidate exists for each zone and add it to the list
-    const { getOrCreateYuvaNotaCandidate } = await import('@/lib/nota')
-    
-    // Get unique zones from candidates
-    const uniqueZones = new Set(candidates.map(c => c.zoneId).filter(Boolean))
-    
-    // Add NOTA candidate for each zone
-    for (const zoneId of uniqueZones) {
-      if (!zoneId) continue
-      
-      // Check if NOTA already exists in the list
-      const notaExists = formattedCandidates.some(c => 
-        c.position === 'NOTA' && c.zone?.id === zoneId
-      )
-      
-      if (!notaExists) {
-        try {
-          const notaCandidateId = await getOrCreateYuvaNotaCandidate(zoneId)
-          
-          // Fetch the NOTA candidate details
-          const notaCandidate = await prisma.yuvaPankhCandidate.findUnique({
-            where: { id: notaCandidateId },
-            include: {
-              zone: {
-                select: {
-                  id: true,
-                  name: true,
-                  nameGujarati: true,
-                  code: true,
-                  seats: true
-                }
-              }
-            }
-          })
-          
-          if (notaCandidate) {
-            const zone = notaCandidate.zone
-            formattedCandidates.push({
-              id: notaCandidate.id,
-              name: notaCandidate.name,
-              nameGujarati: zone?.nameGujarati ? `NOTA - ${zone.nameGujarati}` : notaCandidate.name,
-              email: null,
-              phone: null,
-              party: 'NOTA',
-              position: 'NOTA',
-              region: 'NOTA',
-              manifesto: null,
-              experience: null,
-              education: null,
-              photoUrl: null,
-              photoFileKey: null,
-              age: null,
-              gender: null,
-              birthDate: null,
-              status: notaCandidate.status,
-              zone: zone ? {
-                id: zone.id,
-                name: zone.name,
-                nameGujarati: zone.nameGujarati,
-                code: zone.code,
-                seats: zone.seats
-              } : null
-            })
-          }
-        } catch (error) {
-          console.error('Error adding NOTA candidate for zone:', zoneId, error)
-        }
-      }
-    }
+    // NOTA candidates should NOT be displayed as selectable options
+    // They are only created in the backend when votes are submitted for unfilled seats
+    // Filter out any NOTA candidates that might have been fetched
+    const candidatesWithoutNota = formattedCandidates.filter(c => c.position !== 'NOTA')
 
     return NextResponse.json({
-      candidates: formattedCandidates
+      candidates: candidatesWithoutNota
     })
 
   } catch (error) {

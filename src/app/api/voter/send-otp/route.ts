@@ -99,6 +99,15 @@ async function handler(request: NextRequest) {
     const useEmail = !!email
     const targetEmail = email || null
     
+    // Display OTP in terminal for development/testing
+    const recipient = useEmail ? targetEmail : (voter.phone || phone)
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    console.log(`📱 OTP GENERATED (${useEmail ? 'EMAIL' : 'SMS'}):`)
+    console.log(`   Recipient: ${recipient}`)
+    console.log(`   OTP Code: ${otpCode}`)
+    console.log(`   Expires at: ${expiresAt.toLocaleString()}`)
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    
     // Store OTP identifier (phone for SMS, email for email OTPs)
     // Note: OTP table uses 'phone' field but we can store email there for email-based OTPs
     const otpIdentifier = useEmail && targetEmail 
@@ -119,7 +128,7 @@ async function handler(request: NextRequest) {
 
     if (useEmail && targetEmail) {
       // Send OTP via email
-      console.log('Sending OTP via email:', targetEmail)
+      console.log('Sending OTP via email to:', targetEmail)
       result = await sendVoterOTP(targetEmail, otpCode, voter.name)
       message = result.message || 'OTP has been sent to your registered email address.'
     } else {
@@ -130,7 +139,7 @@ async function handler(request: NextRequest) {
           error: 'Phone number is required for SMS delivery' 
         }, { status: 400 })
       }
-      console.log('Sending OTP via SMS:', smsTarget ? '***' : 'missing')
+      console.log('Sending OTP via SMS to:', smsTarget)
       result = await sendOTP(smsTarget, otpCode)
       message = result.message || 'OTP has been sent to your registered phone number.'
     }

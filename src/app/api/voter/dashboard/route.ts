@@ -50,7 +50,10 @@ export async function GET(request: NextRequest) {
     // Get approved candidates for voting from all candidate tables
     const [yuvaPankhCandidates, karobariCandidates, trusteeCandidates] = await Promise.all([
       prisma.yuvaPankhCandidate.findMany({
-        where: { status: 'APPROVED' },
+        where: { 
+          status: 'APPROVED',
+          position: { not: 'NOTA' } // Exclude NOTA candidates
+        },
         include: {
           user: {
             select: {
@@ -60,7 +63,10 @@ export async function GET(request: NextRequest) {
         }
       }),
       prisma.karobariCandidate.findMany({
-        where: { status: 'APPROVED' },
+        where: { 
+          status: 'APPROVED',
+          position: { not: 'NOTA' } // Exclude NOTA candidates
+        },
         include: {
           user: {
             select: {
@@ -70,7 +76,10 @@ export async function GET(request: NextRequest) {
         }
       }),
       prisma.trusteeCandidate.findMany({
-        where: { status: 'APPROVED' },
+        where: { 
+          status: 'APPROVED',
+          position: { not: { startsWith: 'NOTA' } } // Exclude NOTA candidates
+        },
         include: {
           user: {
             select: {

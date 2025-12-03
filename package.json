@@ -44,7 +44,8 @@
     "restart": "pm2 restart kms-election",
     "stop": "pm2 stop kms-election",
     "status": "pm2 status",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "copy-favicon": "node -e \"require('fs').copyFileSync('public/electkms favicon.png', 'src/app/icon.png')\""
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.888.0",

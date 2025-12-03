@@ -501,61 +501,41 @@ export default function VoterDashboard() {
     }] : [])
   ]
 
-  // Calculate voting progress based on eligible elections (age-based)
-  // Note: Karobari is always counted as "done" since it's already completed
-  // Yuva Pankh is counted as "done" if winners are declared (completed zones or not assigned zones)
+  // Calculate voting progress - always 3 elections (Karobari, Yuva Pankh, Trustee)
+  // Count votes based on actual voting status
   const voterAge = voterData.age || 0
-  const eligibleElections = elections.filter(election => {
-    // Include Karobari - it's already completed, so always counted as "done"
-    if (election.id === 'karobari-members') {
-      return election.zone !== null // Include if voter has karobari zone
-    }
-    // Yuva Pankh: Must be 39 or younger as of August 31, 2025
-    // Include if: (has zone and meets age) OR (no zone but winners declared - for not assigned zones)
-    if (election.id === 'yuva-pank') {
-      // If voter has no zone assigned, include if winners are declared (for not assigned zones)
-      // This allows voters without zones to see progress when winners are declared
-      if ((!election.zone || election.zone === null) && hasYuvaPankhWinners) {
-        return true
-      }
-      // If voter has zone, check age eligibility
-      if (!election.zone || election.zone === null) return false // No zone and no winners, exclude
-      if (!voterData.dob) return false // Need DOB to check eligibility
-      const cutoffDate = new Date('2025-08-31')
-      const ageAsOfCutoff = calculateAgeAsOf(voterData.dob, cutoffDate)
-      const meetsAgeRequirement = ageAsOfCutoff !== null && ageAsOfCutoff >= 18 && ageAsOfCutoff <= 39
-      // Include if has zone and meets age requirement
-      return meetsAgeRequirement
-    }
-    // Trustee: 18+ years
-    if (election.id === 'trustees') {
-      return voterAge >= 18 && election.zone !== null
-    }
-    return election.zone !== null
-  })
   
-  // Count votes: 
-  // - Karobari is always counted as voted (done) if voter has karobari zone (winners declared)
-  // - Yuva Pankh is counted as voted if:
-  //   * The voter's zone is completed (winners declared) OR
-  //   * The voter has no zone assigned but winners are declared (for not assigned zones) OR
-  //   * The voter has actually voted
-  // - Trustee is counted as voted only if voter has actually voted
-  const totalVotes = eligibleElections.filter(election => {
-    if (election.id === 'karobari-members') {
-      return true // Karobari is always "done" (winners declared for all zones)
+  // Check if voter has any eligible elections
+  const hasKarobari = voterData.karobariZone !== null
+  const hasYuvaPankh = voterData.yuvaPankZone !== null
+  const hasTrustee = voterData.trusteeZone !== null && voterAge >= 18
+  
+  // Total elections is 3 if voter has any eligible elections, otherwise 0
+  const totalElections = (hasKarobari || hasYuvaPankh || hasTrustee) ? 3 : 0
+  
+  // Count votes:
+  // - Karobari: always counted as done (1) if voter has karobari zone
+  // - Yuva Pankh: counted as done if voted OR if zone is completed (not Raigad/Karnataka pending zones)
+  // - Trustee: counted as done if voted
+  let totalVotes = 0
+  
+  // Karobari is always done if voter has karobari zone
+  if (hasKarobari) {
+    totalVotes += 1
+  }
+  
+  // Yuva Pankh: done if voted OR if zone is completed (not Raigad/Karnataka)
+  if (hasYuvaPankh) {
+    const isRaigadOrKarnataka = voterData.yuvaPankZone?.code === 'RAIGAD' || voterData.yuvaPankZone?.code === 'KARNATAKA_GOA'
+    if (voterData.hasVoted.yuvaPank || (!isRaigadOrKarnataka && isYuvaPankhCompleted)) {
+      totalVotes += 1
     }
-    if (election.id === 'yuva-pank') {
-      // Count as done if:
-      // - The voter's specific zone is completed (winners declared) OR
-      // - The voter has no zone assigned but winners are declared (for not assigned zones) OR
-      // - The voter has actually voted
-      // Note: isYuvaPankhCompleted now includes the case for not assigned zones
-      return isYuvaPankhCompleted || election.hasVoted
-    }
-    return election.hasVoted
-  }).length
-  const totalElections = eligibleElections.length
+  }
+  
+  // Trustee: done if voted
+  if (hasTrustee && voterData.hasVoted.trustees) {
+    totalVotes += 1
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -730,7 +710,7 @@ export default function VoterDashboard() {
                           <CheckCircle className="h-3 w-3 mr-1" />
                           {selectedLanguage === 'english' ? 'Voted' : 'મત આપ્યો'}
                         </Badge>
-                      ) : election.id === 'karobari-members' || (election.id === 'yuva-pank' && (isYuvaPankhCompleted || hasYuvaPankhWinners)) ? null : (
+                      ) : election.id === 'karobari-members' ? null : (
                         <Badge variant="outline">
                           <Clock className="h-3 w-3 mr-1" />
                           Pending
@@ -761,14 +741,62 @@ export default function VoterDashboard() {
                     </div>
                     
                     <div className="pt-4">
-                      {election.id === 'yuva-pank' && hasYuvaPankhWinners ? (
-                        <Link href={election.href}>
-                          <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
-                            <Eye className="h-4 w-4 mr-2" />
-                            {content[selectedLanguage].viewElectedMembers}
-                          </Button>
-                        </Link>
-                      ) : election.isNotEligible ? (
+                      {election.id === 'yuva-pank' ? (() => {
+                        // Check if voter's zone is RAIGAD or KARNATAKA_GOA
+                        const isRaigadOrKarnataka = election.zone?.code === 'RAIGAD' || election.zone?.code === 'KARNATAKA_GOA'
+                        
+                        // For Raigad and Karnataka zones, show "Cast Your Vote" instead of "View Elected Members"
+                        // After voting, the card should freeze
+                        if (isRaigadOrKarnataka) {
+                          if (election.hasVoted) {
+                            // After voting, show frozen state
+                            return (
+                              <>
+                                <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                                  <div className="flex items-start">
+                                    <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 mr-2 flex-shrink-0" />
+                                    <p className="text-sm text-amber-800">
+                                      {selectedLanguage === 'english' 
+                                        ? content[selectedLanguage].zoneVotingCompleted
+                                        : content[selectedLanguage].zoneVotingCompletedGuj}
+                                    </p>
+                                  </div>
+                                </div>
+                                <Button className="w-full" disabled>
+                                  <CheckCircle className="h-4 w-4 mr-2" />
+                                  {content[selectedLanguage].votingCompleted}
+                                </Button>
+                              </>
+                            )
+                          } else {
+                            // Show "Cast Your Vote" button for Raigad and Karnataka zones
+                            return (
+                              <Link href={election.href}>
+                                <Button className={`w-full bg-${election.color}-600 hover:bg-${election.color}-700 text-white`}>
+                                  <Vote className="h-4 w-4 mr-2" />
+                                  {content[selectedLanguage].castYourVote}
+                                  <ArrowRight className="h-4 w-4 ml-2" />
+                                </Button>
+                              </Link>
+                            )
+                          }
+                        }
+                        
+                        // For other zones, show "View Elected Members" if winners exist
+                        if (hasYuvaPankhWinners) {
+                          return (
+                            <Link href={election.href}>
+                              <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
+                                <Eye className="h-4 w-4 mr-2" />
+                                {content[selectedLanguage].viewElectedMembers}
+                              </Button>
+                            </Link>
+                          )
+                        }
+                        
+                        // Default case - should not reach here for yuva-pank, but return null for safety
+                        return null
+                      })() : election.isNotEligible ? (
                         <>
                           <div className="mb-3 p-3 bg-gray-50 border border-gray-200 rounded-md">
                             <div className="flex items-start">
@@ -1043,7 +1071,7 @@ export default function VoterDashboard() {
                           </div>
                           <div>
                             <div className="text-xl sm:text-2xl font-bold text-purple-600">
-                              {results?.totalVotersInSystem ? results.totalVotersInSystem.toLocaleString() : processedData.reduce((sum, r) => sum + r.voters, 0).toLocaleString()}
+                              {processedData.reduce((sum, r) => sum + r.voters, 0).toLocaleString()}
                             </div>
                             <div className="text-xs sm:text-sm text-gray-500">{content[selectedLanguage].totalVoters}</div>
                           </div>

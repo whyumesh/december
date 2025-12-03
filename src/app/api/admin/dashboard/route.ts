@@ -343,6 +343,9 @@ export async function GET(request: NextRequest) {
 
     // Get recent candidates from all candidate tables in smaller batches
     const recentYuvaPankhCandidates = await prisma.yuvaPankhCandidate.findMany({
+      where: {
+        position: { not: 'NOTA' } // Exclude NOTA candidates
+      },
       take: 3,
       orderBy: { createdAt: 'desc' },
       include: {
@@ -380,6 +383,9 @@ export async function GET(request: NextRequest) {
     })
 
     const recentKarobariCandidates = await prisma.karobariCandidate.findMany({
+      where: {
+        position: { not: 'NOTA' } // Exclude NOTA candidates
+      },
       take: 3,
       orderBy: { createdAt: 'desc' },
       include: {
@@ -402,6 +408,9 @@ export async function GET(request: NextRequest) {
     })
 
     const recentTrusteeCandidates = await prisma.trusteeCandidate.findMany({
+      where: {
+        position: { not: { startsWith: 'NOTA' } } // Exclude NOTA candidates
+      },
       take: 3,
       orderBy: { createdAt: 'desc' },
       include: {

@@ -13,7 +13,10 @@ export async function GET(request: NextRequest) {
         // Get candidates from all candidate tables
         const [yuvaPankhCandidates, karobariCandidates, trusteeCandidates] = await Promise.all([
             prisma.yuvaPankhCandidate.findMany({
-                where: zoneId ? { zoneId } : {},
+                where: {
+                    ...(zoneId ? { zoneId } : {}),
+                    position: { not: 'NOTA' } // Exclude NOTA candidates
+                },
                 include: {
                     user: {
                         select: {
@@ -34,7 +37,10 @@ export async function GET(request: NextRequest) {
                 orderBy: { createdAt: "desc" },
             }),
             prisma.karobariCandidate.findMany({
-                where: zoneId ? { zoneId } : {},
+                where: {
+                    ...(zoneId ? { zoneId } : {}),
+                    position: { not: 'NOTA' } // Exclude NOTA candidates
+                },
                 include: {
                     user: {
                         select: {
@@ -55,7 +61,10 @@ export async function GET(request: NextRequest) {
                 orderBy: { createdAt: "desc" },
             }),
             prisma.trusteeCandidate.findMany({
-                where: zoneId ? { zoneId } : {},
+                where: {
+                    ...(zoneId ? { zoneId } : {}),
+                    position: { not: { startsWith: 'NOTA' } } // Exclude NOTA candidates
+                },
                 include: {
                     user: {
                         select: {

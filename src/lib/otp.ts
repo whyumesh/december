@@ -122,6 +122,14 @@ export async function sendOTP(phone: string, otp: string): Promise<{ success: bo
   const startTime = Date.now()
   const phoneHash = phone.slice(-4) // Last 4 digits for logging (privacy)
   
+  // Display OTP in terminal
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  console.log('📱 SMS OTP BEING SENT:')
+  console.log(`   Phone: ${phone}`)
+  console.log(`   OTP Code: ${otp}`)
+  console.log(`   Generated at: ${new Date().toLocaleString()}`)
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  
   try {
     // Format phone number
     const formattedPhone = formatPhoneNumber(phone)
@@ -179,10 +187,15 @@ export async function sendOTP(phone: string, otp: string): Promise<{ success: bo
       duration: `${duration}ms`
     })
     
-    // Also log to console for development/debugging (with masked phone)
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`✅ SMS sent to ${phoneHash}*** | SID: ${message.sid} | Status: ${message.status}`)
-    }
+    // Also log to console for development/debugging (with full OTP displayed)
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    console.log('✅ SMS OTP SENT SUCCESSFULLY:')
+    console.log(`   Phone: ${phone}`)
+    console.log(`   OTP Code: ${otp}`)
+    console.log(`   Twilio SID: ${message.sid}`)
+    console.log(`   Status: ${message.status}`)
+    console.log(`   Duration: ${duration}ms`)
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
     
     return {
       success: true,

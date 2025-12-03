@@ -18,6 +18,11 @@ export const metadata: Metadata = {
     keywords: ["election", "voting", "democracy", "secure", "online"],
     authors: [{ name: "Shree Panvel Kutchi Maheshwari Mahajan" }],
     robots: "noindex, nofollow", // Security for election system
+    icons: {
+        icon: "/electkms favicon.png",
+        shortcut: "/electkms favicon.png",
+        apple: "/electkms favicon.png",
+    },
 };
 
 export const viewport = {

@@ -245,7 +245,11 @@ export default function YuvaPankVotingPage() {
       acceptAndContinue: 'હું સ્વીકારું છું અને આગળ વધું',
       backToDashboard: 'ડેશબોર્ડ પર પાછા જાઓ',
       yuvaPankhWinners: 'યુવા પાંખ વિજેતાઓ',
-      winners: 'વિજેતાઓ'
+      winners: 'વિજેતાઓ',
+      castYourVote: 'Cast your vote',
+      castYourVoteGuj: 'તમારો મત આપો',
+      pending: 'Pending',
+      pendingGuj: 'પેન્ડિંગ'
     }
   }
 

@@ -52,11 +52,14 @@ export async function GET(request: NextRequest) {
       trustees: voter.votes.some(vote => vote.trusteeCandidateId !== null)
     }
 
-    // Mark Yuva Pankh zone as frozen if it's not KARNATAKA_GOA or RAIGAD
+    // Mark Yuva Pankh zone as frozen:
+    // - If it's not KARNATAKA_GOA or RAIGAD: always frozen (completed zones)
+    // - If it's KARNATAKA_GOA or RAIGAD: frozen only if voter has voted
     // But still return it so the card can be shown with a completion message
     let yuvaPankZoneWithStatus = null
     if (voter.yuvaPankZone) {
-      const isFrozen = voter.yuvaPankZone.code !== 'KARNATAKA_GOA' && voter.yuvaPankZone.code !== 'RAIGAD'
+      const isRaigadOrKarnataka = voter.yuvaPankZone.code === 'KARNATAKA_GOA' || voter.yuvaPankZone.code === 'RAIGAD'
+      const isFrozen = !isRaigadOrKarnataka || (isRaigadOrKarnataka && hasVoted.yuvaPank)
       yuvaPankZoneWithStatus = {
         ...voter.yuvaPankZone,
         isFrozen
