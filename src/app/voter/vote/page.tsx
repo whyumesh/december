@@ -11,6 +11,7 @@ import { Vote, Users, Building, Award, CheckCircle, ArrowLeft, Eye, ArrowRight, 
 import Link from 'next/link'
 import Logo from '@/components/Logo'
 import Footer from '@/components/Footer'
+import ScreenshotProtection from '@/components/ScreenshotProtection'
 
 interface Candidate {
   id: string
@@ -605,30 +606,36 @@ export default function UnifiedVotingPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">{content[selectedLanguage].loading}</p>
+      <>
+        <ScreenshotProtection />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">{content[selectedLanguage].loading}</p>
+          </div>
         </div>
-      </div>
+      </>
     )
   }
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="bg-green-100 rounded-full p-6 w-24 h-24 mx-auto mb-6 flex items-center justify-center">
-            <CheckCircle className="h-12 w-12 text-green-600" />
+      <>
+        <ScreenshotProtection />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="bg-green-100 rounded-full p-6 w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+              <CheckCircle className="h-12 w-12 text-green-600" />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">{content[selectedLanguage].voteSubmitted}</h1>
+            <h2 className="text-2xl font-semibold text-purple-600 mb-3">{content[selectedLanguage].thankYou}</h2>
+            <p className="text-gray-700 mb-4 italic text-lg">
+              {content[selectedLanguage].thankYouMessage}
+            </p>
+            <p className="text-gray-600 mb-6">{content[selectedLanguage].redirecting}</p>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">{content[selectedLanguage].voteSubmitted}</h1>
-          <h2 className="text-2xl font-semibold text-purple-600 mb-3">{content[selectedLanguage].thankYou}</h2>
-          <p className="text-gray-700 mb-4 italic text-lg">
-            {content[selectedLanguage].thankYouMessage}
-          </p>
-          <p className="text-gray-600 mb-6">{content[selectedLanguage].redirecting}</p>
         </div>
-      </div>
+      </>
     )
   }
 
@@ -636,7 +643,9 @@ export default function UnifiedVotingPage() {
     const incompleteSelections = checkIncompleteSelections()
     
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <>
+        <ScreenshotProtection />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Card className="max-w-md w-full mx-4">
           <CardContent className="pt-6">
             <div className="text-center">
@@ -667,11 +676,13 @@ export default function UnifiedVotingPage() {
           </CardContent>
         </Card>
       </div>
+      </>
     )
   }
 
   return (
     <>
+      <ScreenshotProtection />
       <div className="fixed inset-0 pointer-events-none select-none z-50 overflow-hidden">
         <div className="w-full h-full flex flex-wrap">
           {Array.from({ length: 100 }).map((_, i) => (

@@ -134,9 +134,9 @@ export default function ScreenshotProtection() {
     // Monitor for DevTools
     const devToolsInterval = setInterval(detectDevTools, 500)
 
-    // Detect screen recording (limited detection)
+    // Enhanced screen recording detection
     const detectScreenRecording = () => {
-      // Check if page is being recorded by monitoring performance
+      // Method 1: Check if page is being recorded by monitoring performance
       const startTime = performance.now()
       requestAnimationFrame(() => {
         const endTime = performance.now()
@@ -144,9 +144,63 @@ export default function ScreenshotProtection() {
         
         // If frame time is unusually high, might indicate screen recording
         if (frameTime > 100) {
-          console.warn('Possible screen recording detected')
+          console.warn('⚠️ Possible screen recording detected (performance anomaly)')
+          alert('⚠️ Screen recording is not allowed on this page for security reasons.')
         }
       })
+
+      // Method 2: Detect MediaRecorder API usage - Block getDisplayMedia
+      if (typeof navigator !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+        try {
+          // Override getDisplayMedia to block screen sharing
+          const originalGetDisplayMedia = navigator.mediaDevices.getDisplayMedia.bind(navigator.mediaDevices)
+          navigator.mediaDevices.getDisplayMedia = function(...args: any[]) {
+            alert('⚠️ Screen recording is not allowed on this page for security reasons.')
+            return Promise.reject(new Error('Screen recording is not allowed'))
+          }
+        } catch (e) {
+          console.warn('Could not override getDisplayMedia:', e)
+        }
+      }
+
+      // Method 3: Detect canvas fingerprinting (screen recording tools often use canvas)
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      if (ctx) {
+        try {
+          ctx.fillText('Screen recording detection', 2, 2)
+          const imageData = ctx.getImageData(0, 0, 1, 1)
+          // If canvas is being monitored, this might indicate recording
+        } catch (e) {
+          // Canvas might be blocked
+        }
+      }
+    }
+
+    // Enhanced MediaRecorder detection
+    if (typeof window !== 'undefined' && window.MediaRecorder) {
+      try {
+        const OriginalMediaRecorder = window.MediaRecorder
+        const Self = class extends OriginalMediaRecorder {
+          constructor(stream: MediaStream, options?: MediaRecorderOptions) {
+            super(stream, options)
+            // Check if stream contains screen capture tracks
+            const tracks = stream.getVideoTracks()
+            tracks.forEach(track => {
+              if (track.label.includes('screen') || track.label.includes('Screen') || 
+                  track.label.includes('display') || track.label.includes('Display')) {
+                alert('⚠️ Screen recording is not allowed on this page for security reasons.')
+                track.stop()
+                stream.getTracks().forEach(t => t.stop())
+              }
+            })
+          }
+        }
+        // Override MediaRecorder
+        ;(window as any).MediaRecorder = Self
+      } catch (e) {
+        console.warn('Could not override MediaRecorder:', e)
+      }
     }
 
     // Monitor for screen recording
@@ -157,13 +211,40 @@ export default function ScreenshotProtection() {
       if (document.hidden) {
         // Page is hidden - might be taking screenshot
         console.warn('⚠️ Page visibility changed - screenshot may have been taken')
+        // Show warning when page becomes visible again
+        setTimeout(() => {
+          if (!document.hidden) {
+            alert('⚠️ Screenshots are not allowed on this page for security reasons.')
+          }
+        }, 100)
       }
     }
 
     // Detect window blur (might indicate screenshot tool)
     const handleBlur = () => {
       console.warn('⚠️ Window lost focus - possible screenshot attempt')
+      // Show warning when window regains focus
+      setTimeout(() => {
+        if (document.hasFocus()) {
+          alert('⚠️ Screenshots are not allowed on this page for security reasons.')
+        }
+      }, 100)
     }
+
+    // Detect fullscreen API abuse (some screenshot tools use this)
+    document.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement) {
+        console.warn('⚠️ Fullscreen exit detected - possible screenshot attempt')
+      }
+    })
+
+    // Detect page unload (might indicate screenshot tool closing)
+    window.addEventListener('beforeunload', (e) => {
+      // This is a security measure - don't allow easy page closure during voting
+      e.preventDefault()
+      e.returnValue = 'Are you sure you want to leave? Your vote may not be saved.'
+      return e.returnValue
+    })
 
     // Add event listeners
     document.addEventListener('contextmenu', handleContextMenu, { capture: true })

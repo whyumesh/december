@@ -3,7 +3,7 @@
 // Force dynamic rendering - never statically generate this page
 export const dynamic = 'force-dynamic'
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
@@ -195,16 +195,76 @@ export default function AdminDashboard() {
     const [isLoadingResults, setIsLoadingResults] = useState(false);
     const router = useRouter();
 
-    // Move useEffect before early returns
-    useEffect(() => {
-        // Only fetch data if authenticated and admin
-        if (isAuthenticated && isAdmin && !authLoading) {
-            fetchDashboardData();
-            fetchResults();
-        }
-    }, [isAuthenticated, isAdmin, authLoading]);
+    const fetchDashboardData = useCallback(async (isRefresh = false) => {
+        try {
+            if (isRefresh) {
+                setIsRefreshing(true);
+            } else {
+                setIsLoading(true);
+            }
+            setError(null);
 
-    const fetchResults = async () => {
+            console.log('Fetching dashboard data...');
+            // Add cache-busting query parameter and headers
+            const timestamp = new Date().getTime();
+            const response = await fetch(`/api/admin/dashboard?t=${timestamp}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0',
+                },
+            });
+
+            console.log('Dashboard response status:', response.status);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('Dashboard data received:', data);
+
+            // Check if API returned an error response
+            if (data.error) {
+                throw new Error(data.details || data.error || 'API returned an error');
+            }
+
+            if (data.stats) {
+                setStats(data.stats);
+                console.log('Stats set:', data.stats);
+            } else {
+                console.warn('No stats in response:', data);
+            }
+
+            if (data.recentCandidates) {
+                setRecentCandidates(data.recentCandidates);
+                console.log('Recent candidates set:', data.recentCandidates.length);
+            } else {
+                console.warn('No recent candidates in response:', data);
+                setRecentCandidates([]);
+            }
+
+        } catch (error) {
+            console.error("Error fetching dashboard data:", error);
+            const errorMessage = error instanceof Error ? error.message : 'Failed to fetch dashboard data';
+            setError(errorMessage);
+            // Set empty stats to prevent showing stale data
+            setStats({
+                yuvaPankh: { total: 0, pending: 0, approved: 0, rejected: 0 },
+                karobari: { total: 0, pending: 0, approved: 0, rejected: 0 },
+                totalVoters: 0,
+                totalVotes: 0,
+            });
+            setRecentCandidates([]);
+        } finally {
+            setIsLoading(false);
+            setIsRefreshing(false);
+        }
+    }, []);
+
+    const fetchResults = useCallback(async () => {
         setIsLoadingResults(true);
         try {
             const response = await fetch('/api/admin/results');
@@ -217,7 +277,16 @@ export default function AdminDashboard() {
         } finally {
             setIsLoadingResults(false);
         }
-    };
+    }, []);
+
+    // Move useEffect before early returns
+    useEffect(() => {
+        // Only fetch data if authenticated and admin
+        if (isAuthenticated && isAdmin && !authLoading) {
+            fetchDashboardData();
+            fetchResults();
+        }
+    }, [isAuthenticated, isAdmin, authLoading, fetchDashboardData, fetchResults]);
 
     // Show loading state while checking authentication
     if (authLoading) {
@@ -396,54 +465,6 @@ export default function AdminDashboard() {
         }
     };
 
-    const fetchDashboardData = async (isRefresh = false) => {
-        try {
-            if (isRefresh) {
-                setIsRefreshing(true);
-            } else {
-                setIsLoading(true);
-            }
-            setError(null);
-
-            console.log('Fetching dashboard data...');
-            // Add cache-busting query parameter and headers
-            const timestamp = new Date().getTime();
-            const response = await fetch(`/api/admin/dashboard?t=${timestamp}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Cache-Control': 'no-cache, no-store, must-revalidate',
-                    'Pragma': 'no-cache',
-                    'Expires': '0',
-                },
-            });
-
-            console.log('Dashboard response status:', response.status);
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-            console.log('Dashboard data received:', data);
-
-            if (data.stats) {
-                setStats(data.stats);
-            }
-
-            if (data.recentCandidates) {
-                setRecentCandidates(data.recentCandidates);
-                console.log('Recent candidates set:', data.recentCandidates);
-            }
-
-        } catch (error) {
-            console.error("Error fetching dashboard data:", error);
-            setError(error instanceof Error ? error.message : 'Failed to fetch dashboard data');
-        } finally {
-            setIsLoading(false);
-            setIsRefreshing(false);
-        }
-    };
 
 
     const handleLogout = async () => {
