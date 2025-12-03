@@ -245,38 +245,49 @@ export async function GET(request: NextRequest) {
     // ============================================
     const yuvaPankhResultsSheet = workbook.addWorksheet('Yuva Pankh Results')
     
-    const yuvaPankhVoteRecords = await prisma.vote.findMany({
+    // Use aggregation query instead of fetching all votes
+    const yuvaPankhVoteCounts = await prisma.vote.groupBy({
+      by: ['yuvaPankhCandidateId'],
       where: { yuvaPankhCandidateId: { not: null } },
-      include: {
-        yuvaPankhCandidate: {
-          include: {
-            user: { select: { name: true } },
-            zone: { select: { name: true, nameGujarati: true, code: true } }
-          }
-        }
+      _count: { id: true }
+    })
+
+    // Get candidate and zone info in parallel
+    const yuvaPankhCandidateIds = yuvaPankhVoteCounts.map(v => v.yuvaPankhCandidateId!).filter(Boolean)
+    const candidates = await prisma.yuvaPankhCandidate.findMany({
+      where: { id: { in: yuvaPankhCandidateIds } },
+      select: {
+        id: true,
+        name: true,
+        zoneId: true,
+        user: { select: { name: true } }
       }
     })
 
-    // Group by zone and candidate
-    const yuvaPankhResults = new Map<string, Map<string, { name: string; votes: number }>>()
-    
-    yuvaPankhVoteRecords.forEach(vote => {
-      if (vote.yuvaPankhCandidate) {
-        const zoneId = vote.yuvaPankhCandidate.zoneId || 'Unknown'
-        const candidateId = vote.yuvaPankhCandidateId || ''
-        const candidateName = vote.yuvaPankhCandidate.user?.name || vote.yuvaPankhCandidate.name || 'Unknown'
-        const zoneName = vote.yuvaPankhCandidate.zone?.name || 'Unknown'
+    // Get zones in one query
+    const zoneIds = [...new Set(candidates.map(c => c.zoneId).filter(Boolean) as string[])]
+    const zones = await prisma.zone.findMany({
+      where: { id: { in: zoneIds } },
+      select: { id: true, name: true }
+    })
+    const zoneMap = new Map(zones.map(z => [z.id, z.name]))
 
-        if (!yuvaPankhResults.has(zoneId)) {
-          yuvaPankhResults.set(zoneId, new Map())
-        }
-        
-        const zoneCandidates = yuvaPankhResults.get(zoneId)!
-        if (!zoneCandidates.has(candidateId)) {
-          zoneCandidates.set(candidateId, { name: candidateName, votes: 0 })
-        }
-        zoneCandidates.get(candidateId)!.votes++
+    // Build results map
+    const yuvaPankhResults = new Map<string, Array<{ name: string; votes: number }>>()
+    
+    yuvaPankhVoteCounts.forEach(voteCount => {
+      if (!voteCount.yuvaPankhCandidateId) return
+      const candidate = candidates.find(c => c.id === voteCount.yuvaPankhCandidateId)
+      if (!candidate) return
+      
+      const zoneId = candidate.zoneId || 'Unknown'
+      const candidateName = candidate.user?.name || candidate.name || 'Unknown'
+      const voteCountNum = voteCount._count.id
+
+      if (!yuvaPankhResults.has(zoneId)) {
+        yuvaPankhResults.set(zoneId, [])
       }
+      yuvaPankhResults.get(zoneId)!.push({ name: candidateName, votes: voteCountNum })
     })
 
     yuvaPankhResultsSheet.columns = [
@@ -287,12 +298,12 @@ export async function GET(request: NextRequest) {
     ]
 
     for (const [zoneId, candidates] of yuvaPankhResults.entries()) {
-      const zone = await prisma.zone.findUnique({ where: { id: zoneId }, select: { name: true } })
-      const sortedCandidates = Array.from(candidates.values()).sort((a, b) => b.votes - a.votes)
+      const zoneName = zoneMap.get(zoneId) || zoneId
+      const sortedCandidates = candidates.sort((a, b) => b.votes - a.votes)
       
       sortedCandidates.forEach((candidate, index) => {
         yuvaPankhResultsSheet.addRow({
-          zone: zone?.name || zoneId,
+          zone: zoneName,
           candidate: candidate.name,
           votes: candidate.votes,
           rank: index + 1
@@ -316,37 +327,43 @@ export async function GET(request: NextRequest) {
     // ============================================
     const karobariResultsSheet = workbook.addWorksheet('Karobari Results')
     
-    const karobariVoteRecords = await prisma.vote.findMany({
+    // Use aggregation query instead of fetching all votes
+    const karobariVoteCounts = await prisma.vote.groupBy({
+      by: ['karobariCandidateId'],
       where: { karobariCandidateId: { not: null } },
-      include: {
-        karobariCandidate: {
-          include: {
-            user: { select: { name: true } },
-            zone: { select: { name: true, nameGujarati: true, code: true } }
-          }
-        }
+      _count: { id: true }
+    })
+
+    // Get candidate and zone info in parallel
+    const karobariCandidateIds = karobariVoteCounts.map(v => v.karobariCandidateId!).filter(Boolean)
+    const karobariCandidates = await prisma.karobariCandidate.findMany({
+      where: { id: { in: karobariCandidateIds } },
+      select: {
+        id: true,
+        name: true,
+        position: true,
+        zoneId: true,
+        user: { select: { name: true } }
       }
     })
 
-    const karobariResults = new Map<string, Map<string, { name: string; position: string; votes: number }>>()
+    // Build results map
+    const karobariResults = new Map<string, Array<{ name: string; position: string; votes: number }>>()
     
-    karobariVoteRecords.forEach(vote => {
-      if (vote.karobariCandidate) {
-        const zoneId = vote.karobariCandidate.zoneId || 'Unknown'
-        const candidateId = vote.karobariCandidateId || ''
-        const candidateName = vote.karobariCandidate.user?.name || vote.karobariCandidate.name || 'Unknown'
-        const position = vote.karobariCandidate.position || 'Unknown'
+    karobariVoteCounts.forEach(voteCount => {
+      if (!voteCount.karobariCandidateId) return
+      const candidate = karobariCandidates.find(c => c.id === voteCount.karobariCandidateId)
+      if (!candidate) return
+      
+      const zoneId = candidate.zoneId || 'Unknown'
+      const candidateName = candidate.user?.name || candidate.name || 'Unknown'
+      const position = candidate.position || 'Unknown'
+      const voteCountNum = voteCount._count.id
 
-        if (!karobariResults.has(zoneId)) {
-          karobariResults.set(zoneId, new Map())
-        }
-        
-        const zoneCandidates = karobariResults.get(zoneId)!
-        if (!zoneCandidates.has(candidateId)) {
-          zoneCandidates.set(candidateId, { name: candidateName, position, votes: 0 })
-        }
-        zoneCandidates.get(candidateId)!.votes++
+      if (!karobariResults.has(zoneId)) {
+        karobariResults.set(zoneId, [])
       }
+      karobariResults.get(zoneId)!.push({ name: candidateName, position, votes: voteCountNum })
     })
 
     karobariResultsSheet.columns = [
@@ -357,13 +374,21 @@ export async function GET(request: NextRequest) {
       { header: 'Rank', key: 'rank', width: 10 }
     ]
 
+    // Get zones for karobari
+    const karobariZoneIds = [...new Set(karobariCandidates.map(c => c.zoneId).filter(Boolean) as string[])]
+    const karobariZones = await prisma.zone.findMany({
+      where: { id: { in: karobariZoneIds } },
+      select: { id: true, name: true }
+    })
+    const karobariZoneMap = new Map(karobariZones.map(z => [z.id, z.name]))
+
     for (const [zoneId, candidates] of karobariResults.entries()) {
-      const zone = await prisma.zone.findUnique({ where: { id: zoneId }, select: { name: true } })
-      const sortedCandidates = Array.from(candidates.values()).sort((a, b) => b.votes - a.votes)
+      const zoneName = karobariZoneMap.get(zoneId) || zoneId
+      const sortedCandidates = candidates.sort((a, b) => b.votes - a.votes)
       
       sortedCandidates.forEach((candidate, index) => {
         karobariResultsSheet.addRow({
-          zone: zone?.name || zoneId,
+          zone: zoneName,
           position: candidate.position,
           candidate: candidate.name,
           votes: candidate.votes,
@@ -387,36 +412,41 @@ export async function GET(request: NextRequest) {
     // ============================================
     const trusteeResultsSheet = workbook.addWorksheet('Trustee Results')
     
-    const trusteeVoteRecords = await prisma.vote.findMany({
+    // Use aggregation query instead of fetching all votes
+    const trusteeVoteCounts = await prisma.vote.groupBy({
+      by: ['trusteeCandidateId'],
       where: { trusteeCandidateId: { not: null } },
-      include: {
-        trusteeCandidate: {
-          include: {
-            user: { select: { name: true } },
-            zone: { select: { name: true, nameGujarati: true, code: true } }
-          }
-        }
+      _count: { id: true }
+    })
+
+    // Get candidate and zone info in parallel
+    const trusteeCandidateIds = trusteeVoteCounts.map(v => v.trusteeCandidateId!).filter(Boolean)
+    const trusteeCandidates = await prisma.trusteeCandidate.findMany({
+      where: { id: { in: trusteeCandidateIds } },
+      select: {
+        id: true,
+        name: true,
+        zoneId: true,
+        user: { select: { name: true } }
       }
     })
 
-    const trusteeResults = new Map<string, Map<string, { name: string; votes: number }>>()
+    // Build results map
+    const trusteeResults = new Map<string, Array<{ name: string; votes: number }>>()
     
-    trusteeVoteRecords.forEach(vote => {
-      if (vote.trusteeCandidate) {
-        const zoneId = vote.trusteeCandidate.zoneId || 'Unknown'
-        const candidateId = vote.trusteeCandidateId || ''
-        const candidateName = vote.trusteeCandidate.user?.name || vote.trusteeCandidate.name || 'Unknown'
+    trusteeVoteCounts.forEach(voteCount => {
+      if (!voteCount.trusteeCandidateId) return
+      const candidate = trusteeCandidates.find(c => c.id === voteCount.trusteeCandidateId)
+      if (!candidate) return
+      
+      const zoneId = candidate.zoneId || 'Unknown'
+      const candidateName = candidate.user?.name || candidate.name || 'Unknown'
+      const voteCountNum = voteCount._count.id
 
-        if (!trusteeResults.has(zoneId)) {
-          trusteeResults.set(zoneId, new Map())
-        }
-        
-        const zoneCandidates = trusteeResults.get(zoneId)!
-        if (!zoneCandidates.has(candidateId)) {
-          zoneCandidates.set(candidateId, { name: candidateName, votes: 0 })
-        }
-        zoneCandidates.get(candidateId)!.votes++
+      if (!trusteeResults.has(zoneId)) {
+        trusteeResults.set(zoneId, [])
       }
+      trusteeResults.get(zoneId)!.push({ name: candidateName, votes: voteCountNum })
     })
 
     trusteeResultsSheet.columns = [
@@ -426,13 +456,21 @@ export async function GET(request: NextRequest) {
       { header: 'Rank', key: 'rank', width: 10 }
     ]
 
+    // Get zones for trustee
+    const trusteeZoneIds = [...new Set(trusteeCandidates.map(c => c.zoneId).filter(Boolean) as string[])]
+    const trusteeZones = await prisma.zone.findMany({
+      where: { id: { in: trusteeZoneIds } },
+      select: { id: true, name: true }
+    })
+    const trusteeZoneMap = new Map(trusteeZones.map(z => [z.id, z.name]))
+
     for (const [zoneId, candidates] of trusteeResults.entries()) {
-      const zone = await prisma.zone.findUnique({ where: { id: zoneId }, select: { name: true } })
-      const sortedCandidates = Array.from(candidates.values()).sort((a, b) => b.votes - a.votes)
+      const zoneName = trusteeZoneMap.get(zoneId) || zoneId
+      const sortedCandidates = candidates.sort((a, b) => b.votes - a.votes)
       
       sortedCandidates.forEach((candidate, index) => {
         trusteeResultsSheet.addRow({
-          zone: zone?.name || zoneId,
+          zone: zoneName,
           candidate: candidate.name,
           votes: candidate.votes,
           rank: index + 1
@@ -469,67 +507,72 @@ export async function GET(request: NextRequest) {
       { header: 'Seats', key: 'seats', width: 10 }
     ]
 
-    // Process zones in batches to avoid timeout
-    for (const zone of allZones) {
+    // Process zones in parallel batches
+    const zonePromises = allZones.map(async (zone) => {
       let voterCount = 0
       let voteCount = 0
 
       try {
         if (zone.electionType === 'YUVA_PANK') {
           voterCount = await prisma.voter.count({ where: { yuvaPankZoneId: zone.id } })
-          const votes = await prisma.vote.findMany({
+          // Use distinct count query instead of fetching all votes
+          const uniqueVoters = await prisma.vote.findMany({
             where: {
               yuvaPankhCandidate: { zoneId: zone.id }
             },
-            select: { voterId: true }
+            select: { voterId: true },
+            distinct: ['voterId']
           })
-          // Deduplicate by voterId
-          voteCount = new Set(votes.map(v => v.voterId)).size
+          voteCount = uniqueVoters.length
         } else if (zone.electionType === 'KAROBARI_MEMBERS') {
           voterCount = await prisma.voter.count({ where: { karobariZoneId: zone.id } })
-          const votes = await prisma.vote.findMany({
+          const uniqueVoters = await prisma.vote.findMany({
             where: {
               karobariCandidate: { zoneId: zone.id }
             },
-            select: { voterId: true }
+            select: { voterId: true },
+            distinct: ['voterId']
           })
-          // Deduplicate by voterId
-          voteCount = new Set(votes.map(v => v.voterId)).size
+          voteCount = uniqueVoters.length
         } else if (zone.electionType === 'TRUSTEES') {
           voterCount = await prisma.voter.count({ where: { trusteeZoneId: zone.id } })
-          const votes = await prisma.vote.findMany({
+          const uniqueVoters = await prisma.vote.findMany({
             where: {
               trusteeCandidate: { zoneId: zone.id }
             },
-            select: { voterId: true }
+            select: { voterId: true },
+            distinct: ['voterId']
           })
-          // Deduplicate by voterId
-          voteCount = new Set(votes.map(v => v.voterId)).size
+          voteCount = uniqueVoters.length
         }
 
         const turnout = voterCount > 0 ? ((voteCount / voterCount) * 100).toFixed(2) + '%' : '0%'
 
-        turnoutSheet.addRow({
+        return {
           electionType: zone.electionType,
           zoneName: zone.name,
           totalVoters: voterCount,
           votesCast: voteCount,
           turnout,
           seats: zone.seats
-        })
+        }
       } catch (zoneError) {
         console.error(`Error processing zone ${zone.id}:`, zoneError)
-        // Continue with next zone even if one fails
-        turnoutSheet.addRow({
+        return {
           electionType: zone.electionType,
           zoneName: zone.name,
           totalVoters: 0,
           votesCast: 0,
           turnout: 'Error',
           seats: zone.seats
-        })
+        }
       }
-    }
+    })
+
+    const zoneResults = await Promise.all(zonePromises)
+    zoneResults.forEach(result => {
+      turnoutSheet.addRow(result)
+    })
 
     turnoutSheet.getRow(1).font = { bold: true, size: 12 }
     turnoutSheet.getRow(1).fill = {
@@ -576,7 +619,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Karobari Candidates
-    const karobariCandidates = await prisma.karobariCandidate.findMany({
+    const karobariCandidatesForStatus = await prisma.karobariCandidate.findMany({
       include: {
         user: { select: { name: true } },
         zone: { select: { name: true } }
@@ -584,7 +627,7 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' }
     })
 
-    karobariCandidates.forEach(candidate => {
+    karobariCandidatesForStatus.forEach(candidate => {
       candidateStatusSheet.addRow({
         electionType: 'KAROBARI',
         zone: candidate.zone?.name || 'N/A',
@@ -597,7 +640,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Trustee Candidates
-    const trusteeCandidates = await prisma.trusteeCandidate.findMany({
+    const trusteeCandidatesForStatus = await prisma.trusteeCandidate.findMany({
       include: {
         user: { select: { name: true } },
         zone: { select: { name: true } }
@@ -605,7 +648,7 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' }
     })
 
-    trusteeCandidates.forEach(candidate => {
+    trusteeCandidatesForStatus.forEach(candidate => {
       candidateStatusSheet.addRow({
         electionType: 'TRUSTEE',
         zone: candidate.zone?.name || 'N/A',
@@ -629,95 +672,24 @@ export async function GET(request: NextRequest) {
     // SHEET 4: VOTER PARTICIPATION STATUS
     // ============================================
     
-    // Get all votes with related data - fetch fresh from database
-    console.log('Fetching all votes from database...')
+    // Optimized: Fetch votes with minimal includes, get related data separately
+    console.log('Fetching votes from database (optimized)...')
     const allVotes = await prisma.vote.findMany({
-      include: {
-        voter: {
-          select: {
-            id: true,
-            voterId: true,
-            name: true,
-            phone: true,
-            region: true,
-            user: {
-              select: {
-                name: true,
-                email: true,
-                phone: true
-              }
-            },
-            yuvaPankZone: {
-              select: {
-                name: true,
-                nameGujarati: true,
-                code: true
-              }
-            },
-            karobariZone: {
-              select: {
-                name: true,
-                nameGujarati: true,
-                code: true
-              }
-            },
-            trusteeZone: {
-              select: {
-                name: true,
-                nameGujarati: true,
-                code: true
-              }
-            }
-          }
-        },
+      select: {
+        id: true,
+        voterId: true,
+        yuvaPankhCandidateId: true,
+        karobariCandidateId: true,
+        trusteeCandidateId: true,
+        timestamp: true,
+        ipAddress: true,
+        userAgent: true,
+        latitude: true,
+        longitude: true,
         election: {
           select: {
             type: true,
             title: true
-          }
-        },
-        yuvaPankhCandidate: {
-          include: {
-            zone: {
-              select: {
-                name: true,
-                nameGujarati: true,
-                code: true
-              }
-            }
-          }
-        },
-        yuvaPankhNominee: {
-          include: {
-            zone: {
-              select: {
-                name: true,
-                nameGujarati: true,
-                code: true
-              }
-            }
-          }
-        },
-        karobariCandidate: {
-          include: {
-            zone: {
-              select: {
-                name: true,
-                nameGujarati: true,
-                code: true
-              }
-            }
-          }
-        },
-        trusteeCandidate: {
-          include: {
-            zone: {
-              select: {
-                name: true,
-                nameGujarati: true,
-                code: true
-              }
-            }
           }
         }
       },
@@ -727,6 +699,63 @@ export async function GET(request: NextRequest) {
     })
     
     console.log(`Fetched ${allVotes.length} votes from database at ${new Date().toISOString()}`)
+
+    // Fetch related data in parallel batches
+    const voterIds = [...new Set(allVotes.map(v => v.voterId).filter((id): id is string => Boolean(id)))]
+    const voteCandidateIds = {
+      yuvaPankh: [...new Set(allVotes.map(v => v.yuvaPankhCandidateId).filter((id): id is string => Boolean(id)))],
+      karobari: [...new Set(allVotes.map(v => v.karobariCandidateId).filter((id): id is string => Boolean(id)))],
+      trustee: [...new Set(allVotes.map(v => v.trusteeCandidateId).filter((id): id is string => Boolean(id)))]
+    }
+
+    const [voters, yuvaCandidatesForVotes, karobariCandidatesForVotes, trusteeCandidatesForVotes] = await Promise.all([
+      voterIds.length > 0 ? prisma.voter.findMany({
+        where: { id: { in: voterIds } },
+        select: {
+          id: true,
+          voterId: true,
+          name: true,
+          phone: true,
+          region: true,
+          yuvaPankZone: { select: { name: true } },
+          karobariZone: { select: { name: true } },
+          trusteeZone: { select: { name: true } },
+          user: { select: { name: true, email: true, phone: true } }
+        }
+      }) : Promise.resolve([]),
+      voteCandidateIds.yuvaPankh.length > 0 ? prisma.yuvaPankhCandidate.findMany({
+        where: { id: { in: voteCandidateIds.yuvaPankh } },
+        select: {
+          id: true,
+          name: true,
+          position: true,
+          zone: { select: { name: true, nameGujarati: true, code: true } }
+        }
+      }) : Promise.resolve([]),
+      voteCandidateIds.karobari.length > 0 ? prisma.karobariCandidate.findMany({
+        where: { id: { in: voteCandidateIds.karobari } },
+        select: {
+          id: true,
+          name: true,
+          position: true,
+          zone: { select: { name: true, nameGujarati: true, code: true } }
+        }
+      }) : Promise.resolve([]),
+      voteCandidateIds.trustee.length > 0 ? prisma.trusteeCandidate.findMany({
+        where: { id: { in: voteCandidateIds.trustee } },
+        select: {
+          id: true,
+          name: true,
+          zone: { select: { name: true, nameGujarati: true, code: true } }
+        }
+      }) : Promise.resolve([])
+    ])
+
+    // Create lookup maps
+    const voterMap = new Map(voters.map(v => [v.id, v]))
+    const yuvaCandidateMap = new Map(yuvaCandidatesForVotes.map(c => [c.id, c]))
+    const karobariCandidateMap = new Map(karobariCandidatesForVotes.map(c => [c.id, c]))
+    const trusteeCandidateMap = new Map(trusteeCandidatesForVotes.map(c => [c.id, c]))
 
     // ============================================
     // SHEET 5: DETAILED VOTING DATA
@@ -753,21 +782,58 @@ export async function GET(request: NextRequest) {
       { header: 'Longitude', key: 'longitude', width: 15 }
     ]
 
-    // Log sample data to verify freshness
-    const getVoteMeta = (vote: any) => {
-      const sources = [
-        { candidate: vote.trusteeCandidate, type: 'Trustee Candidate' },
-        { candidate: vote.karobariCandidate, type: 'Karobari Candidate' },
-        { candidate: vote.yuvaPankhCandidate, type: 'Yuva Pankh Candidate' },
-        { candidate: vote.yuvaPankhNominee, type: 'Yuva Pankh Nominee' }
-      ]
-      for (const source of sources) {
-        if (source.candidate) {
-          const isNota = source.candidate.position === 'NOTA' || source.candidate.name?.startsWith('NOTA')
+    // Optimized vote meta function using lookup maps
+    type VoteType = {
+      id: string
+      voterId: string | null
+      yuvaPankhCandidateId: string | null
+      karobariCandidateId: string | null
+      trusteeCandidateId: string | null
+      timestamp: Date
+      ipAddress: string | null
+      userAgent: string | null
+      latitude: number | null
+      longitude: number | null
+      election: {
+        type: string | null
+        title: string | null
+      } | null
+    }
+    const getVoteMeta = (vote: VoteType) => {
+      if (vote.trusteeCandidateId) {
+        const candidate = trusteeCandidateMap.get(vote.trusteeCandidateId)
+        if (candidate) {
+          const isNota = candidate.name?.startsWith('NOTA') || false
           return {
-            candidateType: source.type,
-            zoneName: source.candidate.zone?.name || 'N/A',
-            zoneCode: source.candidate.zone?.code || 'N/A',
+            candidateType: 'Trustee Candidate',
+            zoneName: candidate.zone?.name || 'N/A',
+            zoneCode: candidate.zone?.code || 'N/A',
+            voteCategory: isNota ? 'NOTA' : 'Candidate',
+            isNota
+          }
+        }
+      }
+      if (vote.karobariCandidateId) {
+        const candidate = karobariCandidateMap.get(vote.karobariCandidateId)
+        if (candidate) {
+          const isNota = candidate.position === 'NOTA' || candidate.name?.startsWith('NOTA') || false
+          return {
+            candidateType: 'Karobari Candidate',
+            zoneName: candidate.zone?.name || 'N/A',
+            zoneCode: candidate.zone?.code || 'N/A',
+            voteCategory: isNota ? 'NOTA' : 'Candidate',
+            isNota
+          }
+        }
+      }
+      if (vote.yuvaPankhCandidateId) {
+        const candidate = yuvaCandidateMap.get(vote.yuvaPankhCandidateId)
+        if (candidate) {
+          const isNota = candidate.position === 'NOTA' || candidate.name?.startsWith('NOTA') || false
+          return {
+            candidateType: 'Yuva Pankh Candidate',
+            zoneName: candidate.zone?.name || 'N/A',
+            zoneCode: candidate.zone?.code || 'N/A',
             voteCategory: isNota ? 'NOTA' : 'Candidate',
             isNota
           }
@@ -813,7 +879,7 @@ export async function GET(request: NextRequest) {
     const voteParticipationMap = new Map<string, Record<string, { total: number; nota: number }>>()
     allVotes.forEach(vote => {
       const electionType = vote.election?.type
-      if (!electionType) return
+      if (!electionType || !vote.voterId) return
       if (!voteParticipationMap.has(vote.voterId)) {
         voteParticipationMap.set(vote.voterId, {})
       }
@@ -828,18 +894,8 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    const voterRecords = await prisma.voter.findMany({
-      select: {
-        id: true,
-        voterId: true,
-        name: true,
-        phone: true,
-        region: true,
-        yuvaPankZone: { select: { name: true } },
-        karobariZone: { select: { name: true } },
-        trusteeZone: { select: { name: true } }
-      }
-    })
+    // Use already fetched voters instead of querying again
+    const voterRecords = voters
 
     const formatParticipationStatus = (hasZone: boolean, stats?: { total: number; nota: number }) => {
       if (!hasZone) return 'Not Eligible'
@@ -872,19 +928,20 @@ export async function GET(request: NextRequest) {
     }
     voterParticipationSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
     
-    // Process each vote
+    // Process each vote using lookup maps
     allVotes.forEach(vote => {
       const electionType = vote.election?.type || 'UNKNOWN'
       const electionTitle = vote.election?.title || 'N/A'
       const meta = getVoteMeta(vote)
 
-      const voterName = vote.voter?.name || vote.voter?.user?.name || 'Unknown'
-      const voterPhone = vote.voter?.phone || vote.voter?.user?.phone || 'N/A'
-      const voterRegion = vote.voter?.region || 'N/A'
+      const voter = vote.voterId ? voterMap.get(vote.voterId) : null
+      const voterName = voter?.name || voter?.user?.name || 'Unknown'
+      const voterPhone = voter?.phone || voter?.user?.phone || 'N/A'
+      const voterRegion = voter?.region || 'N/A'
 
       votingDataSheet.addRow({
         voteId: vote.id,
-        voterId: vote.voter?.voterId || vote.voterId,
+        voterId: voter?.voterId || vote.voterId || 'N/A',
         voterName,
         voterPhone,
         voterRegion,

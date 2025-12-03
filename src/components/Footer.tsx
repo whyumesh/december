@@ -59,8 +59,14 @@ export default function Footer() {
                     <div>
                         <h4 className="font-semibold mb-4">Contact</h4>
                         <div className="space-y-2 text-sm text-gray-400">
-                            <p>+91 9819474238</p>
-                            <p>+91 9820216044</p>
+                            <p>
+                                <a href="tel:+917666778349" className="hover:text-white">+91 7666778349</a>
+                                <span className="block text-xs mt-1">Dipen Ketan Somani</span>
+                            </p>
+                            <p>
+                                <a href="tel:+919820216044" className="hover:text-white">+91 9820216044</a>
+                                <span className="block text-xs mt-1">Jay Deepak Bhutada</span>
+                            </p>
                             <p>kmselec2026@gmail.com</p>
                             <p>B-2 Nityanand Krupa CHS, Deodhar Wada, Opp. Janakalyan Bank, Panvel (MH) - 410206</p>
                         </div>

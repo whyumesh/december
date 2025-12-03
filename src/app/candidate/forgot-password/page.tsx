@@ -367,11 +367,14 @@ export default function ForgotPasswordPage() {
                             <div className="flex justify-between">
                                 <span className="font-medium">Phone:</span>
                                 <a 
-                                    href="tel:+919819474238" 
+                                    href="tel:+917666778349" 
                                     className="text-blue-600 hover:text-blue-800 hover:underline"
                                 >
-                                    +91 9819474238
+                                    +91 7666778349
                                 </a>
+                            </div>
+                            <div className="text-xs text-gray-500 text-right mt-1">
+                                Dipen Ketan Somani
                             </div>
                         </div>
                     </div>
