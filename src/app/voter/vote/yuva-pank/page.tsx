@@ -12,7 +12,6 @@ import { Vote, Users, CheckCircle, ArrowLeft, AlertCircle, Eye, User } from 'luc
 import Link from 'next/link'
 import Logo from '@/components/Logo'
 import CandidateProfileModal from '@/components/CandidateProfileModal'
-import ScreenshotProtection from '@/components/ScreenshotProtection'
 import Footer from '@/components/Footer'
 import { set } from 'zod'
 
@@ -654,7 +653,6 @@ export default function YuvaPankVotingPage() {
   if (showConfirmation) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <ScreenshotProtection />
         {/* Header */}
         <header className="bg-white shadow-sm border-b">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -818,7 +816,6 @@ export default function YuvaPankVotingPage() {
   if (!rulesAccepted && !showWinners) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <ScreenshotProtection />
         <header className="bg-white shadow-sm border-b">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 gap-4">
@@ -925,7 +922,6 @@ export default function YuvaPankVotingPage() {
 
   return (
     <>
-      <ScreenshotProtection />
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
         <header className="bg-white shadow-sm border-b">

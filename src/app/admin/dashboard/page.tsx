@@ -53,7 +53,8 @@ import {
     CartesianGrid,
     Tooltip,
     ResponsiveContainer,
-    Cell
+    Cell,
+    LabelList
 } from '@/components/ChartsWrapper';
 
 interface CommitteeStats {
@@ -267,13 +268,32 @@ export default function AdminDashboard() {
     const fetchResults = useCallback(async () => {
         setIsLoadingResults(true);
         try {
-            const response = await fetch('/api/admin/results');
+            console.log('Fetching election results...');
+            const timestamp = new Date().getTime();
+            const response = await fetch(`/api/admin/results?t=${timestamp}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0',
+                },
+            });
+            
+            console.log('Results response status:', response.status);
+            
             if (response.ok) {
                 const data = await response.json();
+                console.log('Results data received:', data);
                 setResults(data);
+            } else {
+                console.error('Failed to fetch results:', response.status, response.statusText);
+                const errorData = await response.json().catch(() => ({}));
+                console.error('Error details:', errorData);
             }
         } catch (error) {
             console.error('Error fetching results:', error);
+            setError(error instanceof Error ? error.message : 'Failed to fetch election results');
         } finally {
             setIsLoadingResults(false);
         }
@@ -1063,6 +1083,14 @@ export default function AdminDashboard() {
                                                                 />
                                                             );
                                                         })}
+                                                        <LabelList 
+                                                            dataKey="turnout" 
+                                                            position="top" 
+                                                            formatter={(value: number) => `${value.toFixed(1)}%`} 
+                                                            fill="#333" 
+                                                            fontSize={12} 
+                                                            fontWeight="bold" 
+                                                        />
                                                     </Bar>
                                                 </BarChart>
                                             </ResponsiveContainer>
@@ -1186,6 +1214,14 @@ export default function AdminDashboard() {
                                                                 />
                                                             );
                                                         })}
+                                                        <LabelList 
+                                                            dataKey="turnout" 
+                                                            position="top" 
+                                                            formatter={(value: number) => `${value.toFixed(1)}%`} 
+                                                            fill="#333" 
+                                                            fontSize={12} 
+                                                            fontWeight="bold" 
+                                                        />
                                                     </Bar>
                                                 </BarChart>
                                             </ResponsiveContainer>

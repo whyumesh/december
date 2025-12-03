@@ -8,7 +8,8 @@ import {
     CartesianGrid,
     Tooltip,
     ResponsiveContainer,
-    Cell
+    Cell,
+    LabelList
 } from 'recharts';
 
 export {
@@ -19,5 +20,6 @@ export {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Cell
+  Cell,
+  LabelList
 };

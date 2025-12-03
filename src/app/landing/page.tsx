@@ -200,7 +200,7 @@ export default function LandingPage() {
                     {/* Organization Info */}
                     <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8 mb-8 sm:mb-12">
                         <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6 text-center">
-                            Organization Details
+                            Election Commission Details
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
                             <div className="space-y-4">

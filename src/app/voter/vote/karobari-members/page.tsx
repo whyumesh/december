@@ -12,7 +12,6 @@ import { Vote, Building, CheckCircle, ArrowLeft, AlertCircle, Users, Eye } from 
 import Link from 'next/link'
 import Logo from '@/components/Logo'
 import CandidateProfileModal from '@/components/CandidateProfileModal'
-import ScreenshotProtection from '@/components/ScreenshotProtection'
 import Footer from '@/components/Footer'
 
 interface Candidate {
@@ -350,7 +349,6 @@ export default function KarobariMembersVotingPage() {
   if (success) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <ScreenshotProtection />
         <Card className="max-w-md w-full mx-4">
           <CardContent className="pt-6">
             <div className="text-center">
@@ -378,7 +376,6 @@ export default function KarobariMembersVotingPage() {
 
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <ScreenshotProtection />
         <Card className="max-w-md w-full mx-4">
           <CardContent className="pt-6">
             <div className="text-center">
@@ -410,7 +407,6 @@ export default function KarobariMembersVotingPage() {
   if (showConfirmation) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <ScreenshotProtection />
         {/* Header */}
         <header className="bg-white shadow-sm border-b">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -584,7 +580,6 @@ export default function KarobariMembersVotingPage() {
 
   return (
     <>
-      <ScreenshotProtection />
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
         <header className="bg-white shadow-sm border-b">

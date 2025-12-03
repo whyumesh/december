@@ -11,7 +11,6 @@ import { Vote, Users, Building, Award, CheckCircle, ArrowLeft, Eye, ArrowRight, 
 import Link from 'next/link'
 import Logo from '@/components/Logo'
 import Footer from '@/components/Footer'
-import ScreenshotProtection from '@/components/ScreenshotProtection'
 
 interface Candidate {
   id: string
@@ -232,49 +231,6 @@ export default function UnifiedVotingPage() {
     }
   }, [votingData.yuvaPank.selectedCandidates, votingData.karobariMembers.selectedCandidates, votingData.trustees.selectedTrustees])
 
-  useEffect(() => {
-    const handleSecurityCheck = () => {
-      router.push("/voter/dashboard")
-    }
-
-    // Tab visibility change
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden") {
-        handleSecurityCheck()
-      }
-    }
-
-    // Window blur
-    const handleBlur = () => {
-      handleSecurityCheck()
-    }
-
-    // PrintScreen key
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "PrintScreen") {
-        navigator.clipboard.writeText("Screenshots are disabled.")
-        handleSecurityCheck()
-      }
-    }
-
-    // Block right-click
-    const handleContextMenu = (e: MouseEvent) => {
-      e.preventDefault()
-      handleSecurityCheck()
-    }
-
-    document.addEventListener("visibilitychange", handleVisibilityChange)
-    window.addEventListener("blur", handleBlur)
-    document.addEventListener("keydown", handleKeyDown)
-    document.addEventListener("contextmenu", handleContextMenu)
-
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange)
-      window.removeEventListener("blur", handleBlur)
-      document.removeEventListener("keydown", handleKeyDown)
-      document.removeEventListener("contextmenu", handleContextMenu)
-    }
-  }, [router])
 
   const fetchAllData = async () => {
 
@@ -607,7 +563,6 @@ export default function UnifiedVotingPage() {
   if (isLoading) {
     return (
       <>
-        <ScreenshotProtection />
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
@@ -621,7 +576,6 @@ export default function UnifiedVotingPage() {
   if (success) {
     return (
       <>
-        <ScreenshotProtection />
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
           <div className="text-center">
             <div className="bg-green-100 rounded-full p-6 w-24 h-24 mx-auto mb-6 flex items-center justify-center">
@@ -644,7 +598,6 @@ export default function UnifiedVotingPage() {
     
     return (
       <>
-        <ScreenshotProtection />
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Card className="max-w-md w-full mx-4">
           <CardContent className="pt-6">
@@ -682,7 +635,6 @@ export default function UnifiedVotingPage() {
 
   return (
     <>
-      <ScreenshotProtection />
       <div className="fixed inset-0 pointer-events-none select-none z-50 overflow-hidden">
         <div className="w-full h-full flex flex-wrap">
           {Array.from({ length: 100 }).map((_, i) => (

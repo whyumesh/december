@@ -928,6 +928,125 @@ export async function GET(request: NextRequest) {
     }
     voterParticipationSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
     
+    // ============================================
+    // SHEET 5: VOTER VOTING STATUS (Yes/No Format)
+    // ============================================
+    const voterVotingStatusSheet = workbook.addWorksheet('Voter Voting Status')
+    voterVotingStatusSheet.columns = [
+      { header: 'Voter ID', key: 'voterId', width: 18 },
+      { header: 'Name', key: 'name', width: 28 },
+      { header: 'Phone', key: 'phone', width: 18 },
+      { header: 'Region', key: 'region', width: 20 },
+      { header: 'Yuva Pankh Zone', key: 'yuvaZone', width: 25 },
+      { header: 'Yuva Pankh Voted', key: 'yuvaVoted', width: 18 },
+      { header: 'Karobari Zone', key: 'karobariZone', width: 25 },
+      { header: 'Karobari Voted', key: 'karobariVoted', width: 18 },
+      { header: 'Trustee Zone', key: 'trusteeZone', width: 25 },
+      { header: 'Trustee Voted', key: 'trusteeVoted', width: 18 }
+    ]
+
+    // Create a map of voters who have voted in each election type
+    const votersVotedMap = new Map<string, Set<string>>()
+    allVotes.forEach(vote => {
+      const electionType = vote.election?.type
+      if (!electionType || !vote.voterId) return
+      if (!votersVotedMap.has(electionType)) {
+        votersVotedMap.set(electionType, new Set())
+      }
+      votersVotedMap.get(electionType)!.add(vote.voterId)
+    })
+
+    // Add all voters with Yes/No voting status
+    voterRecords.forEach(voter => {
+      const yuvaVoted = votersVotedMap.get('YUVA_PANK')?.has(voter.id) ? 'Yes' : (voter.yuvaPankZone ? 'No' : 'Not Eligible')
+      const karobariVoted = votersVotedMap.get('KAROBARI_MEMBERS')?.has(voter.id) ? 'Yes' : (voter.karobariZone ? 'No' : 'Not Eligible')
+      const trusteeVoted = votersVotedMap.get('TRUSTEES')?.has(voter.id) ? 'Yes' : (voter.trusteeZone ? 'No' : 'Not Eligible')
+
+      voterVotingStatusSheet.addRow({
+        voterId: voter.voterId,
+        name: voter.name,
+        phone: voter.phone || 'N/A',
+        region: voter.region || 'N/A',
+        yuvaZone: voter.yuvaPankZone?.name || 'N/A',
+        yuvaVoted,
+        karobariZone: voter.karobariZone?.name || 'N/A',
+        karobariVoted,
+        trusteeZone: voter.trusteeZone?.name || 'N/A',
+        trusteeVoted
+      })
+    })
+
+    // Style the header row
+    voterVotingStatusSheet.getRow(1).font = { bold: true, size: 12 }
+    voterVotingStatusSheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF16A085' }
+    }
+    voterVotingStatusSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
+
+    // Apply conditional formatting for Yes/No columns
+    const yuvaVotedCol = voterVotingStatusSheet.getColumn('yuvaVoted')
+    const karobariVotedCol = voterVotingStatusSheet.getColumn('karobariVoted')
+    const trusteeVotedCol = voterVotingStatusSheet.getColumn('trusteeVoted')
+
+    // Apply conditional formatting to Yes/No cells
+    voterRecords.forEach((voter, index) => {
+      const rowIndex = index + 2 // +2 because row 1 is header
+      const yuvaVoted = votersVotedMap.get('YUVA_PANK')?.has(voter.id) ? 'Yes' : (voter.yuvaPankZone ? 'No' : 'Not Eligible')
+      const karobariVoted = votersVotedMap.get('KAROBARI_MEMBERS')?.has(voter.id) ? 'Yes' : (voter.karobariZone ? 'No' : 'Not Eligible')
+      const trusteeVoted = votersVotedMap.get('TRUSTEES')?.has(voter.id) ? 'Yes' : (voter.trusteeZone ? 'No' : 'Not Eligible')
+
+      // Color code: Green for Yes, Red for No, Gray for Not Eligible
+      if (yuvaVoted === 'Yes') {
+        voterVotingStatusSheet.getCell(`F${rowIndex}`).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF10B981' }
+        }
+        voterVotingStatusSheet.getCell(`F${rowIndex}`).font = { color: { argb: 'FFFFFFFF' }, bold: true }
+      } else if (yuvaVoted === 'No') {
+        voterVotingStatusSheet.getCell(`F${rowIndex}`).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFEF4444' }
+        }
+        voterVotingStatusSheet.getCell(`F${rowIndex}`).font = { color: { argb: 'FFFFFFFF' }, bold: true }
+      }
+
+      if (karobariVoted === 'Yes') {
+        voterVotingStatusSheet.getCell(`H${rowIndex}`).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF10B981' }
+        }
+        voterVotingStatusSheet.getCell(`H${rowIndex}`).font = { color: { argb: 'FFFFFFFF' }, bold: true }
+      } else if (karobariVoted === 'No') {
+        voterVotingStatusSheet.getCell(`H${rowIndex}`).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFEF4444' }
+        }
+        voterVotingStatusSheet.getCell(`H${rowIndex}`).font = { color: { argb: 'FFFFFFFF' }, bold: true }
+      }
+
+      if (trusteeVoted === 'Yes') {
+        voterVotingStatusSheet.getCell(`J${rowIndex}`).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF10B981' }
+        }
+        voterVotingStatusSheet.getCell(`J${rowIndex}`).font = { color: { argb: 'FFFFFFFF' }, bold: true }
+      } else if (trusteeVoted === 'No') {
+        voterVotingStatusSheet.getCell(`J${rowIndex}`).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFEF4444' }
+        }
+        voterVotingStatusSheet.getCell(`J${rowIndex}`).font = { color: { argb: 'FFFFFFFF' }, bold: true }
+      }
+    })
+    
     // Process each vote using lookup maps
     allVotes.forEach(vote => {
       const electionType = vote.election?.type || 'UNKNOWN'

@@ -14,7 +14,6 @@ import { Vote, Award, CheckCircle, ArrowLeft, AlertCircle, MapPin, Users, Search
 import Link from 'next/link'
 import Logo from '@/components/Logo'
 import CandidateProfileModal from '@/components/CandidateProfileModal'
-import ScreenshotProtection from '@/components/ScreenshotProtection'
 import Footer from '@/components/Footer'
 
 interface Trustee {
@@ -711,7 +710,6 @@ export default function TrusteesVotingPage() {
   if (showConfirmation) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <ScreenshotProtection />
         {/* Header */}
         <header className="bg-white shadow-sm border-b">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -869,7 +867,6 @@ export default function TrusteesVotingPage() {
   if (!rulesAccepted) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <ScreenshotProtection />
         <header className="bg-white shadow-sm border-b">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 gap-4">
@@ -994,7 +991,7 @@ export default function TrusteesVotingPage() {
                   <div className="grid grid-cols-3 gap-2 text-gray-700 min-w-[500px] sm:min-w-0">
                     <div className="text-xs sm:text-sm">02 {selectedLanguage === 'english' ? 'Mumbai' : 'મુંબઈ'}</div>
                     <div className="text-xs sm:text-sm">02</div>
-                    <div className="text-xs">{selectedLanguage === 'english' ? 'Mumbai, Thane district, Navi Mumbai, Nashik, Ahmednagar district, Nagpur, Chandrapur, Madhya Pradesh, Rajasthan, West Bengal, Odisha, Haryana, Overseas area, and entire country' : 'મુંબઈ,થાણા જિલ્લો,નવી મુંબઈ,નાસિક,અહેમદનગર જિલ્લો,નાગપુર,ચંદ્રપુર,મધ્યપ્રદેશ,રાજસ્થાન,પશ્ચિમ બંગાળ,ઓડિશા,હરિયાણા,વિદેશી વિસ્તાર,અને સમગ્ર દેશ'}</div>
+                    <div className="text-xs">{selectedLanguage === 'english' ? 'Mumbai, Thane district, Navi Mumbai, Nashik, Ahmednagar district, Nagpur, Chandrapur, Madhya Pradesh, Rajasthan, West Bengal, Odisha, Haryana, Overseas area, and entire country' : 'મુંબઈ,થાણા જિલ્લો,નવી મુંબઈ,નાસિક,અહેમદનગર જિલ્લો,નાગપુર,ચંદ્રપુર,મધ્યપ્રદેશ,રાજસ્થાન,પશ્ચિમ બંગાળ,ઓડિશા,હરિયાણા,વિદેશ વિસ્તાર,અને સમગ્ર દેશ'}</div>
                   </div>
                   <div className="grid grid-cols-3 gap-2 text-gray-700 min-w-[500px] sm:min-w-0">
                     <div className="text-xs sm:text-sm">03 {selectedLanguage === 'english' ? 'Karnataka & Goa' : 'કર્ણાટક,ગોવા'}</div>
@@ -1043,7 +1040,6 @@ export default function TrusteesVotingPage() {
 
   return (
     <>
-      <ScreenshotProtection />
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
         <header className="bg-white shadow-sm border-b">
@@ -1172,7 +1168,7 @@ export default function TrusteesVotingPage() {
                   },
                   'MUMBAI': {
                     en: 'Mumbai, Thane district, Navi Mumbai, Nashik, Ahmednagar district, Nagpur, Chandrapur, Madhya Pradesh, Rajasthan, West Bengal, Odisha, Haryana, Overseas area, and entire country',
-                    gu: 'મુંબઈ,થાણા જિલ્લો,નવી મુંબઈ,નાસિક,અહેમદનગર જિલ્લો,નાગપુર,ચંદ્રપુર,મધ્યપ્રદેશ,રાજસ્થાન,પશ્ચિમ બંગાળ,ઓડિશા,હરિયાણા,વિદેશી વિસ્તાર,અને સમગ્ર દેશ'
+                    gu: 'મુંબઈ,થાણા જિલ્લો,નવી મુંબઈ,નાસિક,અહેમદનગર જિલ્લો,નાગપુર,ચંદ્રપુર,મધ્યપ્રદેશ,રાજસ્થાન,પશ્ચિમ બંગાળ,ઓડિશા,હરિયાણા,વિદેશ વિસ્તાર,અને સમગ્ર દેશ'
                   },
                   'KARNATAKA_GOA': {
                     en: 'Karnataka and Goa states',
