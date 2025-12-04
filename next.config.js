@@ -63,6 +63,8 @@ const nextConfig = {
       ],
     },
     serverComponentsExternalPackages: [
+      'prisma',
+      '@prisma/client',
       'pg',
       'bcryptjs',
       'jsonwebtoken',

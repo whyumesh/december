@@ -1,6 +1,6 @@
 # Netlify Configuration for Next.js 14
 [build]
-  command = "npm install && npm run build"
+  command = "npm install && npx prisma generate && npm run build"
   publish = ".next"
   # Explicitly run prisma generate to ensure binary targets are included
 
@@ -19,14 +19,37 @@
   NETLIFY_USE_YARN = "false"
   NEXT_TELEMETRY_DISABLED = "1"
 
-# Optimize function size - use "none" bundler to prevent bundling node_modules
-# This tells Netlify to NOT bundle dependencies - they'll be loaded from node_modules at runtime
+# Optimize function size - use esbuild bundler to tree-shake and minimize function code
+# esbuild will bundle and optimize the function, excluding externalized dependencies
 [functions]
-  node_bundler = "none"
-  # With node_bundler = "none", all node_modules are externalized automatically
-  # No need to list external_node_modules - everything is external
-  # Prisma disabled for Phase 1 deployment
-  included_files = []
+  node_bundler = "esbuild"
+  # Externalize heavy dependencies - these will NOT be bundled, loaded from node_modules at runtime
+  external_node_modules = [
+    "@prisma/client",
+    "prisma",
+    "pg",
+    "bcryptjs",
+    "jsonwebtoken",
+    "nodemailer",
+    "@aws-sdk/client-s3",
+    "@aws-sdk/s3-request-presigner",
+    "cloudinary",
+    "pdf-parse",
+    "exceljs",
+    "jspdf",
+    "jsdom",
+    "isomorphic-dompurify",
+    "twilio",
+    "csv-parser",
+    "@upstash/ratelimit",
+    "@upstash/redis"
+  ]
+  # Include ONLY the Prisma query engine binary - required for runtime database queries
+  # DO NOT include .env files - use Netlify environment variables instead
+  included_files = [
+    "node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node",
+    "node_modules/@prisma/engines/**/libquery_engine-rhel-openssl-3.0.x.so.node"
+  ]
 
 # Required environment variables (set these in Netlify dashboard under Site settings → Environment variables)
 # See NETLIFY_ENV_VARIABLES.md for complete checklist
