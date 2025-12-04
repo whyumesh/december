@@ -5,6 +5,9 @@ uploads
 # Local Netlify folder
 .netlify
 
+# Vercel
+.vercel
+
 # Environment files
 .env
 .env.local

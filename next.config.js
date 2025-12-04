@@ -50,15 +50,15 @@ const nextConfig = {
         'node_modules/terser/**/*',
         'node_modules/webpack/**/*',
         'node_modules/.cache/**/*',
-        // Exclude Prisma engines (except RHEL which is included via netlify.toml)
+        // Exclude Prisma engines (keep linux-musl for Vercel, exclude others)
         'node_modules/.prisma/client/libquery_engine-darwin*',
         'node_modules/.prisma/client/libquery_engine-windows*',
         'node_modules/.prisma/client/libquery_engine-debian*',
-        'node_modules/.prisma/client/libquery_engine-linux-musl*',
+        'node_modules/.prisma/client/libquery_engine-rhel*',
         'node_modules/@prisma/engines/**/query-engine-darwin*',
         'node_modules/@prisma/engines/**/query-engine-windows*',
         'node_modules/@prisma/engines/**/query-engine-debian*',
-        'node_modules/@prisma/engines/**/query-engine-linux-musl*',
+        'node_modules/@prisma/engines/**/query-engine-rhel*',
         'node_modules/@prisma/engines/**/migration-engine*',
         'node_modules/@prisma/engines/**/introspection-engine*',
         'node_modules/@prisma/engines/**/prisma-fmt*',
@@ -135,12 +135,12 @@ const nextConfig = {
   swcMinify: true,
   // Optimize bundle
   webpack: (config, { dev, isServer }) => {
-    // Externalize large dependencies for server-side (Netlify functions)
+    // Externalize large dependencies for server-side (Vercel serverless functions)
     if (!dev && isServer) {
       config.externals = config.externals || []
-      // Externalize large dependencies to reduce Netlify function bundle size
-      // These will be installed at runtime by Netlify, not bundled
-      // NOTE: Prisma is externalized via netlify.toml [functions] configuration
+      // Externalize large dependencies to reduce Vercel function bundle size
+      // These will be loaded from node_modules at runtime, not bundled
+      // NOTE: Prisma binaries are automatically handled by Vercel
       const largeDependencies = [
         'pg',
         'bcryptjs',
@@ -256,9 +256,8 @@ const nextConfig = {
   productionBrowserSourceMaps: false,
   // Enable compression
   compress: true,
-  // Output standalone mode - DISABLED for Netlify
-  // Standalone mode creates a large bundle that exceeds Netlify's 250MB function limit
-  // Netlify's Next.js plugin handles server bundling differently
+  // Output standalone mode - DISABLED for Vercel
+  // Vercel's Next.js runtime handles server bundling automatically
   // output: 'standalone',
   // Skip type checking during build for speed
   typescript: {
@@ -272,7 +271,7 @@ const nextConfig = {
   generateBuildId: async () => {
     return 'build-' + Date.now()
   },
-  // Note: output standalone is disabled for Netlify compatibility
+  // Note: Vercel automatically handles Next.js serverless function bundling
 }
 
 module.exports = nextConfig
