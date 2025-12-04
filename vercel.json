@@ -1,0 +1,18 @@
+{
+  "buildCommand": "prisma generate && next build",
+  "devCommand": "next dev",
+  "installCommand": "npm install --legacy-peer-deps",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "functions": {
+    "src/app/api/**/*.ts": {
+      "maxDuration": 30,
+      "memory": 1024
+    }
+  },
+  "env": {
+    "PRISMA_GENERATE_DATAPROXY": "false"
+  },
+  "crons": []
+}
+

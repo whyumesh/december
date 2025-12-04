@@ -1,8 +1,10 @@
 # Netlify Configuration for Next.js 14
 [build]
-  command = "npm install && npx prisma generate && npm run build"
+  # Use optimization script that installs all deps, builds, then optimizes (removes dev deps and unnecessary binaries)
+  # Alternative: Use optimize-for-netlify.sh for production-only install (may fail if dev deps needed for build)
+  command = "chmod +x scripts/optimize-for-netlify-full.sh && bash scripts/optimize-for-netlify-full.sh"
   publish = ".next"
-  # Explicitly run prisma generate to ensure binary targets are included
+  # The optimization script handles: npm ci, prisma generate, npm run build, npm prune, binary cleanup
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"

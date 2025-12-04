@@ -1,0 +1,41 @@
+# Vercel ignore file
+# Files and directories to exclude from Vercel deployments
+
+# Netlify-specific files (optional - can be removed)
+netlify.toml
+scripts/optimize-for-netlify*.sh
+netlify/
+
+# Development files
+*.log
+*.local
+.env.local
+.env*.local
+
+# Build artifacts (Vercel handles these)
+.next
+.vercel
+node_modules
+
+# Documentation (optional - can be included)
+# NETLIFY_*.md
+# DEPLOYMENT_*.md
+
+# Scripts (keep for reference, but not needed in deployment)
+scripts/
+
+# Database files (if any)
+*.db
+*.sqlite
+*.sqlite3
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
