@@ -696,7 +696,7 @@ export default function YuvaPankNominationsPage() {
                     <div className="text-center py-8 text-gray-500">
                       <FileText className="h-12 w-12 mx-auto mb-2 text-gray-400" />
                       <p>No documents uploaded yet</p>
-                      <p className="text-sm">Click "Upload Documents" to add candidate documents</p>
+                      <p className="text-sm">Click &quot;Upload Documents&quot; to add candidate documents</p>
                     </div>
                   )}
                 </div>

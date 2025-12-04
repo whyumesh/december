@@ -204,7 +204,13 @@ export async function POST(request: NextRequest) {
       ?? 'unknown'
     const userAgent = request.headers.get('user-agent') ?? 'unknown'
     
-    const voteCreationData = []
+    const voteCreationData: Array<{
+      voterId: string;
+      yuvaPankhCandidateId: string;
+      electionId: string;
+      ipAddress: string;
+      userAgent: string;
+    }> = []
     for (const selection of processedSelections) {
       if (selection.isNota) {
         const notaCandidateId = await getOrCreateYuvaNotaCandidate(selection.zoneId)

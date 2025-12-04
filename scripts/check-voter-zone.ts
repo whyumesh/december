@@ -31,7 +31,7 @@ async function checkVoterZone(phone: string) {
   console.log(`Phone: ${voter.phone}`)
   console.log(`Voter ID: ${voter.voterId || 'N/A'}`)
   console.log(`Region: ${voter.region || 'N/A'}`)
-  console.log(`Age: ${voter.age || voter.user?.age || 'N/A'}`)
+  console.log(`Age: ${voter.age ?? 'N/A'}`)
   
   console.log('\n📍 Zone Assignments:')
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')

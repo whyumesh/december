@@ -157,7 +157,7 @@ export default function VoterDashboard() {
       electionCommission: 'Election Commission : Shree Panvel Kutchi Maheshwari Mahajan',
       yuvaPankhWinners: 'Yuva Pankh Winners',
       yuvaPankhWinnersDescription: 'Elected members for completed zones',
-      zone: 'Zone',
+      zoneLabel: 'Zone',
       winners: 'Winners',
       viewWinners: 'View Winners',
       viewElectedMembers: 'View Elected Members'
@@ -214,7 +214,7 @@ export default function VoterDashboard() {
       electionCommission: 'ચૂંટણી નિયામક : શ્રી પનવેલ કચ્છી માહેશ્વરી મહાજન',
       yuvaPankhWinners: 'યુવા પાંખ વિજેતાઓ',
       yuvaPankhWinnersDescription: 'પૂર્ણ થયેલ વિભાગો માટે નિર્વાચિત સભ્યો',
-      zone: 'વિભાગ',
+      zoneLabel: 'વિભાગ',
       winners: 'વિજેતાઓ',
       viewWinners: 'વિજેતાઓ જુઓ',
       viewElectedMembers: 'નિર્વાચિત સભ્યો જુઓ'
@@ -453,6 +453,7 @@ export default function VoterDashboard() {
   // 1. Voter has a zone and it's in the completed zones list, OR
   // 2. Voter has no zone assigned but winners are declared (for not assigned zones)
   const isYuvaPankhCompleted = (voterData.yuvaPankZone && 
+    voterData.yuvaPankZone.code &&
     completedYuvaPankhZones.includes(voterData.yuvaPankZone.code)) ||
     (!voterData.yuvaPankZone && hasYuvaPankhWinners)
 
@@ -741,7 +742,8 @@ export default function VoterDashboard() {
                     <div className="pt-4">
                       {election.id === 'yuva-pank' ? (() => {
                         // Check if voter's zone is RAIGAD or KARNATAKA_GOA
-                        const isRaigadOrKarnataka = election.zone?.code === 'RAIGAD' || election.zone?.code === 'KARNATAKA_GOA'
+                        const zoneCode = 'code' in (election.zone || {}) ? (election.zone as { code?: string })?.code : undefined
+                        const isRaigadOrKarnataka = zoneCode === 'RAIGAD' || zoneCode === 'KARNATAKA_GOA'
                         
                         // For Raigad and Karnataka zones, show "Cast Your Vote" instead of "View Elected Members"
                         // After voting, the card should freeze
@@ -1011,7 +1013,7 @@ export default function VoterDashboard() {
                                 ticks={[0, 25, 50, 75, 100]}
                               />
                               <Tooltip 
-                                formatter={(value, name, props) => {
+                                formatter={(value: any, name: any, props: any) => {
                                   const data = props.payload;
                                   const uniqueVoters = data.uniqueVoters !== undefined 
                                     ? data.uniqueVoters 
@@ -1024,7 +1026,7 @@ export default function VoterDashboard() {
                                       : (selectedLanguage === 'english' ? ' (Pending)' : ' (બાકી)'));
                                   return [`${value}%${status}`, `${uniqueVoters} ${selectedLanguage === 'english' ? 'out of' : 'માંથી'} ${totalVoters} ${selectedLanguage === 'english' ? 'voters voted' : 'મતદાતાઓએ મતદાન કર્યા'}`];
                                 }}
-                                labelFormatter={(label, payload) => {
+                                labelFormatter={(label: any, payload: any) => {
                                   if (payload && payload[0]) {
                                     const data = payload[0].payload;
                                     const zoneName = selectedLanguage === 'english' 
@@ -1169,7 +1171,7 @@ export default function VoterDashboard() {
                               ticks={[0, 25, 50, 75, 100]}
                             />
                             <Tooltip 
-                              formatter={(value, name, props) => {
+                              formatter={(value: any, name: any, props: any) => {
                                 const data = props.payload;
                                 const uniqueVoters = data.uniqueVoters !== undefined 
                                   ? data.uniqueVoters 
@@ -1182,7 +1184,7 @@ export default function VoterDashboard() {
                                     : (selectedLanguage === 'english' ? ' (Pending)' : ' (બાકી)'));
                                 return [`${value}%${status}`, `${uniqueVoters} ${selectedLanguage === 'english' ? 'out of' : 'માંથી'} ${totalVoters} ${selectedLanguage === 'english' ? 'voters voted' : 'મતદાતાઓએ મતદાન કર્યા'}`];
                               }}
-                              labelFormatter={(label, payload) => {
+                              labelFormatter={(label: any, payload: any) => {
                                 if (payload && payload[0]) {
                                   const data = payload[0].payload;
                                   const zoneName = selectedLanguage === 'english' 

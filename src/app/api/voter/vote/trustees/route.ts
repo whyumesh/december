@@ -74,7 +74,8 @@ export async function POST(request: NextRequest) {
       { 
         voterMinAge: election.voterMinAge, // null means all ages
         voterMaxAge: election.voterMaxAge, 
-        voterJurisdiction: election.voterJurisdiction 
+        voterJurisdiction: election.voterJurisdiction,
+        candidateJurisdiction: election.candidateJurisdiction || election.voterJurisdiction
       }
     )
     if (!eligibility.eligible) {

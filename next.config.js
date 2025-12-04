@@ -88,6 +88,15 @@ const nextConfig = {
         'node_modules/date-fns/**/locale/**',
         'node_modules/date-fns/**/esm/**',
         'node_modules/date-fns/**/fp/**',
+        // Exclude .next build artifacts from function tracing
+        '.next/cache/**',
+        '.next/trace*',
+        '.next/server/chunks/**',
+        '.next/static/**',
+        '.next/BUILD_ID',
+        '.next/routes-manifest.json',
+        '.next/prerender-manifest.json',
+        '.next/images-manifest.json',
       ],
     },
     serverComponentsExternalPackages: [
@@ -247,9 +256,10 @@ const nextConfig = {
   productionBrowserSourceMaps: false,
   // Enable compression
   compress: true,
-  // Output standalone mode - creates a minimal server build
-  // Note: Netlify's Next.js plugin handles this, but standalone helps reduce bundle size
-  output: 'standalone',
+  // Output standalone mode - DISABLED for Netlify
+  // Standalone mode creates a large bundle that exceeds Netlify's 250MB function limit
+  // Netlify's Next.js plugin handles server bundling differently
+  // output: 'standalone',
   // Skip type checking during build for speed
   typescript: {
     ignoreBuildErrors: true,

@@ -27,3 +27,44 @@ Thumbs.db
 scripts/
 *.bat
 *.sh
+
+# Build artifacts - should NOT be included in functions
+# The .next directory is large and causes function size to exceed 250MB
+.next/cache/**
+.next/trace
+.next/trace.*
+.next/server/chunks/**
+.next/server/pages-manifest.json
+.next/server/app-paths-manifest.json
+.next/BUILD_ID
+.next/static/chunks/**
+.next/static/css/**
+.next/static/media/**
+
+# Exclude large node_modules subdirectories from functions
+node_modules/.cache/**
+node_modules/.bin/**
+node_modules/**/*.md
+node_modules/**/*.txt
+node_modules/**/*.map
+node_modules/**/test/**
+node_modules/**/tests/**
+node_modules/**/__tests__/**
+node_modules/**/examples/**
+node_modules/**/example/**
+node_modules/**/docs/**
+node_modules/**/documentation/**
+node_modules/**/*.d.ts.map
+
+# Exclude Prisma engines except the one we need
+node_modules/.prisma/client/libquery_engine-darwin*
+node_modules/.prisma/client/libquery_engine-windows*
+node_modules/.prisma/client/libquery_engine-debian*
+node_modules/.prisma/client/libquery_engine-linux-musl*
+node_modules/@prisma/engines/**/query-engine-darwin*
+node_modules/@prisma/engines/**/query-engine-windows*
+node_modules/@prisma/engines/**/query-engine-debian*
+node_modules/@prisma/engines/**/query-engine-linux-musl*
+node_modules/@prisma/engines/**/migration-engine*
+node_modules/@prisma/engines/**/introspection-engine*
+node_modules/@prisma/engines/**/prisma-fmt*

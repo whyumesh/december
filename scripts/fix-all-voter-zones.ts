@@ -165,6 +165,7 @@ async function fixAllVoterZones(filePath: string) {
     const updates: Promise<any>[] = []
 
     for (const voter of batch) {
+      if (!voter.phone) continue
       const excelInfo = excelData.get(voter.phone)
       
       if (!excelInfo) {

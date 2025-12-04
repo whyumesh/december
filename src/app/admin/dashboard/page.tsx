@@ -1004,7 +1004,7 @@ export default function AdminDashboard() {
                                                         ticks={[0, 25, 50, 75, 100]}
                                                     />
                                                     <Tooltip 
-                                                        formatter={(value, name, props) => {
+                                                        formatter={(value: any, name: any, props: any) => {
                                                             const data = props.payload;
                                                             const uniqueVoters = data.uniqueVoters !== undefined 
                                                                 ? data.uniqueVoters 
@@ -1017,7 +1017,7 @@ export default function AdminDashboard() {
                                                                     : ' (Pending)');
                                                             return [`${value}%${status}`, `${uniqueVoters} out of ${totalVoters} voters voted`];
                                                         }}
-                                                        labelFormatter={(label, payload) => {
+                                                        labelFormatter={(label: any, payload: any) => {
                                                             if (payload && payload[0]) {
                                                                 const data = payload[0].payload;
                                                                 return data.name;
@@ -1135,7 +1135,7 @@ export default function AdminDashboard() {
                                                         ticks={[0, 25, 50, 75, 100]}
                                                     />
                                                     <Tooltip 
-                                                        formatter={(value, name, props) => {
+                                                        formatter={(value: any, name: any, props: any) => {
                                                             const data = props.payload;
                                                             const uniqueVoters = data.uniqueVoters !== undefined 
                                                                 ? data.uniqueVoters 
@@ -1148,7 +1148,7 @@ export default function AdminDashboard() {
                                                                     : ' (Pending)');
                                                             return [`${value}%${status}`, `${uniqueVoters} out of ${totalVoters} voters voted`];
                                                         }}
-                                                        labelFormatter={(label, payload) => {
+                                                        labelFormatter={(label: any, payload: any) => {
                                                             if (payload && payload[0]) {
                                                                 const data = payload[0].payload;
                                                                 return data.name;

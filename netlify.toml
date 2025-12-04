@@ -76,8 +76,10 @@
     "node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node",
     "node_modules/@prisma/engines/**/libquery_engine-rhel-openssl-3.0.x.so.node"
   ]
-  # Note: File exclusions are handled in next.config.js via outputFileTracingExcludes
-  # Netlify doesn't support excluded_patterns in the [functions] section
+  # Note: File exclusions are handled in:
+  # 1. next.config.js via outputFileTracingExcludes (excludes .next artifacts)
+  # 2. .netlifyignore file (excludes build artifacts from deployment)
+  # These prevent .next build artifacts from being included in the function bundle
 
 # Required environment variables (set these in Netlify dashboard under Site settings → Environment variables)
 # See NETLIFY_ENV_VARIABLES.md for complete checklist

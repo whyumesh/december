@@ -29,7 +29,8 @@ export async function GET(request: NextRequest) {
     
     // Build where clause - if zoneId is provided, filter by zone, otherwise get all approved candidates
     const whereClause: any = {
-      status: 'APPROVED'
+      status: 'APPROVED',
+      position: { not: 'NOTA' } // Exclude NOTA candidates from display
     }
     
     if (voterZoneId) {
@@ -55,10 +56,6 @@ export async function GET(request: NextRequest) {
             seats: true
           }
         }
-      },
-      where: {
-        ...whereClause,
-        position: { not: 'NOTA' } // Exclude NOTA candidates from display
       },
       orderBy: [
         { createdAt: 'desc' }
