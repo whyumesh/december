@@ -1,6 +1,6 @@
 # Netlify Configuration for Next.js 14
 [build]
-  command = "npm install && npx prisma generate && npm run build"
+  command = "npm install && npm run build"
   publish = ".next"
   # Explicitly run prisma generate to ensure binary targets are included
 
@@ -8,7 +8,7 @@
   package = "@netlify/plugin-nextjs"
 
 [build.environment]
-  NODE_VERSION = "24"
+  NODE_VERSION = "20"
   NPM_FLAGS = "--legacy-peer-deps"
   # Reduce bundle size by optimizing dependencies
   NODE_OPTIONS = "--max-old-space-size=4096"
@@ -25,8 +25,6 @@
   node_bundler = "esbuild"
   # Externalize heavy dependencies - these will NOT be bundled, loaded from node_modules at runtime
   external_node_modules = [
-    "@prisma/client",
-    "prisma",
     "pg",
     "bcryptjs",
     "jsonwebtoken",
@@ -44,12 +42,9 @@
     "@upstash/ratelimit",
     "@upstash/redis"
   ]
-  # Include ONLY the Prisma query engine binary - required for runtime database queries
-  # DO NOT include .env files - use Netlify environment variables instead
-  included_files = [
-    "node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node",
-    "node_modules/@prisma/engines/**/libquery_engine-rhel-openssl-3.0.x.so.node"
-  ]
+  # Prisma disabled for Phase 1 deployment
+  # included_files will be restored in Phase 2
+  included_files = []
 
 # Required environment variables (set these in Netlify dashboard under Site settings → Environment variables)
 # See NETLIFY_ENV_VARIABLES.md for complete checklist
