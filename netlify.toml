@@ -19,13 +19,33 @@
   NETLIFY_USE_YARN = "false"
   NEXT_TELEMETRY_DISABLED = "1"
 
-# Optimize function size - exclude large dependencies from bundling
-# The Next.js plugin will handle bundling, and webpack externalization will prevent
-# large dependencies from being included in the function bundle
+# Optimize function size - externalize heavy dependencies to reduce bundle size
+# With esbuild bundler and external_node_modules, dependencies load from node_modules at runtime
 [functions]
   node_bundler = "esbuild"
-  # Include Prisma binaries - required for runtime database queries
-  # These binaries must be included for Prisma Client to work in Netlify functions
+  # Externalize heavy dependencies - these will NOT be bundled, loaded from node_modules at runtime
+  external_node_modules = [
+    "@prisma/client",
+    "prisma",
+    "pg",
+    "bcryptjs",
+    "jsonwebtoken",
+    "nodemailer",
+    "@aws-sdk/client-s3",
+    "@aws-sdk/s3-request-presigner",
+    "cloudinary",
+    "pdf-parse",
+    "exceljs",
+    "jspdf",
+    "jsdom",
+    "isomorphic-dompurify",
+    "twilio",
+    "csv-parser",
+    "@upstash/ratelimit",
+    "@upstash/redis"
+  ]
+  # Include ONLY the Prisma query engine binary - required for runtime database queries
+  # DO NOT include .env files - use Netlify environment variables instead
   included_files = [
     "node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node",
     "node_modules/@prisma/engines/**/libquery_engine-rhel-openssl-3.0.x.so.node"

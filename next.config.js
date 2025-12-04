@@ -111,7 +111,7 @@ const nextConfig = {
       config.externals = config.externals || []
       // Externalize large dependencies to reduce Netlify function bundle size
       // These will be installed at runtime by Netlify, not bundled
-      // NOTE: Do NOT externalize @prisma/client or prisma - they must be bundled for Netlify functions
+      // NOTE: Prisma is externalized via netlify.toml [functions] configuration
       const largeDependencies = [
         'pg',
         'bcryptjs',

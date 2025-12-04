@@ -1,15 +1,18 @@
 # Multi-stage Docker build for KMS Election System
-FROM node:18-alpine AS base
+FROM node:24-alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat openssl1.1-compat
 WORKDIR /app
 
 # Install dependencies based on the preferred package manager
+# Copy package files AND prisma schema (needed for postinstall script)
 COPY package.json package-lock.json* ./
-RUN npm ci --only=production && npm cache clean --force
+COPY prisma ./prisma
+# Skip postinstall during deps stage to avoid Prisma generation without full context
+RUN npm ci --only=production --ignore-scripts && npm cache clean --force
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -17,7 +20,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma client
+# Generate Prisma client (now schema is available)
 RUN npx prisma generate
 
 # Build the application

@@ -1,83 +1,29 @@
+# Environment files - should NOT be included in functions
+.env
+.env.local
+.env.production
+.env.production.local
+.env.development
+.env.development.local
+
+# Test and debug routes (optional - exclude from production if needed)
+# Uncomment to exclude test routes:
+# src/app/api/test-csrf/**
+# src/app/api/test-storage/**
+# src/app/api/upload/test/**
+# src/app/api/upload/diagnostic/**
+
 # Development files
-.env*
-!.env.production.example
 *.log
 logs/
-node_modules/
-.next/cache/
-
-# Database files
-prisma/dev.db
-prisma/dev.db-journal
-public/prisma/
-
-# Uploads and temporary files
-uploads/
-temp/
-tmp/
+.DS_Store
+Thumbs.db
 
 # Documentation
 *.md
 !README.md
 
-# Scripts and configs not needed in production
+# Scripts (not needed in production)
 scripts/
 *.bat
 *.sh
-debug-*.js
-setup.js
-
-# IDE and editor files
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Build artifacts
-dist/
-build/
-coverage/
-
-# Test files
-__tests__/
-*.test.*
-*.spec.*
-
-# Sample data
-*.csv
-*.pdf
-*.jpg
-!public/logo.jpg
-!public/logo2.jpg
-
-# Additional exclusions for function size reduction
-src/components/ui/
-src/hooks/
-src/types/
-src/lib/auth.ts
-src/lib/cache.ts
-src/lib/error-handler.ts
-src/lib/file-upload.ts
-src/lib/file-utils.ts
-src/lib/free-storage.ts
-src/lib/geolocation.ts
-src/lib/jwt.ts
-src/lib/logger.ts
-src/lib/mail.ts
-src/lib/monitoring.ts
-src/lib/otp.ts
-src/lib/password-policy.ts
-src/lib/performance.ts
-src/lib/prisma-retry.ts
-src/lib/rate-limit.ts
-src/lib/sanitization.ts
-src/lib/saved-credentials.ts
-src/lib/session.ts
-src/lib/storage.ts
-src/lib/storj.ts
-src/lib/utils.ts
-src/lib/validation.ts
