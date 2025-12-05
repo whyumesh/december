@@ -403,6 +403,156 @@ export default function VoterDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [voterData?.id]) // Only depend on voterData.id - fetchResults is stable, results/isLoadingResults checked inside
 
+  // Helper function to check if a Yuva Pankh zone is completed dynamically based on results
+  // This checks the actual turnout percentage from the results data
+  // Made safe to handle null/undefined results
+  const isYuvaPankhZoneCompleted = (zoneCode: string | null | undefined, zoneId: string | null | undefined): boolean => {
+    if (!results?.yuvaPankh?.regions || (!zoneCode && !zoneId)) return false
+    
+    try {
+      // Find the zone in results by code or ID and check if turnout is 100%
+      const zoneResult = results.yuvaPankh.regions.find(
+        r => (zoneCode && r.zoneCode === zoneCode) || (zoneId && r.zoneId === zoneId)
+      )
+      
+      // Zone is completed if turnout is 100% or more
+      return zoneResult ? (Number(zoneResult.turnoutPercentage) >= 100) : false
+    } catch (error) {
+      console.error('Error checking zone completion:', error)
+      return false
+    }
+  }
+
+  // Calculate voting progress using useMemo to prevent unnecessary recalculations
+  // MUST be called before any early returns to comply with Rules of Hooks
+  // Logic:
+  // 1. For voters 40+ (not age-eligible for Yuva Pankh): show X/2 (Karobari + Trustee only)
+  // 2. For voters with Yuva Pankh zone but not age-eligible: show X/2 (Karobari + Trustee only)
+  // 3. For voters age-eligible for Yuva Pankh: show X/3 (Karobari + Yuva Pankh + Trustee)
+  // 4. For Raigad/Karnataka zones: Karobari counts as done if frozen/completed (even if not voted)
+  const { totalElections, totalVotes } = useMemo(() => {
+    // Early return if voterData is not available
+    if (!voterData) {
+      return { totalElections: 0, totalVotes: 0 }
+    }
+    
+    try {
+      const voterAge = voterData.age || 0
+    
+      // Check age eligibility for Yuva Pankh (must be 39 or younger as of August 31, 2025)
+      const dob = voterData.dob
+      const cutoffDate = new Date('2025-08-31T23:59:59') // End of day cutoff for accurate age calculation
+      const ageAsOfCutoff = dob ? calculateAgeAsOf(dob, cutoffDate) : null
+      const isAgeEligibleForYuvaPankh = ageAsOfCutoff !== null && ageAsOfCutoff >= 18 && ageAsOfCutoff <= 39
+      
+      // Check if voter has zones for each election type
+      const hasKarobariZone = voterData.karobariZone !== null
+      const hasYuvaPankhZone = voterData.yuvaPankZone !== null
+      const hasTrusteeZone = voterData.trusteeZone !== null
+      
+      // Get Yuva Pankh zone code to check if it's Raigad or Karnataka
+      const yuvaPankhZoneCode = voterData.yuvaPankZone?.code
+      const isRaigadOrKarnataka = yuvaPankhZoneCode === 'RAIGAD' || yuvaPankhZoneCode === 'KARNATAKA_GOA'
+      
+      // Determine eligibility: voter must have zone AND meet age requirements
+      const isEligibleForKarobari = hasKarobariZone
+      // Only count Yuva Pankh if voter has zone AND is age-eligible
+      const isEligibleForYuvaPankh = hasYuvaPankhZone && isAgeEligibleForYuvaPankh
+      const isEligibleForTrustee = hasTrusteeZone && voterAge >= 18
+      
+      // Count total eligible elections
+      // Rule 1: For Raigad/Karnataka zones: always count all 3 elections = X/3 (even if not age-eligible)
+      // Rule 2: For other zones (Mumbai, etc.) with Yuva Pankh zone: always count all 3 elections = X/3 (even if not age-eligible)
+      // Rule 3: For voters without Yuva Pankh zone: count only Karobari + Trustee (2 elections) = X/2
+      let totalElections = 0
+      if (isEligibleForKarobari) totalElections++
+      
+      // Count Yuva Pankh in total if voter has a zone (regardless of age eligibility)
+      // This applies to both Raigad/Karnataka and other zones (Mumbai, etc.)
+      if (hasYuvaPankhZone) {
+        totalElections++ // Always count if voter has Yuva Pankh zone
+      }
+      
+      if (isEligibleForTrustee) totalElections++
+      
+      // Count completed votes:
+      // - Karobari: ALWAYS counted if voter has karobariZone (all Karobari elections are completed)
+      // - Yuva Pankh: counted if voted OR if zone is completed (100% turnout) - only if age-eligible
+      // - Trustee: counted only if actually voted
+      let totalVotes = 0
+      
+      // Karobari: ALWAYS count as done if voter has karobariZone
+      // All Karobari elections are completed, so having a zone means it's done
+      if (isEligibleForKarobari) {
+        // Always count Karobari as done since all elections are completed
+        totalVotes += 1
+      }
+      
+      // Yuva Pankh: count if voted OR if zone is completed (100% turnout)
+      // For Raigad/Karnataka: only count if voted (not based on zone completion)
+      // For other zones (Mumbai, etc.): count if voted OR if zone has winners (completed) - regardless of age eligibility
+      if (hasYuvaPankhZone && voterData.yuvaPankZone) {
+        if (isRaigadOrKarnataka) {
+          // For Raigad/Karnataka: only count if voted (regardless of age eligibility)
+          if (voterData.hasVoted.yuvaPank) {
+            totalVotes += 1
+          }
+        } else {
+          // For other zones (Mumbai, etc.): count if voted OR if zone has winners (completed)
+          // This applies regardless of age eligibility - if zone is completed, it counts
+          let zoneCompleted = false
+          
+          // Check if zone has winners (completed zones)
+          if (yuvaPankhZoneCode && yuvaPankhZoneCode in yuvaPankhWinners) {
+            zoneCompleted = true
+          }
+          
+          // Also check dynamically if the zone is completed based on results data (turnout >= 100%)
+          if (!zoneCompleted && results?.yuvaPankh?.regions) {
+            try {
+              zoneCompleted = isYuvaPankhZoneCompleted(
+                voterData.yuvaPankZone.code, 
+                voterData.yuvaPankZone.id
+              )
+            } catch (error) {
+              console.error('Error checking zone completion in progress calc:', error)
+            }
+          }
+          
+          // Count as done if voter voted OR if zone is completed (regardless of age eligibility)
+          if (voterData.hasVoted.yuvaPank || zoneCompleted) {
+            totalVotes += 1
+          }
+        }
+      }
+      
+      // Trustee: count only if voted
+      if (isEligibleForTrustee && voterData.hasVoted.trustees) {
+        totalVotes += 1
+      }
+    
+      return { totalElections, totalVotes }
+    } catch (error) {
+      console.error('Error calculating voting progress:', error)
+      // Return safe defaults on error
+      return { totalElections: 0, totalVotes: 0 }
+    }
+  }, [
+    voterData?.id, 
+    voterData?.hasVoted?.karobariMembers, 
+    voterData?.hasVoted?.yuvaPank, 
+    voterData?.hasVoted?.trustees,
+    voterData?.karobariZone?.id, 
+    voterData?.yuvaPankZone?.id, 
+    voterData?.yuvaPankZone?.code,
+    voterData?.trusteeZone?.id, 
+    voterData?.age, 
+    voterData?.dob,
+    // Only recalculate when results are first loaded or when regions count changes
+    results ? results.yuvaPankh?.regions?.length ?? 0 : 0
+  ])
+
+  // Early return checks - MUST be after all hooks
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -429,7 +579,6 @@ export default function VoterDashboard() {
       </div>
     )
   }
-
 
   // Determine why Yuva Pankh is not available (if applicable)
   const getYuvaPankhEligibilityReason = () => {
@@ -462,54 +611,6 @@ export default function VoterDashboard() {
       return 'region' // Not eligible due to region
     }
     return 'unknown' // Unknown reason (shouldn't happen if logic is correct)
-  }
-
-  // Early return checks - must be before any voterData access
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">{content[selectedLanguage].loading}</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!voterData) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">{content[selectedLanguage].accessDenied}</h1>
-          <p className="text-gray-600 mb-4">{content[selectedLanguage].pleaseLogin}</p>
-          <Link href="/voter/login">
-            <Button className="bg-green-600 hover:bg-green-700 text-white">
-              {content[selectedLanguage].goToLogin}
-            </Button>
-          </Link>
-        </div>
-      </div>
-    )
-  }
-
-  // Helper function to check if a Yuva Pankh zone is completed dynamically based on results
-  // This checks the actual turnout percentage from the results data
-  // Made safe to handle null/undefined results
-  const isYuvaPankhZoneCompleted = (zoneCode: string | null | undefined, zoneId: string | null | undefined): boolean => {
-    if (!results?.yuvaPankh?.regions || (!zoneCode && !zoneId)) return false
-    
-    try {
-      // Find the zone in results by code or ID and check if turnout is 100%
-      const zoneResult = results.yuvaPankh.regions.find(
-        r => (zoneCode && r.zoneCode === zoneCode) || (zoneId && r.zoneId === zoneId)
-      )
-      
-      // Zone is completed if turnout is 100% or more
-      return zoneResult ? (Number(zoneResult.turnoutPercentage) >= 100) : false
-    } catch (error) {
-      console.error('Error checking zone completion:', error)
-      return false
-    }
   }
 
   // Create elections array - show all elections (always show Yuva Pankh, even if not eligible)
@@ -558,102 +659,6 @@ export default function VoterDashboard() {
       tenure: '2026-2029'
     }] : [])
   ]
-
-  // Calculate voting progress using useMemo to prevent unnecessary recalculations
-  // For voters not eligible for Yuva Pankh (based on age): show X/2 format (Karobari + Trustee only)
-  // For voters eligible for Yuva Pankh: show X/3 format (Karobari + Yuva Pankh + Trustee)
-  const { totalElections, totalVotes } = useMemo(() => {
-    // Early return if voterData is not available
-    if (!voterData) {
-      return { totalElections: 0, totalVotes: 0 }
-    }
-    
-    try {
-      const voterAge = voterData.age || 0
-    
-    // Check age eligibility for Yuva Pankh (must be 39 or younger as of August 31, 2025)
-    const dob = voterData.dob
-    const cutoffDate = new Date('2025-08-31T23:59:59') // End of day cutoff for accurate age calculation
-    const ageAsOfCutoff = dob ? calculateAgeAsOf(dob, cutoffDate) : null
-    const isAgeEligibleForYuvaPankh = ageAsOfCutoff !== null && ageAsOfCutoff >= 18 && ageAsOfCutoff <= 39
-    
-    // Check if voter has zones for each election type
-    const hasKarobariZone = voterData.karobariZone !== null
-    const hasYuvaPankhZone = voterData.yuvaPankZone !== null
-    const hasTrusteeZone = voterData.trusteeZone !== null
-    
-    // Determine eligibility: voter must have zone AND meet age requirements
-    const isEligibleForKarobari = hasKarobariZone
-    const isEligibleForYuvaPankh = hasYuvaPankhZone && isAgeEligibleForYuvaPankh
-    const isEligibleForTrustee = hasTrusteeZone && voterAge >= 18
-    
-    // Count total eligible elections
-    // If age-eligible for Yuva Pankh: count all 3 elections they're eligible for
-    // If NOT age-eligible for Yuva Pankh: count only Karobari + Trustee (2 elections)
-    let totalElections = 0
-    if (isEligibleForKarobari) totalElections++
-    if (isEligibleForYuvaPankh) totalElections++
-    if (isEligibleForTrustee) totalElections++
-    
-    // Count completed votes:
-    // - Karobari: counted only if actually voted
-    // - Yuva Pankh: counted if voted OR if zone is completed (100% turnout from results) - only if age-eligible
-    // - Trustee: counted only if actually voted
-    let totalVotes = 0
-    
-    // Karobari: count only if voted
-    if (isEligibleForKarobari && voterData.hasVoted.karobariMembers) {
-      totalVotes += 1
-    }
-    
-    // Yuva Pankh: count if voted OR if zone is completed (100% turnout from results) - only if age-eligible
-    if (isEligibleForYuvaPankh && voterData.yuvaPankZone) {
-      // Check dynamically if the zone is completed based on actual results data (turnout >= 100%)
-      // Only check if results are loaded to prevent errors - if results not loaded, only count if voted
-      let zoneCompleted = false
-      if (results?.yuvaPankh?.regions) {
-        try {
-          zoneCompleted = isYuvaPankhZoneCompleted(
-            voterData.yuvaPankZone.code, 
-            voterData.yuvaPankZone.id
-          )
-        } catch (error) {
-          console.error('Error checking zone completion in progress calc:', error)
-          zoneCompleted = false
-        }
-      }
-      
-      // Count as done if voter voted OR if zone is completed (100% turnout)
-      if (voterData.hasVoted.yuvaPank || zoneCompleted) {
-        totalVotes += 1
-      }
-    }
-    
-    // Trustee: count only if voted
-    if (isEligibleForTrustee && voterData.hasVoted.trustees) {
-      totalVotes += 1
-    }
-    
-      return { totalElections, totalVotes }
-    } catch (error) {
-      console.error('Error calculating voting progress:', error)
-      // Return safe defaults on error
-      return { totalElections: 0, totalVotes: 0 }
-    }
-  }, [
-    voterData?.id, 
-    voterData?.hasVoted?.karobariMembers, 
-    voterData?.hasVoted?.yuvaPank, 
-    voterData?.hasVoted?.trustees,
-    voterData?.karobariZone?.id, 
-    voterData?.yuvaPankZone?.id, 
-    voterData?.yuvaPankZone?.code,
-    voterData?.trusteeZone?.id, 
-    voterData?.age, 
-    voterData?.dob,
-    // Only recalculate when results are first loaded or when regions count changes
-    results ? results.yuvaPankh?.regions?.length ?? 0 : 0
-  ])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -889,6 +894,8 @@ export default function VoterDashboard() {
                         }
                         
                         // For other zones, show "View Elected Members" if winners exist
+                        // Check if the zone code exists in yuvaPankhWinners object
+                        const hasYuvaPankhWinners = zoneCode && zoneCode in yuvaPankhWinners && yuvaPankhWinners[zoneCode as keyof typeof yuvaPankhWinners]?.winners?.length > 0
                         if (hasYuvaPankhWinners) {
                           return (
                             <Link href={election.href}>
@@ -1083,8 +1090,7 @@ export default function VoterDashboard() {
                             : (
                               <span className="block space-y-1">
                                 <span className="block">૧- યુવા પાંખ સમિતિ (૨ પ્રદેશો)</span>
-                                <span className="block">૨- યુવા પાંખ સમિતિ (૨ પ્રદેશો)</span>
-                                <span className="block">૩- ફક્ત કર્ણાટક-ગોવા અને રાયગઢ વિભાગ માં જ મતદાન થશે. અન્ય વિભાગ ના ઉમેદવારો બિનહરીફ ચુંટાઇ આવેલ છે</span>
+                                <span className="block">૨- ફક્ત કર્ણાટક-ગોવા અને રાયગઢ વિભાગ માં જ મતદાન થશે. અન્ય વિભાગ ના ઉમેદવારો બિનહરીફ ચુંટાઇ આવેલ છે</span>
                               </span>
                             )}
                         </span>
@@ -1164,7 +1170,7 @@ export default function VoterDashboard() {
                         </div>
                         
                         {/* Summary Statistics */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-center">
                           <div>
                             <div className="text-xl sm:text-2xl font-bold text-purple-600">
                               {processedData.length}
@@ -1176,6 +1182,14 @@ export default function VoterDashboard() {
                               {processedData.length > 0 ? Math.max(...processedData.map(r => r.turnout)).toFixed(1) : '0'}%
                             </div>
                             <div className="text-xs sm:text-sm text-gray-500">{content[selectedLanguage].highestTurnout}</div>
+                          </div>
+                          <div>
+                            <div className="text-xl sm:text-2xl font-bold text-blue-600">
+                              {processedData.reduce((sum, r) => sum + (r.uniqueVoters || 0), 0).toLocaleString()} / {processedData.reduce((sum, r) => sum + r.voters, 0).toLocaleString()}
+                            </div>
+                            <div className="text-xs sm:text-sm text-gray-500">
+                              {selectedLanguage === 'english' ? 'Voters Voted / Total Voters' : 'મતદાન કરેલ મતદાતાઓ / કુલ મતદાતાઓ'}
+                            </div>
                           </div>
                           <div>
                             <div className="text-xl sm:text-2xl font-bold text-purple-600">
@@ -1325,7 +1339,7 @@ export default function VoterDashboard() {
                       </div>
                       
                       {/* Summary Statistics */}
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-center">
                         <div>
                           <div className="text-xl sm:text-2xl font-bold text-green-600">
                             {results.trustee.totalRegions}
@@ -1337,6 +1351,14 @@ export default function VoterDashboard() {
                             {Math.max(...results.trustee.regions.map(r => r.turnoutPercentage)).toFixed(1)}%
                           </div>
                           <div className="text-xs sm:text-sm text-gray-500">{content[selectedLanguage].highestTurnout}</div>
+                        </div>
+                        <div>
+                          <div className="text-xl sm:text-2xl font-bold text-blue-600">
+                            {results.trustee.regions.reduce((sum, r) => sum + (r.uniqueVoters !== undefined ? r.uniqueVoters : 0), 0).toLocaleString()} / {results.trustee.totalVoters.toLocaleString()}
+                          </div>
+                          <div className="text-xs sm:text-sm text-gray-500">
+                            {selectedLanguage === 'english' ? 'Voters Voted / Total Voters' : 'મતદાન કરેલ મતદાતાઓ / કુલ મતદાતાઓ'}
+                          </div>
                         </div>
                         <div>
                           <div className="text-xl sm:text-2xl font-bold text-purple-600">

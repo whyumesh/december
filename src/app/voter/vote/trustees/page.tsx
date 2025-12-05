@@ -960,20 +960,6 @@ export default function TrusteesVotingPage() {
                 </div>
               </div>
 
-              {/* Election Managers Section */}
-              <div className="pt-6 border-t border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">{content[selectedLanguage].electionManagers}</h3>
-                <div className="space-y-2 text-sm text-gray-700">
-                  <p><strong>Mukeshbhai Ravjibhai Navdhare</strong></p>
-                  <p><strong>Deepakbhai Muljibhai Bhutada</strong></p>
-                </div>
-                <div className="mt-3">
-                  <p className="text-sm text-gray-700">
-                    <strong>{content[selectedLanguage].electionManagerEmail}:</strong> kmselec2026@gmail.com
-                  </p>
-                </div>
-              </div>
-
               {/* Zone-wise Seat Allocation */}
               <div className="pt-6 border-t border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">{content[selectedLanguage].zoneSeatAllocation}</h3>
@@ -985,47 +971,61 @@ export default function TrusteesVotingPage() {
                     <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? 'Areas Covered' : 'આવરી લેતા વિસ્તાર'}</div>
                   </div>
                   <div className="grid grid-cols-4 gap-2 text-gray-700 min-w-[600px] sm:min-w-0">
-                    <div className="text-xs sm:text-sm">૧</div>
-                    <div className="text-xs sm:text-sm">૦૧</div>
+                    <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? '1' : '૧'}</div>
+                    <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? '01' : '૦૧'}</div>
                     <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? 'Raigad' : 'રાયગઢ'}</div>
                     <div className="text-xs">{selectedLanguage === 'english' ? 'Raigad (Kharghar included), Pune, Ratnagiri, Kolhapur, Sangli (All districts)' : 'રાયગઢ(ખારઘર સહીત)પુના,રત્નાગીરી,કોલ્હાપુર,સાંગલી (સર્વે જિલ્લા)'}</div>
                   </div>
                   <div className="grid grid-cols-4 gap-2 text-gray-700 min-w-[600px] sm:min-w-0">
-                    <div className="text-xs sm:text-sm">૨</div>
-                    <div className="text-xs sm:text-sm">૦૨</div>
+                    <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? '2' : '૨'}</div>
+                    <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? '02' : '૦૨'}</div>
                     <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? 'Mumbai' : 'મુંબઈ'}</div>
                     <div className="text-xs">{selectedLanguage === 'english' ? 'Mumbai, Thane district, Navi Mumbai, Nashik, Ahmednagar district, Nagpur, Chandrapur, Madhya Pradesh, Rajasthan, West Bengal, Odisha, Haryana, and entire Overseas' : 'મુંબઈ,થાણા જિલ્લો,નવી મુંબઈ,નાસિક,અહેમદનગર જિલ્લો,નાગપુર,ચંદ્રપુર,મધ્યપ્રદેશ,રાજસ્થાન,પશ્ચિમ બંગાળ,ઓડિશા,હરિયાણા,અને સમગ્ર વિદેશ'}</div>
                   </div>
                   <div className="grid grid-cols-4 gap-2 text-gray-700 min-w-[600px] sm:min-w-0">
-                    <div className="text-xs sm:text-sm">૩</div>
-                    <div className="text-xs sm:text-sm">૦૧</div>
+                    <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? '3' : '૩'}</div>
+                    <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? '01' : '૦૧'}</div>
                     <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? 'Karnataka, Goa' : 'કર્ણાટક,ગોવા'}</div>
                     <div className="text-xs">{selectedLanguage === 'english' ? 'Karnataka and Goa states' : 'સંપુર્ણ કર્ણાટક અને ગોવા રાજ્ય.'}</div>
                   </div>
                   <div className="grid grid-cols-4 gap-2 text-gray-700 min-w-[600px] sm:min-w-0">
-                    <div className="text-xs sm:text-sm">૪</div>
-                    <div className="text-xs sm:text-sm">૦૧</div>
+                    <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? '4' : '૪'}</div>
+                    <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? '01' : '૦૧'}</div>
                     <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? 'Abdasa, Garda, Lakhpat, Nakhatrana' : 'અબડાસા, ગરડા,લખપત, નખત્રાણા'}</div>
                     <div className="text-xs">{selectedLanguage === 'english' ? 'Abdasa, Garda, Lakhpat, Nakhatrana taluka all villages' : 'અબડાસા, ગરડા,લખપત, નખત્રાણા  તાલુકા ના તમામ ગામો'}</div>
                   </div>
                   <div className="grid grid-cols-4 gap-2 text-gray-700 min-w-[600px] sm:min-w-0">
-                    <div className="text-xs sm:text-sm">૫</div>
-                    <div className="text-xs sm:text-sm">૦૧</div>
+                    <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? '5' : '૫'}</div>
+                    <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? '01' : '૦૧'}</div>
                     <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? 'Bhuj' : 'ભુજ'}</div>
                     <div className="text-xs">{selectedLanguage === 'english' ? 'Bhuj, Mirzapar, Madhapar (taluka - Bhuj)' : 'ભુજ,મિર્ઝાપર,માધાપર (તાલુકો-ભુજ)'}</div>
                   </div>
                   <div className="grid grid-cols-4 gap-2 text-gray-700 min-w-[600px] sm:min-w-0">
-                    <div className="text-xs sm:text-sm">૬</div>
-                    <div className="text-xs sm:text-sm">૦૧</div>
+                    <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? '6' : '૬'}</div>
+                    <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? '01' : '૦૧'}</div>
                     <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? 'Anjar & Anya Gujarat (except Kutch)' : 'અંજાર  અન્ય ગુજરાત (કચ્છ સિવાય)'}</div>
                     <div className="text-xs">{selectedLanguage === 'english' ? 'Ahmedabad, Valsad, Sachin, Surat, Udhana, Vadodara, Anand, Mehsana, Bharuch, Dahegam, Kapadvanj, Jamnagar and Morbi, Anjar, Adipur, Mandvi, Mundra, Bhachau, Gandhidham taluka villages' : 'અમદાવાદ,વલસાડ,સચીન,સુરત,ઉધના,વડોદરા, આણંદ,મહેસાણા,ભરૂચ,દહેગામ, કપડવંજ, જામનગર અને મોરબી  અંજાર,આદિપુર,માંડવી,મુંદ્રા,ભચાઉ,ગાંધીધામ તાલુકા ના ગામો'}</div>
                   </div>
                   <div className="grid grid-cols-4 gap-2 font-semibold text-gray-900 pt-2 border-t min-w-[600px] sm:min-w-0">
                     <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? 'Total Seats' : 'કુલ બેઠક'}</div>
-                    <div className="text-xs sm:text-sm">૦૭</div>
+                    <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? '07' : '૦૭'}</div>
                     <div></div>
                     <div></div>
                   </div>
+                </div>
+              </div>
+
+              {/* Election Managers Section */}
+              <div className="pt-6 border-t border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">{content[selectedLanguage].electionManagers}</h3>
+                <div className="space-y-2 text-sm text-gray-700">
+                  <p><strong>Mukeshbhai Ravjibhai Navdhare</strong></p>
+                  <p><strong>Deepakbhai Muljibhai Bhutada</strong></p>
+                </div>
+                <div className="mt-3">
+                  <p className="text-sm text-gray-700">
+                    <strong>{content[selectedLanguage].electionManagerEmail}:</strong> kmselec2026@gmail.com
+                  </p>
                 </div>
               </div>
 
