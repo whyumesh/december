@@ -1,8 +1,8 @@
 "use client";
 
-// Force dynamic rendering - prevent static generation
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+// Note: revalidate and dynamic cannot be exported from client components
+// These are server-only route segment config options
+// The layout.tsx handles dynamic rendering for the entire app
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";

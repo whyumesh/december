@@ -31,8 +31,8 @@ export const viewport = {
 };
 
 // Force dynamic rendering for all routes (can be overridden by child layouts)
+// Note: revalidate is not needed when using dynamic = 'force-dynamic'
 export const dynamic = 'force-dynamic'
-export const revalidate = 0
 
 // Validate critical environment variables at build/runtime
 function validateEnvironment() {
