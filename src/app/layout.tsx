@@ -34,6 +34,33 @@ export const viewport = {
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
+// Validate critical environment variables at build/runtime
+function validateEnvironment() {
+    const requiredVars = ['NEXTAUTH_URL', 'NEXTAUTH_SECRET'];
+    const missing: string[] = [];
+    
+    for (const varName of requiredVars) {
+        if (!process.env[varName]) {
+            missing.push(varName);
+        }
+    }
+    
+    if (missing.length > 0 && process.env.NODE_ENV === 'production') {
+        console.warn(
+            `⚠️ Missing environment variables: ${missing.join(', ')}. ` +
+            `Please set these in your Vercel project settings. ` +
+            `The app may not work correctly without these variables.`
+        );
+    }
+}
+
+// Run validation (only logs warnings, doesn't throw)
+try {
+    validateEnvironment();
+} catch (error) {
+    // Silently continue - validation is non-blocking
+}
+
 export default function RootLayout({
     children,
 }: {
@@ -42,13 +69,13 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body className={inter.className}>
-                <SessionProvider>
-                    <ErrorBoundary>
+                <ErrorBoundary>
+                    <SessionProvider>
                         <div className="min-h-screen bg-gray-50">
                             {children}
                         </div>
-                    </ErrorBoundary>
-                </SessionProvider>
+                    </SessionProvider>
+                </ErrorBoundary>
             </body>
         </html>
     );

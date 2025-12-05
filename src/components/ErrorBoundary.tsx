@@ -41,10 +41,8 @@ export class ErrorBoundary extends Component<Props, State> {
       errorInfo
     })
 
-    // Log error to console in development
-    if (process.env.NODE_ENV === 'development') {
-      console.error('ErrorBoundary caught an error:', error, errorInfo)
-    }
+    // Always log errors to console (helps with debugging in production)
+    console.error('ErrorBoundary caught an error:', error, errorInfo)
 
     // Call custom error handler if provided
     if (this.props.onError) {
@@ -90,15 +88,30 @@ export class ErrorBoundary extends Component<Props, State> {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {process.env.NODE_ENV === 'development' && this.state.error && (
+              {this.state.error && (
                 <div className="rounded-md bg-red-50 p-3">
                   <h4 className="text-sm font-medium text-red-800 mb-2">
-                    Error Details (Development Only):
+                    Error Details:
                   </h4>
                   <p className="text-xs text-red-700 font-mono">
                     {this.state.error.message}
                   </p>
-                  {this.state.errorInfo && (
+                  {/* Show helpful message for common errors */}
+                  {this.state.error.message?.includes('NEXTAUTH') && (
+                    <div className="mt-2 p-2 bg-yellow-50 rounded border border-yellow-200">
+                      <p className="text-xs text-yellow-800">
+                        <strong>Fix:</strong> Make sure NEXTAUTH_URL and NEXTAUTH_SECRET are set in your Vercel environment variables.
+                      </p>
+                    </div>
+                  )}
+                  {this.state.error.message?.includes('DATABASE_URL') && (
+                    <div className="mt-2 p-2 bg-yellow-50 rounded border border-yellow-200">
+                      <p className="text-xs text-yellow-800">
+                        <strong>Fix:</strong> Make sure DATABASE_URL is set in your Vercel environment variables.
+                      </p>
+                    </div>
+                  )}
+                  {process.env.NODE_ENV === 'development' && this.state.errorInfo && (
                     <details className="mt-2">
                       <summary className="text-xs text-red-700 cursor-pointer">
                         Stack Trace
