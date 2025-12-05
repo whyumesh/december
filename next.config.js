@@ -45,6 +45,8 @@ const nextConfig = {
       '*': [
         'node_modules/next/**', // Include EVERYTHING from Next.js
         'node_modules/styled-jsx/**',
+        'node_modules/@prisma/client/**', // CRITICAL: Include Prisma client for serverless functions
+        'node_modules/.prisma/client/**', // CRITICAL: Include generated Prisma client
       ],
     },
     // Exclude unnecessary files from function bundle to reduce size
@@ -118,7 +120,9 @@ const nextConfig = {
     },
     serverComponentsExternalPackages: [
       'prisma',
-      '@prisma/client',
+      // NOTE: @prisma/client should NOT be externalized for API routes (serverless functions)
+      // It needs to be bundled so it's available at runtime
+      // '@prisma/client', // REMOVED - causes MODULE_NOT_FOUND in serverless functions
       'pg',
       'bcryptjs',
       'jsonwebtoken',
@@ -191,8 +195,9 @@ const nextConfig = {
       config.externals.push({
         '@aws-sdk': 'commonjs @aws-sdk',
         'canvas': 'commonjs canvas',
-        '@prisma': 'commonjs @prisma',
-        'prisma': 'commonjs prisma',
+        // NOTE: Do NOT externalize @prisma/client - it must be bundled for serverless functions
+        // '@prisma': 'commonjs @prisma', // REMOVED - causes MODULE_NOT_FOUND errors
+        // 'prisma': 'commonjs prisma', // REMOVED - causes MODULE_NOT_FOUND errors
       })
       
       // CRITICAL: Ensure Next.js and ALL its internal modules are NOT externalized
