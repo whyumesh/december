@@ -559,31 +559,63 @@ export default function AdminDashboard() {
             // Get the blob from the response
             const blob = await response.blob();
             console.log('Blob size:', blob.size, 'bytes');
+            console.log('Blob type:', blob.type);
             
             if (blob.size === 0) {
-                throw new Error('Exported file is empty. Please try again.');
+                // Try to read as text to see if it's an error message
+                const text = await blob.text();
+                console.error('Empty blob, response text:', text.substring(0, 500));
+                try {
+                    const errorData = JSON.parse(text);
+                    throw new Error(errorData.error || errorData.details || 'Exported file is empty');
+                } catch (e) {
+                    throw new Error('Exported file is empty. Please try again.');
+                }
+            }
+            
+            // Validate blob type
+            if (!blob.type || (!blob.type.includes('spreadsheet') && !blob.type.includes('excel') && !blob.type.includes('octet-stream'))) {
+                // Might be an error response, try to parse as text
+                const text = await blob.text();
+                console.error('Invalid blob type, response text:', text.substring(0, 500));
+                try {
+                    const errorData = JSON.parse(text);
+                    throw new Error(errorData.error || errorData.details || 'Invalid file format received');
+                } catch (e) {
+                    throw new Error(`Invalid file format. Expected Excel file, got: ${blob.type || 'unknown'}`);
+                }
             }
             
             // Create a download link
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
+            a.style.display = 'none';
             
             // Get filename from Content-Disposition header or use default
             const contentDisposition = response.headers.get('Content-Disposition');
-            const filename = contentDisposition 
-                ? contentDisposition.split('filename=')[1]?.replace(/"/g, '') 
-                : `election-insights-${new Date().toISOString().split('T')[0]}.xlsx`;
+            let filename = `election-insights-${new Date().toISOString().split('T')[0]}.xlsx`;
+            
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                if (filenameMatch && filenameMatch[1]) {
+                    filename = filenameMatch[1].replace(/['"]/g, '');
+                }
+            }
             
             a.download = filename;
             document.body.appendChild(a);
             a.click();
             
-            // Cleanup
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
+            // Cleanup with a small delay to ensure download starts
+            setTimeout(() => {
+                window.URL.revokeObjectURL(url);
+                if (document.body.contains(a)) {
+                    document.body.removeChild(a);
+                }
+            }, 100);
             
-            console.log('Export completed successfully');
+            console.log('Export completed successfully, file:', filename);
         } catch (error) {
             console.error('Error exporting insights:', error);
             const errorMessage = error instanceof Error ? error.message : 'Failed to export election insights';
