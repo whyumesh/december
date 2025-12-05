@@ -39,12 +39,16 @@ const nextConfig = {
     ],
     // Disable ISR to prevent static generation
     isrMemoryCacheSize: 0,
-    // Simplified: Let Next.js output file tracing work generically
-    // Next.js will automatically include required dependencies
+    // Output file tracing - explicitly include critical dependencies
+    // Vercel needs these explicitly listed to include them in serverless functions
     outputFileTracingIncludes: {
       '*': [
         'node_modules/next/**', // Include Next.js files
         'node_modules/styled-jsx/**',
+        'node_modules/@prisma/client/**', // CRITICAL: Prisma client must be included
+        'node_modules/.prisma/client/**', // CRITICAL: Generated Prisma client
+        'node_modules/.prisma/client/libquery_engine-linux-musl*', // CRITICAL: Prisma engine for Vercel
+        'node_modules/@prisma/engines/**/query-engine-linux-musl*', // CRITICAL: Prisma engine for Vercel
       ],
     },
     // Exclude unnecessary files from function bundle to reduce size
@@ -89,10 +93,12 @@ const nextConfig = {
         // CRITICAL: NEVER exclude Next.js - must come FIRST before any broad patterns
         '!node_modules/next/**', // Keep ALL Next.js files - no exceptions
         '!node_modules/styled-jsx/**', // Keep styled-jsx
-        // Exclude TypeScript source files (but NOT Next.js files - already excluded above)
+        // Exclude TypeScript source files (but NOT Next.js or Prisma files - already excluded above)
         '**/*.ts',
         '!**/*.d.ts',
         '!node_modules/next/**/*.ts', // Explicitly don't exclude Next.js TS files
+        '!node_modules/@prisma/client/**/*.ts', // CRITICAL: Don't exclude Prisma client TS files
+        '!node_modules/.prisma/client/**/*.ts', // CRITICAL: Don't exclude generated Prisma client TS files
         // Exclude unnecessary Radix UI files
         'node_modules/@radix-ui/**/*.stories.*',
         'node_modules/@radix-ui/**/README*',
@@ -118,19 +124,87 @@ const nextConfig = {
     },
     // Simplified: Let Next.js handle server components naturally
     // No external packages - everything will be bundled generically
-    serverComponentsExternalPackages: [
-      'prisma', // Prisma CLI (not client) can be external
-    ],
+    // NOTE: Even 'prisma' CLI removed to ensure @prisma/client bundles correctly
+    serverComponentsExternalPackages: [],
   },
   // Configure middleware to avoid Edge Function issues
   // Exclude jsonwebtoken from Edge Function bundling
   transpilePackages: [],
   // Enable SWC minification
   swcMinify: true,
-  // Simplified webpack config - let Next.js handle bundling generically
-  // Removed externalization to prevent MODULE_NOT_FOUND errors in serverless functions
+  // Webpack config - ensure critical modules are bundled
   webpack: (config, { dev, isServer }) => {
-    // Only apply client-side optimizations
+    // Server-side bundling (for API routes/serverless functions)
+    if (!dev && isServer) {
+      // CRITICAL: Ensure Prisma client is NOT externalized - it must be bundled
+      // Remove Prisma from any externals array
+      if (Array.isArray(config.externals)) {
+        config.externals = config.externals.filter(ext => {
+          if (typeof ext === 'string') {
+            // Never externalize Prisma client
+            return !ext.includes('@prisma/client') && 
+                   !ext.includes('.prisma/client') &&
+                   ext !== '@prisma/client' &&
+                   ext !== 'prisma'
+          }
+          if (typeof ext === 'object' && ext !== null) {
+            // Never externalize Prisma in object form
+            return ext['@prisma/client'] === undefined && 
+                   ext['@prisma'] === undefined &&
+                   ext['prisma'] === undefined
+          }
+          return true
+        })
+      }
+      
+      // Wrap externals function to ensure Prisma is bundled
+      // Next.js might set externals as a function, we need to wrap it
+      const originalExternals = config.externals
+      
+      config.externals = function(context, request, callback) {
+        // CRITICAL: Never externalize Prisma client - it must be bundled
+        if (request && (
+          request.includes('@prisma/client') || 
+          request.includes('.prisma/client') ||
+          request === '@prisma/client'
+        )) {
+          // Don't externalize - let webpack bundle it (callback() without args = bundle it)
+          return callback()
+        }
+        
+        // For other modules, check if original externals wants to externalize them
+        if (typeof originalExternals === 'function') {
+          return originalExternals.call(this, context, request, callback)
+        }
+        
+        // If original externals is an array, check it
+        if (Array.isArray(originalExternals)) {
+          const shouldExternalize = originalExternals.some(ext => {
+            if (typeof ext === 'string') return ext === request
+            if (typeof ext === 'function') {
+              try {
+                let result
+                ext(context, request, (err, result) => {
+                  result = !err
+                })
+                return result
+              } catch {
+                return false
+              }
+            }
+            return false
+          })
+          if (shouldExternalize) {
+            return callback(null, request)
+          }
+        }
+        
+        // Default: don't externalize (bundle it)
+        callback()
+      }
+    }
+    
+    // Client-side optimizations
     if (!dev && !isServer) {
       // Enable tree shaking for client bundle
       config.optimization.usedExports = true
@@ -154,9 +228,6 @@ const nextConfig = {
         },
       }
     }
-    
-    // For server-side: Let Next.js/Vercel handle bundling automatically
-    // No externalization - all modules will be bundled naturally
     
     return config
   },
