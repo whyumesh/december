@@ -98,9 +98,37 @@ export async function GET(request: NextRequest) {
       prisma.vote.count({ where: { yuvaPankhCandidateId: { not: null } } }),
       prisma.vote.count({ where: { karobariCandidateId: { not: null } } }),
       prisma.vote.count({ where: { trusteeCandidateId: { not: null } } }),
-      prisma.vote.count({ where: { yuvaPankhCandidate: { position: 'NOTA' } } }),
-      prisma.vote.count({ where: { karobariCandidate: { position: 'NOTA' } } }),
-      prisma.vote.count({ where: { trusteeCandidate: { position: 'NOTA' } } })
+      // Count NOTA votes by first finding NOTA candidates, then counting votes for them
+      (async () => {
+        const notaCandidates = await prisma.yuvaPankhCandidate.findMany({
+          where: { position: 'NOTA' },
+          select: { id: true }
+        })
+        const notaIds = notaCandidates.map(c => c.id)
+        return notaIds.length > 0 
+          ? prisma.vote.count({ where: { yuvaPankhCandidateId: { in: notaIds } } })
+          : 0
+      })(),
+      (async () => {
+        const notaCandidates = await prisma.karobariCandidate.findMany({
+          where: { position: 'NOTA' },
+          select: { id: true }
+        })
+        const notaIds = notaCandidates.map(c => c.id)
+        return notaIds.length > 0 
+          ? prisma.vote.count({ where: { karobariCandidateId: { in: notaIds } } })
+          : 0
+      })(),
+      (async () => {
+        const notaCandidates = await prisma.trusteeCandidate.findMany({
+          where: { position: 'NOTA' },
+          select: { id: true }
+        })
+        const notaIds = notaCandidates.map(c => c.id)
+        return notaIds.length > 0 
+          ? prisma.vote.count({ where: { trusteeCandidateId: { in: notaIds } } })
+          : 0
+      })()
     ])
     
     console.log('Database counts fetched:', {
