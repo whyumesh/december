@@ -142,10 +142,10 @@ export default function TrusteesVotingPage() {
       rulesAndRegulations: 'Rules and Regulations - Trust Mandal Elections',
       readRulesCarefully: 'Please read the following rules and regulations carefully before proceeding to vote.',
       rule1: 'Only members who are 18 years or older as of 31.08.2025 will have the right to vote in our society.',
-      rule2: 'Our society is a democratic society, and today\'s young generation is adopting this digital age. All members are requested to fulfill their voting duty through online method.',
+      rule2: 'Our society is a democratic society, and today\'s young generation is adopting new age technology. All members are requested to fulfill their voting duty through online method.',
       rule3: 'The outline for organizing elections through online medium will be announced separately in a media. That media and other necessary information will be published in our society\'s WhatsApp app community.',
       rule4: 'Voters can vote for appropriate candidates as trustees in each zone according to the allocated seats. Only members who are 45 years or older as of 31.08.2025 can be voted as members of the Trust Mandal.',
-      rule5: 'The management has a request to all members that they adopt the online method for voting in elections.',
+      rule5: 'Request to all Overseas members that they adopt the online method for voting in elections.',
       rule6: 'The method of voting by postal ballot will be announced separately if necessary and subject to circumstances.',
       rule7: 'The right to take decisions in any circumstances or situations will remain with the election management, which will be final and binding on all.',
       rule8: 'By proceeding, you confirm that you have read and understood all the rules and regulations.',
@@ -235,7 +235,7 @@ export default function TrusteesVotingPage() {
       electionManagerEmail: 'ચુંટણી નિયામક ઈ-મેલ આયડી',
       zoneSeatAllocation: 'ટ્રસ્ટ મંડળ બેઠક ફાળવણી વિભાગ (કુલ બેઠક – ૦૭)',
       totalSeats: 'કુલ બેઠક: ૦૭',
-      acceptAndContinue: 'હું સ્વીકારું છું અને આગળ વધું',
+      acceptAndContinue: 'હું સ્વીકાર કરું છું',
       backToDashboard: 'ડેશબોર્ડ પર પાછા જાઓ'
     }
   }

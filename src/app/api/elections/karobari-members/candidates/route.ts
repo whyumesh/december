@@ -6,42 +6,42 @@ export const dynamic = 'force-dynamic'
 
 // Gujarati name mappings for Karobari winners
 const CANDIDATE_NAMES_GUJARATI: Record<string, string> = {
-  // Garada-Lakhpat & Nakhatrana
-  'Deepak Ladharam Sharda': 'દિપક લાધરામ શારદા',
-  'Kishor Mangaldas Somani': 'કિશોર મંગળદાસ સોમાણી',
+  // ઘરડા - લખપત અને નખત્રાણા તાલુકા - ૨/૨
+  'Deepak Ladharam Sharda': 'દીપક લધારામ શારડા',
+  'Kishor Mangaldas Somani': 'કિશોર મંગલદાસ સોમાણી',
   
-  // Abdasa
-  'Jayesh Jagdishbhai Ladhad': 'જયેશ જગદીશભાઈ લાધડ',
+  // અબડાસા - ૧/૧
+  'Jayesh Jagdishbhai Ladhad': 'જયેશ જગદીશભાઈ લધ્ધડ',
   
-  // Bhuj
-  'Pankaj Shamji Bhedakiya': 'પંકજ શામજી ભેડાકિયા',
-  'Hitesh Mangaldas Bhutada': 'હિતેશ મંગળદાસ ભૂતડા',
-  'Jayantilal Chandrakant Mandan': 'જયંતિલાલ ચંદ્રકાંત મંડણ',
+  // ભુજ - ૩/૩
+  'Pankaj Shamji Bhedakiya': 'પંકજ શામજી ભેડકિયા',
+  'Hitesh Mangaldas Bhutada': 'હિતેશ (પપ્પુભાઈ) મંગલદાસ ભુતડા',
+  'Jayantilal Chandrakant Mandan': 'જયંતિલાલ ચંદ્રકાન્ત માંડણ',
   
-  // Anjar
-  'Gautam Damodarbhai Gagdani': 'ગૌતમ દામોદરભાઈ ગગદાની',
+  // અંજાર - ૧/૧
+  'Gautam Damodarbhai Gagdani': 'ગૌતમ દામોદરભાઇ ગગડાની',
   
-  // Anya Gujarat
+  // અન્ય ગુજરાત - ૩/૩
   'Mitaben Anil Bhutada': 'મીતાબેન અનિલ ભૂતડા',
   'Manilal Damodar Mall': 'મણિલાલ દામોદર મલ્લ',
   'Bhavesh Mohanbhai Bhutada': 'ભાવેશ મોહનભાઈ ભૂતડા',
   
-  // Mumbai
-  'Nandu Bhanji Gingal': 'નંદુ ભાનજી ગિંગલ',
-  'Deepak Kishor Karwa': 'દિપક કિશોર કરવા',
-  'Jaymin Ramji Mall': 'જયમીન રામજી મલ્લ',
+  // મુંબઈ - ૬/૬
+  'Nandu Bhanji Gingal': 'નન્દુ ભાણજી ગીંગલ',
+  'Deepak Kishor Karwa': 'દીપક કિશોર કરવા',
+  'Jaymin Ramji Mall': 'જયંતિલાલ રામજી મલ્લ',
   'Kiran Jamnadas Rathi': 'કિરણ જમનાદાસ રાઠી',
-  'Raghuvir Kiritbhai Zaveri': 'રઘુવીર કિરીટભાઈ ઝવેરી',
+  'Raghuvir Kiritbhai Zaveri': 'રઘુવીર કિરીટભાઇ ઝવેરી',
   'Girish Jethalal Rathi': 'ગિરીશ જેઠાલાલ રાઠી',
   
-  // Raigad
-  'Latesh Bharat Mandan': 'લતેશ ભરત મંડણ',
+  // રાયગઢ - ૪/૪
+  'Latesh Bharat Mandan': 'લતેશ ભરત માંડણ',
   'Paresh Keshavji Karwa': 'પરેશ કેશવજી કરવા',
-  'Anjana Ashwin Bhutada': 'અંજના અશ્વિન ભૂતડા',
-  'Alpeshkumar Harilal Bhutada': 'અલ્પેશકુમાર હરિલાલ ભૂતડા',
+  'Anjana Ashwin Bhutada': 'અંજના અશ્વિન ભુતડા',
+  'Alpeshkumar Harilal Bhutada': 'અલ્પેશકુમાર હરિલાલ ભુતડા',
   
-  // Karnataka & Goa
-  'Rajnikant Hirachand Ladhad': 'રાજનીકાંત હીરાચંદ લાધડ'
+  // કર્ણાટક અને ગોવા - ૧/૧
+  'Rajnikant Hirachand Ladhad': 'રજનીકાંત હીરાચંદ લધ્ધડ'
 }
 
 export async function GET(request: NextRequest) {
