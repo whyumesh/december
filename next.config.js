@@ -15,7 +15,6 @@ const nextConfig = {
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   // Skip font optimization during build if network fails (non-blocking)
-  // This prevents build failures due to Google Fonts network timeouts
   optimizeFonts: process.env.SKIP_FONT_OPTIMIZATION !== 'true',
   
   // Performance optimizations
@@ -43,20 +42,19 @@ const nextConfig = {
     // Vercel needs these explicitly listed to include them in serverless functions
     outputFileTracingIncludes: {
       '*': [
-        'node_modules/next/**', // Include Next.js files
+        'node_modules/next/**',
         'node_modules/styled-jsx/**',
-        'node_modules/@prisma/client/**', // CRITICAL: Prisma client must be included
-        'node_modules/.prisma/client/**', // CRITICAL: Generated Prisma client
-        'node_modules/.prisma/client/libquery_engine-linux-musl*', // CRITICAL: Prisma engine for Vercel
-        'node_modules/@prisma/engines/**/query-engine-linux-musl*', // CRITICAL: Prisma engine for Vercel
+        'node_modules/@prisma/client/**',
+        'node_modules/.prisma/client/**',
+        'node_modules/.prisma/client/libquery_engine-linux-musl*',
+        'node_modules/@prisma/engines/**/query-engine-linux-musl*',
       ],
     },
     // Exclude unnecessary files from function bundle to reduce size
-    // NOTE: Do NOT exclude @swc/helpers - Next.js needs it at runtime
     outputFileTracingExcludes: {
       '*': [
+        // Exclude platform-specific SWC binaries (keep only what's needed)
         'node_modules/@swc/core-linux-x64-gnu/**/*',
-        'node_modules/@swc/core-linux-x64-musl/**/*',
         'node_modules/@swc/core-darwin-x64/**/*',
         'node_modules/@swc/core-darwin-arm64/**/*',
         'node_modules/@swc/core-win32-x64/**/*',
@@ -64,7 +62,7 @@ const nextConfig = {
         'node_modules/terser/**/*',
         'node_modules/webpack/**/*',
         'node_modules/.cache/**/*',
-        // Exclude Prisma engines (keep linux-musl for Vercel, exclude others)
+        // Exclude Prisma engines for other platforms (keep linux-musl for Vercel)
         'node_modules/.prisma/client/libquery_engine-darwin*',
         'node_modules/.prisma/client/libquery_engine-windows*',
         'node_modules/.prisma/client/libquery_engine-debian*',
@@ -90,15 +88,17 @@ const nextConfig = {
         '**/example/**',
         '**/docs/**',
         '**/documentation/**',
-        // CRITICAL: NEVER exclude Next.js - must come FIRST before any broad patterns
-        '!node_modules/next/**', // Keep ALL Next.js files - no exceptions
-        '!node_modules/styled-jsx/**', // Keep styled-jsx
-        // Exclude TypeScript source files (but NOT Next.js or Prisma files - already excluded above)
+        // CRITICAL: NEVER exclude Next.js or Prisma files
+        '!node_modules/next/**',
+        '!node_modules/styled-jsx/**',
+        '!node_modules/@prisma/client/**',
+        '!node_modules/.prisma/client/**',
+        // Exclude TypeScript source files (but keep .d.ts and critical packages)
         '**/*.ts',
         '!**/*.d.ts',
-        '!node_modules/next/**/*.ts', // Explicitly don't exclude Next.js TS files
-        '!node_modules/@prisma/client/**/*.ts', // CRITICAL: Don't exclude Prisma client TS files
-        '!node_modules/.prisma/client/**/*.ts', // CRITICAL: Don't exclude generated Prisma client TS files
+        '!node_modules/next/**/*.ts',
+        '!node_modules/@prisma/client/**/*.ts',
+        '!node_modules/.prisma/client/**/*.ts',
         // Exclude unnecessary Radix UI files
         'node_modules/@radix-ui/**/*.stories.*',
         'node_modules/@radix-ui/**/README*',
@@ -108,114 +108,27 @@ const nextConfig = {
         'node_modules/date-fns/**/locale/**',
         'node_modules/date-fns/**/esm/**',
         'node_modules/date-fns/**/fp/**',
-        // Exclude .next build artifacts from function tracing
-        // BUT keep webpack chunks - they're required at runtime!
+        // Exclude .next build artifacts (but keep chunks)
         '.next/cache/**',
         '.next/trace*',
-        // DO NOT exclude .next/server/chunks/** - these are required webpack chunks!
         '.next/static/**',
         '.next/BUILD_ID',
         '.next/routes-manifest.json',
         '.next/prerender-manifest.json',
         '.next/images-manifest.json',
-        // DO NOT exclude ws - Next.js needs it
-        // 'node_modules/ws/**', // REMOVED - ws must be included
       ],
     },
-    // Simplified: Let Next.js handle server components naturally
-    // No external packages - everything will be bundled generically
-    // NOTE: Even 'prisma' CLI removed to ensure @prisma/client bundles correctly
+    // Let Next.js handle server components naturally - no externalization
     serverComponentsExternalPackages: [],
   },
   // Configure middleware to avoid Edge Function issues
-  // Exclude jsonwebtoken from Edge Function bundling
   transpilePackages: [],
   // Enable SWC minification
   swcMinify: true,
-  // Webpack config - ensure critical modules are bundled
+  // Simplified webpack config - let Next.js handle bundling automatically
+  // No manual externals manipulation - rely on outputFileTracingIncludes instead
   webpack: (config, { dev, isServer }) => {
-    // Server-side bundling (for API routes/serverless functions)
-    if (!dev && isServer) {
-      // CRITICAL: Ensure Prisma client is NOT externalized - it must be bundled
-      // Remove Prisma from any externals array
-      if (Array.isArray(config.externals)) {
-        config.externals = config.externals.filter(ext => {
-          if (typeof ext === 'string') {
-            // Never externalize Prisma client
-            return !ext.includes('@prisma/client') && 
-                   !ext.includes('.prisma/client') &&
-                   ext !== '@prisma/client' &&
-                   ext !== 'prisma'
-          }
-          if (typeof ext === 'object' && ext !== null) {
-            // Never externalize Prisma in object form
-            return ext['@prisma/client'] === undefined && 
-                   ext['@prisma'] === undefined &&
-                   ext['prisma'] === undefined
-          }
-          return true
-        })
-      }
-      
-      // Wrap externals function to ensure Prisma is bundled
-      // Only intercept Prisma requests, let Next.js handle everything else
-      if (typeof config.externals === 'function') {
-        const originalExternals = config.externals
-        config.externals = function(context, request, callback) {
-          // CRITICAL: Never externalize Prisma client - it must be bundled
-          if (request && (
-            request.includes('@prisma/client') || 
-            request.includes('.prisma/client') ||
-            request === '@prisma/client'
-          )) {
-            // Don't externalize - let webpack bundle it
-            return callback()
-          }
-          
-          // For all other modules, use Next.js's original externals function
-          return originalExternals.call(this, context, request, callback)
-        }
-      } else if (Array.isArray(config.externals)) {
-        // If externals is an array, filter out Prisma and wrap with a function
-        const filteredExternals = config.externals.filter(ext => {
-          if (typeof ext === 'string') {
-            return !ext.includes('@prisma/client') && 
-                   !ext.includes('.prisma/client') &&
-                   ext !== '@prisma/client'
-          }
-          return true
-        })
-        
-        // Wrap in a function to also catch Prisma requests
-        config.externals = function(context, request, callback) {
-          // CRITICAL: Never externalize Prisma client
-          if (request && (
-            request.includes('@prisma/client') || 
-            request.includes('.prisma/client') ||
-            request === '@prisma/client'
-          )) {
-            return callback()
-          }
-          
-          // Check if request matches any filtered externals
-          const shouldExternalize = filteredExternals.some(ext => {
-            if (typeof ext === 'string') {
-              return ext === request
-            }
-            return false
-          })
-          
-          if (shouldExternalize) {
-            return callback(null, request)
-          }
-          
-          // Default: bundle it
-          return callback()
-        }
-      }
-    }
-    
-    // Client-side optimizations
+    // Only apply client-side optimizations
     if (!dev && !isServer) {
       // Enable tree shaking for client bundle
       config.optimization.usedExports = true
@@ -239,6 +152,10 @@ const nextConfig = {
         },
       }
     }
+    
+    // For server-side: Let Next.js/Vercel handle bundling automatically
+    // outputFileTracingIncludes ensures Prisma is included
+    // No need to manipulate externals - it causes webpack errors
     
     return config
   },
@@ -293,7 +210,6 @@ const nextConfig = {
   productionBrowserSourceMaps: false,
   // Enable compression
   compress: true,
-  // No standalone mode - let Vercel handle bundling generically
   // Skip type checking during build for speed
   typescript: {
     ignoreBuildErrors: true,
@@ -302,11 +218,9 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   // Force all pages to be dynamic (prevent static generation)
-  // This ensures no pages try to access database during build
   generateBuildId: async () => {
     return 'build-' + Date.now()
   },
-  // Note: Vercel automatically handles Next.js serverless function bundling
 }
 
 module.exports = nextConfig
