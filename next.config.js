@@ -47,6 +47,8 @@ const nextConfig = {
         'node_modules/styled-jsx/**',
         'node_modules/@prisma/client/**', // CRITICAL: Include Prisma client for serverless functions
         'node_modules/.prisma/client/**', // CRITICAL: Include generated Prisma client
+        'node_modules/twilio/**', // CRITICAL: Include Twilio for serverless functions
+        'node_modules/next-auth/**', // CRITICAL: Include NextAuth for serverless functions
       ],
     },
     // Exclude unnecessary files from function bundle to reduce size
@@ -140,11 +142,13 @@ const nextConfig = {
       'cloudinary',
       'isomorphic-dompurify',
       'jsdom',
-      'twilio',
+      // NOTE: twilio and next-auth should NOT be externalized for API routes (serverless functions)
+      // They need to be bundled so they're available at runtime
+      // 'twilio', // REMOVED - causes MODULE_NOT_FOUND in serverless functions
       '@upstash/ratelimit',
       '@upstash/redis',
       'pdf-parse',
-      'next-auth',
+      // 'next-auth', // REMOVED - causes MODULE_NOT_FOUND in serverless functions
       '@hookform/resolvers',
       'react-hook-form'
     ],
@@ -178,13 +182,14 @@ const nextConfig = {
         'jspdf',
         'jsdom',
         'isomorphic-dompurify',
-        'twilio',
+        // NOTE: twilio and next-auth must be bundled for serverless functions
+        // 'twilio', // REMOVED - causes MODULE_NOT_FOUND in serverless functions
         'csv-parser',
         '@upstash/ratelimit',
         '@upstash/redis',
         'uuid',
         'zod',
-        'next-auth',
+        // 'next-auth', // REMOVED - causes MODULE_NOT_FOUND in serverless functions
         '@hookform/resolvers',
         'react-hook-form'
       ]
