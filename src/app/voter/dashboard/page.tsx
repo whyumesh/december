@@ -505,7 +505,7 @@ export default function VoterDashboard() {
   ]
 
   // Calculate voting progress
-  // For voters not eligible for Yuva Pankh (based on age): show 1/2 format (Karobari + Trustee only)
+  // For voters not eligible for Yuva Pankh (based on age): show X/2 format (Karobari + Trustee only)
   // For voters eligible for Yuva Pankh: show X/3 format (Karobari + Yuva Pankh + Trustee)
   const voterAge = voterData.age || 0
   
@@ -515,37 +515,45 @@ export default function VoterDashboard() {
   const ageAsOfCutoff = dob ? calculateAgeAsOf(dob, cutoffDate) : null
   const isAgeEligibleForYuvaPankh = ageAsOfCutoff !== null && ageAsOfCutoff >= 18 && ageAsOfCutoff <= 39
   
-  // Check if voter has any eligible elections
-  const hasKarobari = voterData.karobariZone !== null
-  const hasYuvaPankh = voterData.yuvaPankZone !== null && isAgeEligibleForYuvaPankh
-  const hasTrustee = voterData.trusteeZone !== null && voterAge >= 18
+  // Check if voter has zones for each election type
+  const hasKarobariZone = voterData.karobariZone !== null
+  const hasYuvaPankhZone = voterData.yuvaPankZone !== null
+  const hasTrusteeZone = voterData.trusteeZone !== null
   
-  // Total elections: 2 if not age-eligible for Yuva Pankh, 3 if age-eligible
-  const totalElections = isAgeEligibleForYuvaPankh 
-    ? (hasKarobari || hasYuvaPankh || hasTrustee ? 3 : 0)
-    : (hasKarobari || hasTrustee ? 2 : 0)
+  // Determine eligibility: voter must have zone AND meet age requirements
+  const isEligibleForKarobari = hasKarobariZone
+  const isEligibleForYuvaPankh = hasYuvaPankhZone && isAgeEligibleForYuvaPankh
+  const isEligibleForTrustee = hasTrusteeZone && voterAge >= 18
   
-  // Count votes:
-  // - Karobari: always counted as done (1) if voter has karobari zone
-  // - Yuva Pankh: counted as done if voted OR if zone is completed (not Raigad/Karnataka pending zones) - only if age-eligible
-  // - Trustee: counted as done if voted
+  // Count total eligible elections
+  // If age-eligible for Yuva Pankh: count all 3 elections they're eligible for
+  // If NOT age-eligible for Yuva Pankh: count only Karobari + Trustee (2 elections)
+  let totalElections = 0
+  if (isEligibleForKarobari) totalElections++
+  if (isEligibleForYuvaPankh) totalElections++
+  if (isEligibleForTrustee) totalElections++
+  
+  // Count completed votes:
+  // - Karobari: counted only if actually voted
+  // - Yuva Pankh: counted if voted OR if zone is completed (not Raigad/Karnataka pending zones) - only if age-eligible
+  // - Trustee: counted only if actually voted
   let totalVotes = 0
   
-  // Karobari is always done if voter has karobari zone
-  if (hasKarobari) {
+  // Karobari: count only if voted
+  if (isEligibleForKarobari && voterData.hasVoted.karobariMembers) {
     totalVotes += 1
   }
   
-  // Yuva Pankh: done if voted OR if zone is completed (not Raigad/Karnataka) - only count if age-eligible
-  if (hasYuvaPankh && isAgeEligibleForYuvaPankh) {
+  // Yuva Pankh: count if voted OR if zone is completed (not Raigad/Karnataka) - only if age-eligible
+  if (isEligibleForYuvaPankh) {
     const isRaigadOrKarnataka = voterData.yuvaPankZone?.code === 'RAIGAD' || voterData.yuvaPankZone?.code === 'KARNATAKA_GOA'
     if (voterData.hasVoted.yuvaPank || (!isRaigadOrKarnataka && isYuvaPankhCompleted)) {
       totalVotes += 1
     }
   }
   
-  // Trustee: done if voted
-  if (hasTrustee && voterData.hasVoted.trustees) {
+  // Trustee: count only if voted
+  if (isEligibleForTrustee && voterData.hasVoted.trustees) {
     totalVotes += 1
   }
 

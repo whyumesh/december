@@ -267,7 +267,7 @@ export default function NominationPage() {
                 "Candidate shall require to Sign-Up for processing candidate application.",
                 "Candidate are advised to not share their personal Candidate Log-In ID and Password to anyone.",
                 "Candidates are requested to fill nomination from the zones that shall correspond to the city / village mentioned in their Aadhaar Card. List of zones shall be mentioned in Sign-Up Page.",
-                "Age eligibility criteria for applicants: Minimum 18 years (born on/before 31st August, 2007) Maximum 40 years (born on/before 1st September, 1985).",
+                "Age eligibility criteria for applicants: Minimum 18 years (born on/before 31st August, 2007) Maximum 39 years (born on/before 31st August, 1986) as of 31st August, 2025.",
                 "Candidate shall be eligible for application from either Karobari Samiti or Yuva Pankh Samiti. If any candidate is found to have nominated in both Samiti's after the last date of withdrawal, in such case both nominations of the said candidates shall be cancelled without any prior notice.",
                 "Any member who wishes to nominate themselves as candidates, shall not be allowed to be proposer for any other candidate.",
                 "One member shall be proposer to only one candidate.",
@@ -957,8 +957,10 @@ export default function NominationPage() {
         if (!dateString) return false;
         
         const date = new Date(dateString);
-        const minDate = new Date('1985-09-01');
-        const maxDate = new Date('2007-08-31');
+        // Maximum age 39 as of August 31, 2025 means born on/before August 31, 1986
+        // Minimum age 18 as of August 31, 2025 means born on/before August 31, 2007
+        const minDate = new Date('1985-09-01'); // Born on/after Sept 1, 1985 to be 39 or younger on Aug 31, 2025
+        const maxDate = new Date('2007-08-31'); // Born on/before Aug 31, 2007 to be 18 or older on Aug 31, 2025
         
         return date >= minDate && date <= maxDate;
     };
@@ -1351,7 +1353,7 @@ export default function NominationPage() {
 
         // Validate date of birth
         if (!validateDateOfBirth(formData.birthDate)) {
-            return { isValid: false, errorMessage: 'Date of birth must be between September 1, 1985 and August 31, 2007 (inclusive)' };
+            return { isValid: false, errorMessage: 'Date of birth must be between September 1, 1985 and August 31, 2007 (inclusive) to be 18-39 years old as of August 31, 2025' };
         }
 
         // Validate zones match
@@ -1958,7 +1960,7 @@ export default function NominationPage() {
                                             {formData.birthDate && !validateDateOfBirth(formData.birthDate) && (
                                                 <p className="text-sm text-red-600 mt-1">
                                                     {selectedLanguage === 'english' 
-                                                        ? 'Date of birth must be between September 1, 1985 and August 31, 2007 (inclusive)'
+                                                        ? 'Date of birth must be between September 1, 1985 and August 31, 2007 (inclusive) to be 18-39 years old as of August 31, 2025'
                                                         : 'જન્મ તારીખ 1 સપ્ટેમ્બર 1985 અને 31 ઑગસ્ટ 2007 (બંને સહિત) વચ્ચે હોવી જોઈએ'
                                                     }
                                                 </p>

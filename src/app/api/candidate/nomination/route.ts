@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyToken, JWTError } from "@/lib/jwt";
-import { isEligibleToBeCandidate, calculateAge } from "@/lib/age-validation";
+import { isEligibleToBeCandidate, calculateAge, calculateAgeAsOf } from "@/lib/age-validation";
 import { sanitizeFilename } from "@/lib/file-upload";
 import { candidateNominationSchema, sanitizeInput } from "@/lib/validation";
 import { createRateLimitedRoute, rateLimitConfigs } from "@/lib/rate-limit";
@@ -181,20 +181,26 @@ async function handler(request: NextRequest) {
 
         // Calculate age from the form's birthDate
         const birthDateObj = new Date(birthDate);
-        const calculatedAge = calculateAge(birthDateObj);
+        
+        // For Yuva Pankh, age eligibility is based on age as of August 31, 2025
+        const yuvaPankhCutoffDate = new Date('2025-08-31T23:59:59');
+        const calculatedAgeAsOfCutoff = calculateAgeAsOf(birthDateObj, yuvaPankhCutoffDate);
+        const calculatedAgeToday = calculateAge(birthDateObj);
 
         console.log("Age validation debug:", {
             birthDateFromForm: birthDate,
             birthDateObj: birthDateObj.toISOString(),
-            calculatedAge,
+            calculatedAgeToday,
+            calculatedAgeAsOfCutoff,
+            cutoffDate: yuvaPankhCutoffDate.toISOString(),
             electionCandidateMinAge: election.candidateMinAge,
             electionCandidateMaxAge: election.candidateMaxAge,
         });
 
-        // Check age eligibility for candidacy using calculated age
+        // Check age eligibility for candidacy using age as of August 31, 2025
         const eligibility = isEligibleToBeCandidate(
             {
-                age: calculatedAge,
+                age: calculatedAgeAsOfCutoff, // Use age as of cutoff date
                 dateOfBirth: birthDateObj,
                 jurisdiction: user.jurisdiction,
             },
@@ -206,6 +212,7 @@ async function handler(request: NextRequest) {
                 candidateMaxAge: election.candidateMaxAge,
                 candidateJurisdiction: election.candidateJurisdiction,
             },
+            yuvaPankhCutoffDate, // Pass reference date for accurate error messages
         );
 
         if (!eligibility.eligible) {
