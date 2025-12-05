@@ -158,49 +158,60 @@ const nextConfig = {
       }
       
       // Wrap externals function to ensure Prisma is bundled
-      // Next.js might set externals as a function, we need to wrap it
-      const originalExternals = config.externals
-      
-      config.externals = function(context, request, callback) {
-        // CRITICAL: Never externalize Prisma client - it must be bundled
-        if (request && (
-          request.includes('@prisma/client') || 
-          request.includes('.prisma/client') ||
-          request === '@prisma/client'
-        )) {
-          // Don't externalize - let webpack bundle it (callback() without args = bundle it)
-          return callback()
-        }
-        
-        // For other modules, check if original externals wants to externalize them
-        if (typeof originalExternals === 'function') {
+      // Only intercept Prisma requests, let Next.js handle everything else
+      if (typeof config.externals === 'function') {
+        const originalExternals = config.externals
+        config.externals = function(context, request, callback) {
+          // CRITICAL: Never externalize Prisma client - it must be bundled
+          if (request && (
+            request.includes('@prisma/client') || 
+            request.includes('.prisma/client') ||
+            request === '@prisma/client'
+          )) {
+            // Don't externalize - let webpack bundle it
+            return callback()
+          }
+          
+          // For all other modules, use Next.js's original externals function
           return originalExternals.call(this, context, request, callback)
         }
+      } else if (Array.isArray(config.externals)) {
+        // If externals is an array, filter out Prisma and wrap with a function
+        const filteredExternals = config.externals.filter(ext => {
+          if (typeof ext === 'string') {
+            return !ext.includes('@prisma/client') && 
+                   !ext.includes('.prisma/client') &&
+                   ext !== '@prisma/client'
+          }
+          return true
+        })
         
-        // If original externals is an array, check it
-        if (Array.isArray(originalExternals)) {
-          const shouldExternalize = originalExternals.some(ext => {
-            if (typeof ext === 'string') return ext === request
-            if (typeof ext === 'function') {
-              try {
-                let result
-                ext(context, request, (err, result) => {
-                  result = !err
-                })
-                return result
-              } catch {
-                return false
-              }
+        // Wrap in a function to also catch Prisma requests
+        config.externals = function(context, request, callback) {
+          // CRITICAL: Never externalize Prisma client
+          if (request && (
+            request.includes('@prisma/client') || 
+            request.includes('.prisma/client') ||
+            request === '@prisma/client'
+          )) {
+            return callback()
+          }
+          
+          // Check if request matches any filtered externals
+          const shouldExternalize = filteredExternals.some(ext => {
+            if (typeof ext === 'string') {
+              return ext === request
             }
             return false
           })
+          
           if (shouldExternalize) {
             return callback(null, request)
           }
+          
+          // Default: bundle it
+          return callback()
         }
-        
-        // Default: don't externalize (bundle it)
-        callback()
       }
     }
     
