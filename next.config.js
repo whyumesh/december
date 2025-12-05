@@ -44,10 +44,14 @@ const nextConfig = {
         'node_modules/styled-jsx/**',
         'node_modules/@prisma/client/**',
         'node_modules/.prisma/client/**',
+        // Include all Prisma engine binaries (both musl and rhel)
+        'node_modules/.prisma/client/libquery_engine-linux-musl-openssl-3.0.x.so.node',
+        'node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node',
         'node_modules/.prisma/client/libquery_engine-linux-musl*',
         'node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x*',
-        'node_modules/@prisma/engines/**/query-engine-linux-musl*',
+        'node_modules/@prisma/engines/**/query-engine-linux-musl-openssl-3.0.x*',
         'node_modules/@prisma/engines/**/query-engine-rhel-openssl-3.0.x*',
+        'node_modules/@prisma/engines/**/libquery_engine-rhel-openssl-3.0.x.so.node',
       ],
     },
     // Exclude unnecessary files from function bundle to reduce size
