@@ -103,9 +103,10 @@ const nextConfig = {
         'node_modules/date-fns/**/esm/**',
         'node_modules/date-fns/**/fp/**',
         // Exclude .next build artifacts from function tracing
+        // BUT keep webpack chunks - they're required at runtime!
         '.next/cache/**',
         '.next/trace*',
-        '.next/server/chunks/**',
+        // DO NOT exclude .next/server/chunks/** - these are required webpack chunks!
         '.next/static/**',
         '.next/BUILD_ID',
         '.next/routes-manifest.json',
