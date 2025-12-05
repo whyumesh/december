@@ -39,17 +39,12 @@ const nextConfig = {
     ],
     // Disable ISR to prevent static generation
     isrMemoryCacheSize: 0,
-    // CRITICAL: Explicitly include ALL Next.js internal modules (required for Vercel)
-    // This ensures ALL Next.js files are included - no exceptions
+    // Simplified: Let Next.js output file tracing work generically
+    // Next.js will automatically include required dependencies
     outputFileTracingIncludes: {
       '*': [
-        'node_modules/next/**', // Include EVERYTHING from Next.js
+        'node_modules/next/**', // Include Next.js files
         'node_modules/styled-jsx/**',
-        'node_modules/@prisma/client/**', // CRITICAL: Include Prisma client for serverless functions
-        'node_modules/.prisma/client/**', // CRITICAL: Include generated Prisma client
-        'node_modules/twilio/**', // CRITICAL: Include Twilio for serverless functions
-        'node_modules/next-auth/**', // CRITICAL: Include NextAuth for serverless functions
-        'node_modules/jsonwebtoken/**', // CRITICAL: Include jsonwebtoken for serverless functions
       ],
     },
     // Exclude unnecessary files from function bundle to reduce size
@@ -121,39 +116,10 @@ const nextConfig = {
         // 'node_modules/ws/**', // REMOVED - ws must be included
       ],
     },
+    // Simplified: Let Next.js handle server components naturally
+    // No external packages - everything will be bundled generically
     serverComponentsExternalPackages: [
-      'prisma',
-      // NOTE: @prisma/client should NOT be externalized for API routes (serverless functions)
-      // It needs to be bundled so it's available at runtime
-      // '@prisma/client', // REMOVED - causes MODULE_NOT_FOUND in serverless functions
-      'pg',
-      'bcryptjs',
-      // NOTE: jsonwebtoken should NOT be externalized for API routes (serverless functions)
-      // It needs to be bundled so it's available at runtime
-      // 'jsonwebtoken', // REMOVED - causes MODULE_NOT_FOUND in serverless functions
-      'nodemailer',
-      'csv-parser',
-      'exceljs',
-      'jspdf',
-      'uuid',
-      'zod',
-      '@aws-sdk/client-s3',
-      '@aws-sdk/s3-request-presigner',
-      '@aws-sdk/client-sso',
-      '@aws-sdk/client-sso-oidc',
-      '@aws-sdk/credential-providers',
-      'cloudinary',
-      'isomorphic-dompurify',
-      'jsdom',
-      // NOTE: twilio and next-auth should NOT be externalized for API routes (serverless functions)
-      // They need to be bundled so they're available at runtime
-      // 'twilio', // REMOVED - causes MODULE_NOT_FOUND in serverless functions
-      '@upstash/ratelimit',
-      '@upstash/redis',
-      'pdf-parse',
-      // 'next-auth', // REMOVED - causes MODULE_NOT_FOUND in serverless functions
-      '@hookform/resolvers',
-      'react-hook-form'
+      'prisma', // Prisma CLI (not client) can be external
     ],
   },
   // Configure middleware to avoid Edge Function issues
@@ -161,95 +127,12 @@ const nextConfig = {
   transpilePackages: [],
   // Enable SWC minification
   swcMinify: true,
-  // Optimize bundle
+  // Simplified webpack config - let Next.js handle bundling generically
+  // Removed externalization to prevent MODULE_NOT_FOUND errors in serverless functions
   webpack: (config, { dev, isServer }) => {
-    // Externalize large dependencies for server-side (Vercel serverless functions)
-    if (!dev && isServer) {
-      config.externals = config.externals || []
-      // Externalize large dependencies to reduce Vercel function bundle size
-      // These will be loaded from node_modules at runtime, not bundled
-      // NOTE: Prisma binaries are automatically handled by Vercel
-      const largeDependencies = [
-        'pg',
-        'bcryptjs',
-        // NOTE: jsonwebtoken must be bundled for serverless functions
-        // 'jsonwebtoken', // REMOVED - causes MODULE_NOT_FOUND in serverless functions
-        'nodemailer',
-        '@aws-sdk/client-s3',
-        '@aws-sdk/s3-request-presigner',
-        '@aws-sdk/client-sso',
-        '@aws-sdk/client-sso-oidc',
-        '@aws-sdk/credential-providers',
-        'cloudinary',
-        'pdf-parse',
-        'exceljs',
-        'jspdf',
-        'jsdom',
-        'isomorphic-dompurify',
-        // NOTE: twilio and next-auth must be bundled for serverless functions
-        // 'twilio', // REMOVED - causes MODULE_NOT_FOUND in serverless functions
-        'csv-parser',
-        '@upstash/ratelimit',
-        '@upstash/redis',
-        'uuid',
-        'zod',
-        // 'next-auth', // REMOVED - causes MODULE_NOT_FOUND in serverless functions
-        '@hookform/resolvers',
-        'react-hook-form'
-      ]
-      // Add as external dependencies
-      config.externals.push(...largeDependencies)
-      
-      // Also externalize by pattern for better coverage
-      config.externals.push({
-        '@aws-sdk': 'commonjs @aws-sdk',
-        'canvas': 'commonjs canvas',
-        // NOTE: Do NOT externalize @prisma/client - it must be bundled for serverless functions
-        // '@prisma': 'commonjs @prisma', // REMOVED - causes MODULE_NOT_FOUND errors
-        // 'prisma': 'commonjs prisma', // REMOVED - causes MODULE_NOT_FOUND errors
-      })
-      
-      // CRITICAL: Ensure Next.js and ALL its internal modules are NOT externalized
-      // Next.js must be bundled, not externalized
-      if (Array.isArray(config.externals)) {
-        config.externals = config.externals.filter(
-          (ext) => {
-            // Never externalize Next.js or any of its internal modules
-            if (typeof ext === 'string') {
-              if (ext === 'next' || 
-                  ext === 'ws' || 
-                  ext === 'styled-jsx' ||
-                  ext.includes('next/') ||
-                  ext.includes('next/dist')) {
-                return false
-              }
-            }
-            // Don't externalize Next.js modules in object form
-            if (typeof ext === 'object') {
-              if (ext.next !== undefined || 
-                  ext.ws !== undefined || 
-                  ext['styled-jsx'] !== undefined) {
-                return false
-              }
-            }
-            return true
-          }
-        )
-      }
-      
-      // Final check: Remove Next.js and its dependencies from externals
-      if (Array.isArray(config.externals)) {
-        config.externals = config.externals.filter(ext => {
-          if (typeof ext === 'string') {
-            return ext !== 'next' && ext !== 'styled-jsx' && ext !== 'ws'
-          }
-          return true
-        })
-      }
-    }
-    
+    // Only apply client-side optimizations
     if (!dev && !isServer) {
-      // Enable tree shaking
+      // Enable tree shaking for client bundle
       config.optimization.usedExports = true
       config.optimization.sideEffects = false
       
@@ -271,6 +154,9 @@ const nextConfig = {
         },
       }
     }
+    
+    // For server-side: Let Next.js/Vercel handle bundling automatically
+    // No externalization - all modules will be bundled naturally
     
     return config
   },
@@ -325,9 +211,7 @@ const nextConfig = {
   productionBrowserSourceMaps: false,
   // Enable compression
   compress: true,
-  // Output standalone mode - DISABLED for Vercel
-  // Vercel's Next.js runtime handles server bundling automatically
-  // output: 'standalone',
+  // No standalone mode - let Vercel handle bundling generically
   // Skip type checking during build for speed
   typescript: {
     ignoreBuildErrors: true,
