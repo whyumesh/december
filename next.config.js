@@ -49,6 +49,7 @@ const nextConfig = {
         'node_modules/.prisma/client/**', // CRITICAL: Include generated Prisma client
         'node_modules/twilio/**', // CRITICAL: Include Twilio for serverless functions
         'node_modules/next-auth/**', // CRITICAL: Include NextAuth for serverless functions
+        'node_modules/jsonwebtoken/**', // CRITICAL: Include jsonwebtoken for serverless functions
       ],
     },
     // Exclude unnecessary files from function bundle to reduce size
@@ -127,7 +128,9 @@ const nextConfig = {
       // '@prisma/client', // REMOVED - causes MODULE_NOT_FOUND in serverless functions
       'pg',
       'bcryptjs',
-      'jsonwebtoken',
+      // NOTE: jsonwebtoken should NOT be externalized for API routes (serverless functions)
+      // It needs to be bundled so it's available at runtime
+      // 'jsonwebtoken', // REMOVED - causes MODULE_NOT_FOUND in serverless functions
       'nodemailer',
       'csv-parser',
       'exceljs',
@@ -169,7 +172,8 @@ const nextConfig = {
       const largeDependencies = [
         'pg',
         'bcryptjs',
-        'jsonwebtoken',
+        // NOTE: jsonwebtoken must be bundled for serverless functions
+        // 'jsonwebtoken', // REMOVED - causes MODULE_NOT_FOUND in serverless functions
         'nodemailer',
         '@aws-sdk/client-s3',
         '@aws-sdk/s3-request-presigner',
