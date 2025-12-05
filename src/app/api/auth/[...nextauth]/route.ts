@@ -1,5 +1,6 @@
 import NextAuth from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { NextRequest, NextResponse } from "next/server"
 
 // Validate required environment variables
 function validateAuthConfig() {
@@ -23,12 +24,42 @@ function validateAuthConfig() {
 }
 
 // Validate config before initializing
-validateAuthConfig()
+const isValid = validateAuthConfig()
 
-// Initialize NextAuth
-// Note: NextAuth will throw an error if NEXTAUTH_SECRET is missing,
-// but we've logged a warning above. The error will be caught by error boundaries.
-const handler = NextAuth(authOptions)
+// Initialize NextAuth with error handling
+let handler: ReturnType<typeof NextAuth>
+
+try {
+  if (!isValid) {
+    // Create error handler if config is invalid
+    handler = ((req: NextRequest) => {
+      return NextResponse.json(
+        { 
+          error: 'NextAuth configuration error',
+          message: 'NEXTAUTH_URL and NEXTAUTH_SECRET must be set in environment variables',
+          missing: [
+            !process.env.NEXTAUTH_URL ? 'NEXTAUTH_URL' : null,
+            !process.env.NEXTAUTH_SECRET ? 'NEXTAUTH_SECRET' : null
+          ].filter(Boolean)
+        },
+        { status: 500 }
+      ) as any
+    }) as any
+  } else {
+    handler = NextAuth(authOptions)
+  }
+} catch (error) {
+  console.error('Failed to initialize NextAuth:', error)
+  handler = ((req: NextRequest) => {
+    return NextResponse.json(
+      { 
+        error: 'NextAuth initialization failed',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    ) as any
+  }) as any
+}
 
 export { handler as GET, handler as POST }
 
