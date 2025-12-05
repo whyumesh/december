@@ -39,6 +39,16 @@ const nextConfig = {
     ],
     // Disable ISR to prevent static generation
     isrMemoryCacheSize: 0,
+    // Explicitly include Next.js internal modules (required for Vercel)
+    // This ensures next/dist/compiled/ws and other internal modules are included
+    outputFileTracingIncludes: {
+      '*': [
+        'node_modules/next/dist/compiled/**',
+        'node_modules/next/dist/server/**',
+        'node_modules/next/dist/shared/**',
+        'node_modules/next/dist/compiled/ws/**',
+      ],
+    },
     // Exclude unnecessary files from function bundle to reduce size
     // NOTE: Do NOT exclude @swc/helpers - Next.js needs it at runtime
     outputFileTracingExcludes: {
@@ -78,11 +88,15 @@ const nextConfig = {
         '**/example/**',
         '**/docs/**',
         '**/documentation/**',
+        // CRITICAL: Never exclude Next.js internal modules - MUST come BEFORE **/*.ts
+        // Order matters! Exceptions must come before the rule that would exclude them
+        '!node_modules/next/dist/**', // Keep all Next.js dist files
+        '!node_modules/next/dist/compiled/**', // Explicitly keep compiled modules (including ws)
+        '!node_modules/next/dist/compiled/ws/**', // Explicitly keep ws module
         // Exclude TypeScript source files (keep only .d.ts)
-        // BUT keep Next.js internal compiled modules
+        // BUT keep Next.js internal compiled modules (already excluded above)
         '**/*.ts',
         '!**/*.d.ts',
-        '!node_modules/next/dist/**', // Keep all Next.js dist files
         // Exclude unnecessary Radix UI files
         'node_modules/@radix-ui/**/*.stories.*',
         'node_modules/@radix-ui/**/README*',
