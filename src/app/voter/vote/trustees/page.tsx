@@ -223,17 +223,17 @@ export default function TrusteesVotingPage() {
       of: 'માંથી',
       rulesAndRegulations: 'નિયમો અને સૂચનાઓ',
       readRulesCarefully: 'કૃપા કરીને મતદાન કરવા માટે આગળ વધતા પહેલા નીચેના નિયમો અને નિયમનો કાળજીપૂર્વક વાંચો.',
-      rule1: 'ફક્ત ૩૧.૦૮.૨૦૨૫ સુધી ૧૮ વર્ષ કે તેથી વધુ ઉંમરના આપણા સમાજના સભ્યોને મતદાન કરવાનો અધિકાર રહેશે.',
-      rule2: 'આપણો સમાજ એક લોકશાહી સમાજ છે, અને આજની યુવા પેઢી આ ડિજિટલ યુગમાં સર્વજ્ઞાનિજનોને મર્નુંઈ કે ઓનલાઈન પદ્ધતિ અપનાવી પોતાના મતદાનની નૈતિક ફરજ મનભાવશોજી.',
-      rule3: 'ઓનલાઇન માધ્યમથી ચૂંટણી આયોજન કરવાની રૂપરેખા અલગ થી એક મીડિયામાં જણાવવામાં આવશે. જે મીડિયા અને અન્ય જરૂરી માહિતીઓ સહિત આપણા જ્ઞામિના વોટ્સએપ એપ કમ્યુનિટીમાં પ્રસાદરિત કરવામાં આવશે.',
-      rule4: 'મતદાતા દરેક ઝોનમાં ફાળવેલ બેઠક પ્રમાણે યોગ્ય ઉમેદવારને ટ્રસ્ટી તરીકે મત આપી શકશે. ફક્ત ૩૧.૦૮.૨૦૨૫ સુધી ઉંમર ઓછામાં ઓછા ૪૫ વર્ષ કરેલ સભ્યને જ ટ્રસ્ટ મંડળના સભ્ય તરીકે મત આપી શકાશે.',
-      rule5: 'મર્દેશમાં સર્વજ્ઞામિજનોને આગ્રહ છે કે ચૂંટણીમાં મત આપવા ઓનલાઇન પધ્ધતિ અપનાવે.',
-      rule6: 'મિપત્રક દ્વારા મત આપવાનો મર્કલ્પ જરૂરિયાત મુજબ અને સંજોગોને આધીન જાહેર કરવામાં આવશે.',
-      rule7: 'કોઈ પણ પરિસ્થિતિ થી લોકડહિમાં મનણવય લેવાનો અધિકાર ચુંટણી નિયામક પાસે રહેશે જે આખરી અને સર્વને બંધનકારક રહેશે.',
+      rule1: 'તા ૩૧.૦૮.૨૦૨૫  સુધી ૧૮ વર્ષ પુર્ણ કરેલ આપણા સમાજ ના સભ્યો ને મતદાન કરવાનો અધિકાર રહેશે.',
+      rule2: 'આપણો સમાજ એક શિક્ષિત સમાજ છે, અને આજ ની યુવા પેઢી ને અનુકુળ આ ડિજિટલ યુગ માં સર્વે જ્ઞાતિજનો ને વિનંતી કે ઓનલાઈન પદ્ધતિ અપનાવી પોતાના મતદાન ની નૈતિક ફરજ નિભાવશોજી.',
+      rule3: 'ઓનલાઇન માધ્યમથી ચુંટણી આયોજીત કરવાની રૂપરેખા અલગ થી એક વિડિયોમાં જણાવવામાં આવશે. જે વિડીયો અન્ય જરૂરી માહિતીઓ સહિત આપણા જ્ઞાતિ ના વૉટ્સ એપ કમ્યુનિટિ માં પ્રસારિત કરવામાં આવશે.',
+      rule4: 'મતદાતા દરેક ઝોન માં ફાળવેલ બેઠક પ્રમાણે  યોગ્ય ઉમેદવાર ને ટ્રસ્ટી તરીકે મત આપી શકશે. તા.૩૧.૦૮.૨૦૨૫  સુધી ઉંમર વર્ષ ૪૫  પુર્ણ કરેલ સભ્ય નેજ ટ્રસ્ટ મંડળ ના સભ્ય તરીકે  મત આપી શકાશે.',
+      rule5: 'વિદેશ માં વસતા જ્ઞાતિજનો ને આગ્રહ છે કે ચૂંટણી માં મત આપવા ઓનલાઇન પધ્ધતિ અપનાવે.',
+      rule6: 'મતપત્રક દ્વારા મત આપવાનો વિકલ્પ જરૂરિયાત મુજબ અને સંજોગો ને આધીન  જાહેર કરવામાં આવશે.',
+      rule7: 'કોઈ પણ પરિસ્થિતિ તથા લોકહિત માં નિર્ણય લેવાનો અધિકાર ચુંટણી નિયામક પાસે રહેશે જે આખરી અને સર્વે ને બંધનકર્તા રહેશે.',
       rule8: 'આગળ વધીને, તમે પુષ્ટિ કરો છો કે તમે બધા નિયમો અને નિયમનો વાંચ્યા છે અને સમજ્યા છે.',
       electionManagers: 'ચૂંટણી નિયામક',
       electionManagerEmail: 'ચુંટણી નિયામક ઈ-મેલ આયડી',
-      zoneSeatAllocation: 'ટ્રસ્ટ મંડળ બેઠક ફાળવણી વિભાગ (કુલ બેઠક – ૦૭)',
+      zoneSeatAllocation: 'ટ્રસ્ટમંડળ બેઠક ફાળવણી વિભાગ વાર (કુલ બેઠક- ૦૭)',
       totalSeats: 'કુલ બેઠક: ૦૭',
       acceptAndContinue: 'હું સ્વીકાર કરું છું',
       backToDashboard: 'ડેશબોર્ડ પર પાછા જાઓ'
@@ -978,44 +978,52 @@ export default function TrusteesVotingPage() {
               <div className="pt-6 border-t border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">{content[selectedLanguage].zoneSeatAllocation}</h3>
                 <div className="space-y-2 text-sm overflow-x-auto">
-                  <div className="grid grid-cols-3 gap-2 font-semibold text-gray-900 pb-2 border-b min-w-[500px] sm:min-w-0">
+                  <div className="grid grid-cols-4 gap-2 font-semibold text-gray-900 pb-2 border-b min-w-[600px] sm:min-w-0">
                     <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? 'Zone' : 'ઝોન'}</div>
                     <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? 'Seats' : 'બેઠક'}</div>
-                    <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? 'Areas Covered' : 'ક્ષેત્રો'}</div>
+                    <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? 'Name' : 'નામ'}</div>
+                    <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? 'Areas Covered' : 'આવરી લેતા વિસ્તાર'}</div>
                   </div>
-                  <div className="grid grid-cols-3 gap-2 text-gray-700 min-w-[500px] sm:min-w-0">
-                    <div className="text-xs sm:text-sm">01 {selectedLanguage === 'english' ? 'Raigad' : 'રાયગઢ'}</div>
-                    <div className="text-xs sm:text-sm">01</div>
-                    <div className="text-xs">{selectedLanguage === 'english' ? 'Raigad (Kharghar included), Pune, Ratnagiri, Kolhapur, Sangli, Satara (All districts)' : 'રાયગઢ(ખારઘર સહિત),પુણે,રત્નાગીરી,કોલ્હાપુર,સાંગલી,સાતારા (સર્વ જિલ્લા)'}</div>
+                  <div className="grid grid-cols-4 gap-2 text-gray-700 min-w-[600px] sm:min-w-0">
+                    <div className="text-xs sm:text-sm">૧</div>
+                    <div className="text-xs sm:text-sm">૦૧</div>
+                    <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? 'Raigad' : 'રાયગઢ'}</div>
+                    <div className="text-xs">{selectedLanguage === 'english' ? 'Raigad (Kharghar included), Pune, Ratnagiri, Kolhapur, Sangli (All districts)' : 'રાયગઢ(ખારઘર સહીત)પુના,રત્નાગીરી,કોલ્હાપુર,સાંગલી (સર્વે જિલ્લા)'}</div>
                   </div>
-                  <div className="grid grid-cols-3 gap-2 text-gray-700 min-w-[500px] sm:min-w-0">
-                    <div className="text-xs sm:text-sm">02 {selectedLanguage === 'english' ? 'Mumbai' : 'મુંબઈ'}</div>
-                    <div className="text-xs sm:text-sm">02</div>
-                    <div className="text-xs">{selectedLanguage === 'english' ? 'Mumbai, Thane district, Navi Mumbai, Nashik, Ahmednagar district, Nagpur, Chandrapur, Madhya Pradesh, Rajasthan, West Bengal, Odisha, Haryana, Overseas area, and entire country' : 'મુંબઈ,થાણા જિલ્લો,નવી મુંબઈ,નાસિક,અહેમદનગર જિલ્લો,નાગપુર,ચંદ્રપુર,મધ્યપ્રદેશ,રાજસ્થાન,પશ્ચિમ બંગાળ,ઓડિશા,હરિયાણા,વિદેશ વિસ્તાર,અને સમગ્ર દેશ'}</div>
+                  <div className="grid grid-cols-4 gap-2 text-gray-700 min-w-[600px] sm:min-w-0">
+                    <div className="text-xs sm:text-sm">૨</div>
+                    <div className="text-xs sm:text-sm">૦૨</div>
+                    <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? 'Mumbai' : 'મુંબઈ'}</div>
+                    <div className="text-xs">{selectedLanguage === 'english' ? 'Mumbai, Thane district, Navi Mumbai, Nashik, Ahmednagar district, Nagpur, Chandrapur, Madhya Pradesh, Rajasthan, West Bengal, Odisha, Haryana, and entire Overseas' : 'મુંબઈ,થાણા જિલ્લો,નવી મુંબઈ,નાસિક,અહેમદનગર જિલ્લો,નાગપુર,ચંદ્રપુર,મધ્યપ્રદેશ,રાજસ્થાન,પશ્ચિમ બંગાળ,ઓડિશા,હરિયાણા,અને સમગ્ર વિદેશ'}</div>
                   </div>
-                  <div className="grid grid-cols-3 gap-2 text-gray-700 min-w-[500px] sm:min-w-0">
-                    <div className="text-xs sm:text-sm">03 {selectedLanguage === 'english' ? 'Karnataka & Goa' : 'કર્ણાટક,ગોવા'}</div>
-                    <div className="text-xs sm:text-sm">01</div>
-                    <div className="text-xs">{selectedLanguage === 'english' ? 'Karnataka and Goa states' : 'કર્ણાટક અને ગોવા રાજ્ય'}</div>
+                  <div className="grid grid-cols-4 gap-2 text-gray-700 min-w-[600px] sm:min-w-0">
+                    <div className="text-xs sm:text-sm">૩</div>
+                    <div className="text-xs sm:text-sm">૦૧</div>
+                    <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? 'Karnataka, Goa' : 'કર્ણાટક,ગોવા'}</div>
+                    <div className="text-xs">{selectedLanguage === 'english' ? 'Karnataka and Goa states' : 'સંપુર્ણ કર્ણાટક અને ગોવા રાજ્ય.'}</div>
                   </div>
-                  <div className="grid grid-cols-3 gap-2 text-gray-700 min-w-[500px] sm:min-w-0">
-                    <div className="text-xs sm:text-sm">04 {selectedLanguage === 'english' ? 'Abdasa and Garda' : 'અબડાસા અને ગરડા'}</div>
-                    <div className="text-xs sm:text-sm">01</div>
-                    <div className="text-xs">{selectedLanguage === 'english' ? 'Abdasa, Garda, Lakhpat, Nakhatrana taluka all villages' : 'અબડાસા, ગરડા,લખપત, નખત્રાણા તાલુકાના તમામ ગામો'}</div>
+                  <div className="grid grid-cols-4 gap-2 text-gray-700 min-w-[600px] sm:min-w-0">
+                    <div className="text-xs sm:text-sm">૪</div>
+                    <div className="text-xs sm:text-sm">૦૧</div>
+                    <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? 'Abdasa, Garda, Lakhpat, Nakhatrana' : 'અબડાસા, ગરડા,લખપત, નખત્રાણા'}</div>
+                    <div className="text-xs">{selectedLanguage === 'english' ? 'Abdasa, Garda, Lakhpat, Nakhatrana taluka all villages' : 'અબડાસા, ગરડા,લખપત, નખત્રાણા  તાલુકા ના તમામ ગામો'}</div>
                   </div>
-                  <div className="grid grid-cols-3 gap-2 text-gray-700 min-w-[500px] sm:min-w-0">
-                    <div className="text-xs sm:text-sm">05 {selectedLanguage === 'english' ? 'Bhuj' : 'ભુજ'}</div>
-                    <div className="text-xs sm:text-sm">01</div>
-                    <div className="text-xs">{selectedLanguage === 'english' ? 'Bhuj, Mirzapar, Madhapar (taluka - Bhuj)' : 'ભુજ,મીરઝાવપર,માધાપર (તાલુકો-ભુજ)'}</div>
+                  <div className="grid grid-cols-4 gap-2 text-gray-700 min-w-[600px] sm:min-w-0">
+                    <div className="text-xs sm:text-sm">૫</div>
+                    <div className="text-xs sm:text-sm">૦૧</div>
+                    <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? 'Bhuj' : 'ભુજ'}</div>
+                    <div className="text-xs">{selectedLanguage === 'english' ? 'Bhuj, Mirzapar, Madhapar (taluka - Bhuj)' : 'ભુજ,મિર્ઝાપર,માધાપર (તાલુકો-ભુજ)'}</div>
                   </div>
-                  <div className="grid grid-cols-3 gap-2 text-gray-700 min-w-[500px] sm:min-w-0">
-                    <div className="text-xs sm:text-sm">06 {selectedLanguage === 'english' ? 'Anjar & Anya Gujarat' : 'અંજાર અન્ય ગુજરાત'}</div>
-                    <div className="text-xs sm:text-sm">01</div>
-                    <div className="text-xs">{selectedLanguage === 'english' ? 'Ahmedabad, Valsad, Surat, Sachin, Vadodara, Ankleshwar, Anand, Mehsana, Bharuch, Dahegam, Kapadvanj, Jamnagar, Morbi, Rajkot, Anjar, Adipur, Mandvi, Mundra, Gandhidham taluka villages' : 'અમદાવાદ,વલસાડ,સુરત,સચીન,વડોદરા,આણંદ,મહેસાણા,ભરૂચ,દહેગામ, કપડવંજ, જામનગર અને મોરબી, અંજાર,આડિપુર,માંડવી,મુંદ્રા,ગાંધીધામ તાલુકાના ગામો'}</div>
+                  <div className="grid grid-cols-4 gap-2 text-gray-700 min-w-[600px] sm:min-w-0">
+                    <div className="text-xs sm:text-sm">૬</div>
+                    <div className="text-xs sm:text-sm">૦૧</div>
+                    <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? 'Anjar & Anya Gujarat (except Kutch)' : 'અંજાર  અન્ય ગુજરાત (કચ્છ સિવાય)'}</div>
+                    <div className="text-xs">{selectedLanguage === 'english' ? 'Ahmedabad, Valsad, Sachin, Surat, Udhana, Vadodara, Anand, Mehsana, Bharuch, Dahegam, Kapadvanj, Jamnagar and Morbi, Anjar, Adipur, Mandvi, Mundra, Bhachau, Gandhidham taluka villages' : 'અમદાવાદ,વલસાડ,સચીન,સુરત,ઉધના,વડોદરા, આણંદ,મહેસાણા,ભરૂચ,દહેગામ, કપડવંજ, જામનગર અને મોરબી  અંજાર,આદિપુર,માંડવી,મુંદ્રા,ભચાઉ,ગાંધીધામ તાલુકા ના ગામો'}</div>
                   </div>
-                  <div className="grid grid-cols-3 gap-2 font-semibold text-gray-900 pt-2 border-t min-w-[500px] sm:min-w-0">
-                    <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? 'Total' : 'કુલ'}</div>
-                    <div className="text-xs sm:text-sm">07</div>
+                  <div className="grid grid-cols-4 gap-2 font-semibold text-gray-900 pt-2 border-t min-w-[600px] sm:min-w-0">
+                    <div className="text-xs sm:text-sm">{selectedLanguage === 'english' ? 'Total Seats' : 'કુલ બેઠક'}</div>
+                    <div className="text-xs sm:text-sm">૦૭</div>
+                    <div></div>
                     <div></div>
                   </div>
                 </div>

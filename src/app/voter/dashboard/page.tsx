@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useVoterLanguage } from '@/hooks/useVoterLanguage'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -296,33 +296,43 @@ export default function VoterDashboard() {
   }
 
   useEffect(() => {
-    // Check if user is logged in
+    // Check if user is logged in (only run once on mount)
+    let isMounted = true
+    
     const checkAuth = async () => {
       try {
         const response = await fetch('/api/voter/me')
+        if (!isMounted) return // Prevent state updates if component unmounted
+        
         if (response.ok) {
           const data = await response.json()
-          setVoterData(data.voter)
+          if (isMounted) {
+            setVoterData(data.voter)
+          }
         } else {
-          router.push('/voter/login')
+          if (isMounted) {
+            router.push('/voter/login')
+          }
         }
       } catch (error) {
         console.error('Error checking auth:', error)
-        router.push('/voter/login')
+        if (isMounted) {
+          router.push('/voter/login')
+        }
       } finally {
-        setIsLoading(false)
+        if (isMounted) {
+          setIsLoading(false)
+        }
       }
     }
 
     checkAuth()
-  }, [router])
-
-  // Auto-load results when component mounts
-  useEffect(() => {
-    if (voterData) {
-      fetchResults()
+    
+    return () => {
+      isMounted = false // Cleanup: prevent state updates after unmount
     }
-  }, [voterData])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Empty dependency array - only run once on mount
 
   const handleLogout = () => {
     // Clear any stored tokens/session
@@ -330,7 +340,7 @@ export default function VoterDashboard() {
     router.push('/')
   }
 
-  const fetchResults = async (forceRefresh = false) => {
+  const fetchResults = useCallback(async (forceRefresh = false) => {
     // Check if we have recent cached data (less than 30 seconds old)
     const cacheKey = 'election_results_cache'
     const cached = localStorage.getItem(cacheKey)
@@ -382,7 +392,16 @@ export default function VoterDashboard() {
     } finally {
       setIsLoadingResults(false)
     }
-  }
+  }, []) // Empty dependency array - fetchResults doesn't depend on any props/state
+
+  // Auto-load results when voterData is available (only once, prevent infinite loops)
+  useEffect(() => {
+    // Only fetch if we have voterData and haven't loaded results yet
+    if (voterData?.id && !results && !isLoadingResults) {
+      fetchResults()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voterData?.id]) // Only depend on voterData.id - fetchResults is stable, results/isLoadingResults checked inside
 
   if (isLoading) {
     return (
@@ -544,9 +563,13 @@ export default function VoterDashboard() {
   // For voters not eligible for Yuva Pankh (based on age): show X/2 format (Karobari + Trustee only)
   // For voters eligible for Yuva Pankh: show X/3 format (Karobari + Yuva Pankh + Trustee)
   const { totalElections, totalVotes } = useMemo(() => {
-    if (!voterData) return { totalElections: 0, totalVotes: 0 }
+    // Early return if voterData is not available
+    if (!voterData) {
+      return { totalElections: 0, totalVotes: 0 }
+    }
     
-    const voterAge = voterData.age || 0
+    try {
+      const voterAge = voterData.age || 0
     
     // Check age eligibility for Yuva Pankh (must be 39 or younger as of August 31, 2025)
     const dob = voterData.dob
@@ -611,8 +634,26 @@ export default function VoterDashboard() {
       totalVotes += 1
     }
     
-    return { totalElections, totalVotes }
-  }, [voterData, results])
+      return { totalElections, totalVotes }
+    } catch (error) {
+      console.error('Error calculating voting progress:', error)
+      // Return safe defaults on error
+      return { totalElections: 0, totalVotes: 0 }
+    }
+  }, [
+    voterData?.id, 
+    voterData?.hasVoted?.karobariMembers, 
+    voterData?.hasVoted?.yuvaPank, 
+    voterData?.hasVoted?.trustees,
+    voterData?.karobariZone?.id, 
+    voterData?.yuvaPankZone?.id, 
+    voterData?.yuvaPankZone?.code,
+    voterData?.trusteeZone?.id, 
+    voterData?.age, 
+    voterData?.dob,
+    // Only recalculate when results are first loaded or when regions count changes
+    results ? results.yuvaPankh?.regions?.length ?? 0 : 0
+  ])
 
   return (
     <div className="min-h-screen bg-gray-50">
