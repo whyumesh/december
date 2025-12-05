@@ -99,6 +99,8 @@ const nextConfig = {
         '.next/routes-manifest.json',
         '.next/prerender-manifest.json',
         '.next/images-manifest.json',
+        // DO NOT exclude ws - Next.js needs it
+        // 'node_modules/ws/**', // REMOVED - ws must be included
       ],
     },
     serverComponentsExternalPackages: [
@@ -179,6 +181,14 @@ const nextConfig = {
         '@prisma': 'commonjs @prisma',
         'prisma': 'commonjs prisma',
       })
+      
+      // Ensure ws is NOT externalized (Next.js needs it)
+      // Remove ws from externals if it was added
+      if (Array.isArray(config.externals)) {
+        config.externals = config.externals.filter(
+          (ext) => ext !== 'ws' && (typeof ext !== 'object' || ext.ws === undefined)
+        )
+      }
     }
     
     if (!dev && !isServer) {
