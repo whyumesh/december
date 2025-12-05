@@ -113,15 +113,20 @@ export async function GET(request: NextRequest) {
       })
     ])
 
+    // Extract IDs before Promise.all to avoid hoisting issues
+    const yuvaPankhNotaIds = yuvaPankhNotaCandidates.map(c => c.id)
+    const karobariNotaIds = karobariNotaCandidates.map(c => c.id)
+    const trusteeNotaIds = trusteeNotaCandidates.map(c => c.id)
+
     const [yuvaPankhNotaVotes, karobariNotaVotes, trusteeNotaVotes] = await Promise.all([
-      yuvaPankhNotaCandidates.length > 0
-        ? prisma.vote.count({ where: { yuvaPankhCandidateId: { in: yuvaPankhNotaCandidates.map(c => c.id) } } })
+      yuvaPankhNotaIds.length > 0
+        ? prisma.vote.count({ where: { yuvaPankhCandidateId: { in: yuvaPankhNotaIds } } })
         : Promise.resolve(0),
-      karobariNotaCandidates.length > 0
-        ? prisma.vote.count({ where: { karobariCandidateId: { in: karobariNotaCandidates.map(c => c.id) } } })
+      karobariNotaIds.length > 0
+        ? prisma.vote.count({ where: { karobariCandidateId: { in: karobariNotaIds } } })
         : Promise.resolve(0),
-      trusteeNotaCandidates.length > 0
-        ? prisma.vote.count({ where: { trusteeCandidateId: { in: trusteeNotaCandidates.map(c => c.id) } } })
+      trusteeNotaIds.length > 0
+        ? prisma.vote.count({ where: { trusteeCandidateId: { in: trusteeNotaIds } } })
         : Promise.resolve(0)
     ])
     
@@ -789,28 +794,10 @@ export async function GET(request: NextRequest) {
       { header: 'Trustee Status', key: 'trusteeStatus', width: 30 }
     ]
 
-    const voteParticipationMap = new Map<string, Record<string, { total: number; nota: number }>>()
-    allVotes.forEach(vote => {
-      const electionType = vote.election?.type
-      if (!electionType || !vote.voterId) return
-      if (!voteParticipationMap.has(vote.voterId)) {
-        voteParticipationMap.set(vote.voterId, {})
-      }
-      const electionStats = voteParticipationMap.get(vote.voterId)!
-      if (!electionStats[electionType]) {
-        electionStats[electionType] = { total: 0, nota: 0 }
-      }
-      electionStats[electionType].total += 1
-      const meta = getVoteMeta(vote)
-      if (meta.isNota) {
-        electionStats[electionType].nota += 1
-      }
-    })
+    // Create lookup maps for NOTA detection only (already created above, but ensuring they're available)
+    // Maps are created on lines 776-778, so they're available here
 
-    // Use already fetched voters instead of querying again
-    const voterRecords = voters
-
-    // Helper function for vote meta (used for participation stats only, not for showing who voted to whom)
+    // Helper type for vote meta (used for participation stats only, not for showing who voted to whom)
     type VoteType = {
       id: string
       voterId: string | null
@@ -823,6 +810,9 @@ export async function GET(request: NextRequest) {
         title: string | null
       } | null
     }
+
+    // Helper function for vote meta (used for participation stats only, not for showing who voted to whom)
+    // Must be defined before forEach loop that uses it
     const getVoteMeta = (vote: VoteType) => {
       if (vote.trusteeCandidateId) {
         const candidate = trusteeCandidateMap.get(vote.trusteeCandidateId)
@@ -847,6 +837,27 @@ export async function GET(request: NextRequest) {
       }
       return { isNota: false }
     }
+
+    // Use already fetched voters instead of querying again
+    const voterRecords = voters
+
+    const voteParticipationMap = new Map<string, Record<string, { total: number; nota: number }>>()
+    allVotes.forEach(vote => {
+      const electionType = vote.election?.type
+      if (!electionType || !vote.voterId) return
+      if (!voteParticipationMap.has(vote.voterId)) {
+        voteParticipationMap.set(vote.voterId, {})
+      }
+      const electionStats = voteParticipationMap.get(vote.voterId)!
+      if (!electionStats[electionType]) {
+        electionStats[electionType] = { total: 0, nota: 0 }
+      }
+      electionStats[electionType].total += 1
+      const meta = getVoteMeta(vote)
+      if (meta.isNota) {
+        electionStats[electionType].nota += 1
+      }
+    })
 
     const formatParticipationStatus = (hasZone: boolean, stats?: { total: number; nota: number }) => {
       if (!hasZone) return 'Not Eligible'
