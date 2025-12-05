@@ -264,12 +264,49 @@ export function createRateLimitedRoute(
       )
     }
     
-    // Call the handler
+    // Call the handler with proper error handling
     try {
-      return await handler(request)
+      const response = await handler(request)
+      // Ensure we always return a response
+      if (!response) {
+        logger.error('Handler returned empty response', { identifier, url: request.url })
+        return NextResponse.json(
+          { error: 'Internal server error', message: 'Empty response from handler' },
+          { status: 500 }
+        )
+      }
+      return response
     } catch (error) {
-      logger.error('Handler error', { error, identifier })
-      throw error
+      logger.error('Handler error', { 
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        identifier,
+        url: request.url
+      })
+      
+      // Always return a proper error response - never throw or return empty
+      try {
+        return NextResponse.json(
+          { 
+            error: 'Internal server error',
+            message: error instanceof Error ? error.message : 'Unknown error',
+            details: process.env.NODE_ENV === 'development' 
+              ? (error instanceof Error ? error.stack : undefined) 
+              : undefined
+          },
+          { status: 500 }
+        )
+      } catch (responseError) {
+        // If even creating error response fails, return minimal response
+        logger.error('Failed to create error response', { responseError })
+        return new NextResponse(
+          JSON.stringify({ error: 'Internal server error' }),
+          { 
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        )
+      }
     }
   }
 }

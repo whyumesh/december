@@ -13,6 +13,15 @@ export const revalidate = 0
 
 async function handler(request: NextRequest) {
   try {
+    // Check critical environment variables first
+    if (!process.env.DATABASE_URL) {
+      console.error('DATABASE_URL is missing')
+      return NextResponse.json({ 
+        error: 'Server configuration error',
+        message: 'Database connection not configured'
+      }, { status: 500 })
+    }
+
     logRequest(request, 'OTP send attempt')
     
     console.log('=== Send OTP Handler Started ===')
@@ -166,19 +175,34 @@ async function handler(request: NextRequest) {
     console.error('=== Send OTP Handler Error ===')
     console.error('Error sending OTP:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorStack = error instanceof Error ? error.stack : undefined
     console.error('Error details:', { 
       message: errorMessage,
-      stack: error instanceof Error ? error.stack : undefined,
+      stack: errorStack,
       name: error instanceof Error ? error.name : 'Unknown'
     })
     
-    const errorResponse = NextResponse.json({ 
-      error: error instanceof Error ? `Internal server error: ${errorMessage}` : 'Internal server error',
-      details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : undefined) : undefined
-    }, { status: 500 })
-    
-    console.log('=== Send OTP Handler Error Response ===')
-    return errorResponse
+    // Always return a proper error response - never return empty
+    try {
+      const errorResponse = NextResponse.json({ 
+        error: 'Internal server error',
+        message: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? errorStack : undefined
+      }, { status: 500 })
+      
+      console.log('=== Send OTP Handler Error Response ===')
+      return errorResponse
+    } catch (responseError) {
+      // If even creating the error response fails, log and return minimal response
+      console.error('Failed to create error response:', responseError)
+      return new NextResponse(
+        JSON.stringify({ error: 'Internal server error', message: errorMessage }),
+        { 
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      )
+    }
   }
 }
 
