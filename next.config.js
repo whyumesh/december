@@ -79,8 +79,10 @@ const nextConfig = {
         '**/docs/**',
         '**/documentation/**',
         // Exclude TypeScript source files (keep only .d.ts)
+        // BUT keep Next.js internal compiled modules
         '**/*.ts',
         '!**/*.d.ts',
+        '!node_modules/next/dist/**', // Keep all Next.js dist files
         // Exclude unnecessary Radix UI files
         'node_modules/@radix-ui/**/*.stories.*',
         'node_modules/@radix-ui/**/README*',
@@ -182,12 +184,27 @@ const nextConfig = {
         'prisma': 'commonjs prisma',
       })
       
-      // Ensure ws is NOT externalized (Next.js needs it)
-      // Remove ws from externals if it was added
+      // Ensure Next.js internal modules are NOT externalized
+      // Next.js needs its internal compiled modules (like ws)
       if (Array.isArray(config.externals)) {
         config.externals = config.externals.filter(
-          (ext) => ext !== 'ws' && (typeof ext !== 'object' || ext.ws === undefined)
+          (ext) => {
+            // Don't externalize Next.js internal modules
+            if (typeof ext === 'string' && ext.includes('next/dist')) {
+              return false
+            }
+            // Don't externalize ws (Next.js needs it)
+            if (ext === 'ws' || (typeof ext === 'object' && ext.ws !== undefined)) {
+              return false
+            }
+            return true
+          }
         )
+      }
+      
+      // Ensure Next.js is not externalized
+      if (Array.isArray(config.externals)) {
+        config.externals = config.externals.filter(ext => ext !== 'next')
       }
     }
     
