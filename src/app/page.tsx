@@ -1,5 +1,9 @@
 "use client";
 
+// Force dynamic rendering - prevent static generation
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";

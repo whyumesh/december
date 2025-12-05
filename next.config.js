@@ -37,6 +37,8 @@ const nextConfig = {
       '@radix-ui/react-tabs',
       '@radix-ui/react-toast'
     ],
+    // Disable ISR to prevent static generation
+    isrMemoryCacheSize: 0,
     // Exclude unnecessary files from function bundle to reduce size
     // NOTE: Do NOT exclude @swc/helpers - Next.js needs it at runtime
     outputFileTracingExcludes: {
