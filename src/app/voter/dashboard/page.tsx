@@ -444,18 +444,19 @@ export default function VoterDashboard() {
     return 'unknown' // Unknown reason (shouldn't happen if logic is correct)
   }
 
-  // Check if Yuva Pankh zone is completed (has winners declared)
-  const completedYuvaPankhZones = ['ABDASA_LAKHPAT_NAKHATRANA', 'KUTCH', 'BHUJ_ANJAR', 'ANYA_GUJARAT', 'MUMBAI']
-  const pendingYuvaPankhZones = ['RAIGAD', 'KARNATAKA_GOA']
-  // Check if there are any winners declared (for showing winners to all voters)
-  const hasYuvaPankhWinners = Object.keys(yuvaPankhWinners).length > 0
-  // Yuva Pankh is completed if:
-  // 1. Voter has a zone and it's in the completed zones list, OR
-  // 2. Voter has no zone assigned but winners are declared (for not assigned zones)
-  const isYuvaPankhCompleted = (voterData.yuvaPankZone && 
-    voterData.yuvaPankZone.code &&
-    completedYuvaPankhZones.includes(voterData.yuvaPankZone.code)) ||
-    (!voterData.yuvaPankZone && hasYuvaPankhWinners)
+  // Helper function to check if a Yuva Pankh zone is completed dynamically based on results
+  // This checks the actual turnout percentage from the results data
+  const isYuvaPankhZoneCompleted = (zoneCode: string | null | undefined, zoneId: string | null | undefined): boolean => {
+    if (!results?.yuvaPankh?.regions || (!zoneCode && !zoneId)) return false
+    
+    // Find the zone in results by code or ID and check if turnout is 100%
+    const zoneResult = results.yuvaPankh.regions.find(
+      r => (zoneCode && r.zoneCode === zoneCode) || (zoneId && r.zoneId === zoneId)
+    )
+    
+    // Zone is completed if turnout is 100% or more
+    return zoneResult ? (Number(zoneResult.turnoutPercentage) >= 100) : false
+  }
 
   // Create elections array - show all elections (always show Yuva Pankh, even if not eligible)
   const elections = [
@@ -544,10 +545,16 @@ export default function VoterDashboard() {
     totalVotes += 1
   }
   
-  // Yuva Pankh: count if voted OR if zone is completed (not Raigad/Karnataka) - only if age-eligible
-  if (isEligibleForYuvaPankh) {
-    const isRaigadOrKarnataka = voterData.yuvaPankZone?.code === 'RAIGAD' || voterData.yuvaPankZone?.code === 'KARNATAKA_GOA'
-    if (voterData.hasVoted.yuvaPank || (!isRaigadOrKarnataka && isYuvaPankhCompleted)) {
+  // Yuva Pankh: count if voted OR if zone is completed (100% turnout from results) - only if age-eligible
+  if (isEligibleForYuvaPankh && voterData.yuvaPankZone) {
+    // Check dynamically if the zone is completed based on actual results data (turnout >= 100%)
+    const zoneCompleted = isYuvaPankhZoneCompleted(
+      voterData.yuvaPankZone.code, 
+      voterData.yuvaPankZone.id
+    )
+    
+    // Count as done if voter voted OR if zone is completed (100% turnout)
+    if (voterData.hasVoted.yuvaPank || zoneCompleted) {
       totalVotes += 1
     }
   }
