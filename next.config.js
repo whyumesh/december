@@ -39,14 +39,11 @@ const nextConfig = {
     ],
     // Disable ISR to prevent static generation
     isrMemoryCacheSize: 0,
-    // Explicitly include Next.js internal modules (required for Vercel)
-    // This ensures next/dist/compiled/ws, styled-jsx, and other internal modules are included
+    // CRITICAL: Explicitly include ALL Next.js internal modules (required for Vercel)
+    // This ensures ALL Next.js files are included - no exceptions
     outputFileTracingIncludes: {
       '*': [
-        'node_modules/next/dist/compiled/**',
-        'node_modules/next/dist/server/**',
-        'node_modules/next/dist/shared/**',
-        'node_modules/next/dist/compiled/ws/**',
+        'node_modules/next/**', // Include EVERYTHING from Next.js
         'node_modules/styled-jsx/**',
       ],
     },
@@ -89,16 +86,13 @@ const nextConfig = {
         '**/example/**',
         '**/docs/**',
         '**/documentation/**',
-        // CRITICAL: Never exclude Next.js internal modules - MUST come BEFORE **/*.ts
-        // Order matters! Exceptions must come before the rule that would exclude them
-        '!node_modules/next/dist/**', // Keep all Next.js dist files
-        '!node_modules/next/dist/compiled/**', // Explicitly keep compiled modules (including ws)
-        '!node_modules/next/dist/compiled/ws/**', // Explicitly keep ws module
-        '!node_modules/styled-jsx/**', // Keep styled-jsx (Next.js internal dependency)
-        // Exclude TypeScript source files (keep only .d.ts)
-        // BUT keep Next.js internal compiled modules (already excluded above)
+        // CRITICAL: NEVER exclude Next.js - must come FIRST before any broad patterns
+        '!node_modules/next/**', // Keep ALL Next.js files - no exceptions
+        '!node_modules/styled-jsx/**', // Keep styled-jsx
+        // Exclude TypeScript source files (but NOT Next.js files - already excluded above)
         '**/*.ts',
         '!**/*.d.ts',
+        '!node_modules/next/**/*.ts', // Explicitly don't exclude Next.js TS files
         // Exclude unnecessary Radix UI files
         'node_modules/@radix-ui/**/*.stories.*',
         'node_modules/@radix-ui/**/README*',
@@ -200,33 +194,42 @@ const nextConfig = {
         'prisma': 'commonjs prisma',
       })
       
-      // Ensure Next.js internal modules are NOT externalized
-      // Next.js needs its internal compiled modules (like ws, styled-jsx)
+      // CRITICAL: Ensure Next.js and ALL its internal modules are NOT externalized
+      // Next.js must be bundled, not externalized
       if (Array.isArray(config.externals)) {
         config.externals = config.externals.filter(
           (ext) => {
-            // Don't externalize Next.js internal modules
-            if (typeof ext === 'string' && ext.includes('next/dist')) {
-              return false
+            // Never externalize Next.js or any of its internal modules
+            if (typeof ext === 'string') {
+              if (ext === 'next' || 
+                  ext === 'ws' || 
+                  ext === 'styled-jsx' ||
+                  ext.includes('next/') ||
+                  ext.includes('next/dist')) {
+                return false
+              }
             }
-            // Don't externalize ws (Next.js needs it)
-            if (ext === 'ws' || (typeof ext === 'object' && ext.ws !== undefined)) {
-              return false
-            }
-            // Don't externalize styled-jsx (Next.js needs it)
-            if (ext === 'styled-jsx' || (typeof ext === 'object' && ext['styled-jsx'] !== undefined)) {
-              return false
+            // Don't externalize Next.js modules in object form
+            if (typeof ext === 'object') {
+              if (ext.next !== undefined || 
+                  ext.ws !== undefined || 
+                  ext['styled-jsx'] !== undefined) {
+                return false
+              }
             }
             return true
           }
         )
       }
       
-      // Ensure Next.js and its dependencies are not externalized
+      // Final check: Remove Next.js and its dependencies from externals
       if (Array.isArray(config.externals)) {
-        config.externals = config.externals.filter(ext => 
-          ext !== 'next' && ext !== 'styled-jsx'
-        )
+        config.externals = config.externals.filter(ext => {
+          if (typeof ext === 'string') {
+            return ext !== 'next' && ext !== 'styled-jsx' && ext !== 'ws'
+          }
+          return true
+        })
       }
     }
     
