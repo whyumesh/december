@@ -30,6 +30,10 @@ export const viewport = {
     initialScale: 1,
 };
 
+// Force dynamic rendering for all routes (can be overridden by child layouts)
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default function RootLayout({
     children,
 }: {
