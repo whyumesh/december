@@ -674,8 +674,8 @@ export async function GET(request: NextRequest) {
     // SHEET 4: VOTER PARTICIPATION STATUS
     // ============================================
     
-    // Optimized: Fetch votes with minimal includes, get related data separately
-    console.log('Fetching votes from database (optimized)...')
+    // Fetch votes to determine who has voted (without revealing who they voted for)
+    console.log('Fetching votes from database (for participation tracking only)...')
     const allVotes = await prisma.vote.findMany({
       select: {
         id: true,
@@ -683,55 +683,49 @@ export async function GET(request: NextRequest) {
         yuvaPankhCandidateId: true,
         karobariCandidateId: true,
         trusteeCandidateId: true,
-        timestamp: true,
-        ipAddress: true,
-        userAgent: true,
-        latitude: true,
-        longitude: true,
         election: {
           select: {
-            type: true,
-            title: true
+            type: true
           }
         }
-      },
-      orderBy: {
-        timestamp: 'desc'
       }
     })
     
     console.log(`Fetched ${allVotes.length} votes from database at ${new Date().toISOString()}`)
 
-    // Fetch related data in parallel batches
+    // Fetch voters who have voted (for participation tracking)
     const voterIds = [...new Set(allVotes.map(v => v.voterId).filter((id): id is string => Boolean(id)))]
+    const voters = voterIds.length > 0 ? await prisma.voter.findMany({
+      where: { id: { in: voterIds } },
+      select: {
+        id: true,
+        voterId: true,
+        name: true,
+        phone: true,
+        region: true,
+        yuvaPankZone: { select: { name: true } },
+        karobariZone: { select: { name: true } },
+        trusteeZone: { select: { name: true } }
+      }
+    }) : []
+
+    // Create lookup maps for participation tracking only (not for showing who voted to whom)
+    const voterMap = new Map(voters.map(v => [v.id, v]))
+    
+    // Fetch candidate info only for NOTA detection (not for showing who voted to whom)
     const voteCandidateIds = {
       yuvaPankh: [...new Set(allVotes.map(v => v.yuvaPankhCandidateId).filter((id): id is string => Boolean(id)))],
       karobari: [...new Set(allVotes.map(v => v.karobariCandidateId).filter((id): id is string => Boolean(id)))],
       trustee: [...new Set(allVotes.map(v => v.trusteeCandidateId).filter((id): id is string => Boolean(id)))]
     }
 
-    const [voters, yuvaCandidatesForVotes, karobariCandidatesForVotes, trusteeCandidatesForVotes] = await Promise.all([
-      voterIds.length > 0 ? prisma.voter.findMany({
-        where: { id: { in: voterIds } },
-        select: {
-          id: true,
-          voterId: true,
-          name: true,
-          phone: true,
-          region: true,
-          yuvaPankZone: { select: { name: true } },
-          karobariZone: { select: { name: true } },
-          trusteeZone: { select: { name: true } },
-          user: { select: { name: true, email: true, phone: true } }
-        }
-      }) : Promise.resolve([]),
+    const [yuvaCandidatesForVotes, karobariCandidatesForVotes, trusteeCandidatesForVotes] = await Promise.all([
       voteCandidateIds.yuvaPankh.length > 0 ? prisma.yuvaPankhCandidate.findMany({
         where: { id: { in: voteCandidateIds.yuvaPankh } },
         select: {
           id: true,
           name: true,
-          position: true,
-          zone: { select: { name: true, nameGujarati: true, code: true } }
+          position: true
         }
       }) : Promise.resolve([]),
       voteCandidateIds.karobari.length > 0 ? prisma.karobariCandidate.findMany({
@@ -739,133 +733,28 @@ export async function GET(request: NextRequest) {
         select: {
           id: true,
           name: true,
-          position: true,
-          zone: { select: { name: true, nameGujarati: true, code: true } }
+          position: true
         }
       }) : Promise.resolve([]),
       voteCandidateIds.trustee.length > 0 ? prisma.trusteeCandidate.findMany({
         where: { id: { in: voteCandidateIds.trustee } },
         select: {
           id: true,
-          name: true,
-          zone: { select: { name: true, nameGujarati: true, code: true } }
+          name: true
         }
       }) : Promise.resolve([])
     ])
 
-    // Create lookup maps
-    const voterMap = new Map(voters.map(v => [v.id, v]))
+    // Create lookup maps for NOTA detection only
     const yuvaCandidateMap = new Map(yuvaCandidatesForVotes.map(c => [c.id, c]))
     const karobariCandidateMap = new Map(karobariCandidatesForVotes.map(c => [c.id, c]))
     const trusteeCandidateMap = new Map(trusteeCandidatesForVotes.map(c => [c.id, c]))
 
     // ============================================
-    // SHEET 5: DETAILED VOTING DATA
+    // NOTE: Detailed Voting Data sheet removed for privacy
+    // This sheet would show who voted to whom, which violates voter privacy
+    // All insights are available in other sheets without revealing individual vote choices
     // ============================================
-    const votingDataSheet = workbook.addWorksheet('Detailed Voting Data')
-
-    // Add headers
-    votingDataSheet.columns = [
-      { header: 'Vote ID', key: 'voteId', width: 25 },
-      { header: 'Voter ID', key: 'voterId', width: 20 },
-      { header: 'Voter Name', key: 'voterName', width: 30 },
-      { header: 'Voter Phone', key: 'voterPhone', width: 18 },
-      { header: 'Voter Region', key: 'voterRegion', width: 20 },
-      { header: 'Election Type', key: 'electionType', width: 20 },
-      { header: 'Election Title', key: 'electionTitle', width: 30 },
-      { header: 'Vote Category', key: 'voteCategory', width: 18 },
-      { header: 'Selection Type', key: 'candidateType', width: 22 },
-      { header: 'Zone Name', key: 'zoneName', width: 30 },
-      { header: 'Zone Code', key: 'zoneCode', width: 15 },
-      { header: 'Vote Timestamp', key: 'timestamp', width: 25 },
-      { header: 'IP Address', key: 'ipAddress', width: 20 },
-      { header: 'User Agent', key: 'userAgent', width: 50 },
-      { header: 'Latitude', key: 'latitude', width: 15 },
-      { header: 'Longitude', key: 'longitude', width: 15 }
-    ]
-
-    // Optimized vote meta function using lookup maps
-    type VoteType = {
-      id: string
-      voterId: string | null
-      yuvaPankhCandidateId: string | null
-      karobariCandidateId: string | null
-      trusteeCandidateId: string | null
-      timestamp: Date
-      ipAddress: string | null
-      userAgent: string | null
-      latitude: number | null
-      longitude: number | null
-      election: {
-        type: string | null
-        title: string | null
-      } | null
-    }
-    const getVoteMeta = (vote: VoteType) => {
-      if (vote.trusteeCandidateId) {
-        const candidate = trusteeCandidateMap.get(vote.trusteeCandidateId)
-        if (candidate) {
-          const isNota = candidate.name?.startsWith('NOTA') || false
-          return {
-            candidateType: 'Trustee Candidate',
-            zoneName: candidate.zone?.name || 'N/A',
-            zoneCode: candidate.zone?.code || 'N/A',
-            voteCategory: isNota ? 'NOTA' : 'Candidate',
-            isNota
-          }
-        }
-      }
-      if (vote.karobariCandidateId) {
-        const candidate = karobariCandidateMap.get(vote.karobariCandidateId)
-        if (candidate) {
-          const isNota = candidate.position === 'NOTA' || candidate.name?.startsWith('NOTA') || false
-          return {
-            candidateType: 'Karobari Candidate',
-            zoneName: candidate.zone?.name || 'N/A',
-            zoneCode: candidate.zone?.code || 'N/A',
-            voteCategory: isNota ? 'NOTA' : 'Candidate',
-            isNota
-          }
-        }
-      }
-      if (vote.yuvaPankhCandidateId) {
-        const candidate = yuvaCandidateMap.get(vote.yuvaPankhCandidateId)
-        if (candidate) {
-          const isNota = candidate.position === 'NOTA' || candidate.name?.startsWith('NOTA') || false
-          return {
-            candidateType: 'Yuva Pankh Candidate',
-            zoneName: candidate.zone?.name || 'N/A',
-            zoneCode: candidate.zone?.code || 'N/A',
-            voteCategory: isNota ? 'NOTA' : 'Candidate',
-            isNota
-          }
-        }
-      }
-      return {
-        candidateType: 'N/A',
-        zoneName: 'N/A',
-        zoneCode: 'N/A',
-        voteCategory: 'Candidate',
-        isNota: false
-      }
-    }
-
-    if (allVotes.length > 0) {
-      console.log('Sample vote data (first 3 votes):', allVotes.slice(0, 3).map(v => {
-        const meta = getVoteMeta(v)
-        return {
-          id: v.id,
-          voterId: v.voterId,
-          timestamp: v.timestamp.toISOString(),
-          candidateType: meta.candidateType,
-          voteCategory: meta.voteCategory
-        }
-      }))
-      console.log('Latest vote timestamp:', allVotes[0]?.timestamp.toISOString())
-      console.log('Oldest vote timestamp:', allVotes[allVotes.length - 1]?.timestamp.toISOString())
-    } else {
-      console.log('No votes found in database')
-    }
     
     const voterParticipationSheet = workbook.addWorksheet('Voter Participation')
     voterParticipationSheet.columns = [
@@ -899,6 +788,44 @@ export async function GET(request: NextRequest) {
     // Use already fetched voters instead of querying again
     const voterRecords = voters
 
+    // Helper function for vote meta (used for participation stats only, not for showing who voted to whom)
+    type VoteType = {
+      id: string
+      voterId: string | null
+      yuvaPankhCandidateId: string | null
+      karobariCandidateId: string | null
+      trusteeCandidateId: string | null
+      timestamp: Date
+      election: {
+        type: string | null
+        title: string | null
+      } | null
+    }
+    const getVoteMeta = (vote: VoteType) => {
+      if (vote.trusteeCandidateId) {
+        const candidate = trusteeCandidateMap.get(vote.trusteeCandidateId)
+        if (candidate) {
+          const isNota = candidate.name?.startsWith('NOTA') || false
+          return { isNota }
+        }
+      }
+      if (vote.karobariCandidateId) {
+        const candidate = karobariCandidateMap.get(vote.karobariCandidateId)
+        if (candidate) {
+          const isNota = candidate.position === 'NOTA' || candidate.name?.startsWith('NOTA') || false
+          return { isNota }
+        }
+      }
+      if (vote.yuvaPankhCandidateId) {
+        const candidate = yuvaCandidateMap.get(vote.yuvaPankhCandidateId)
+        if (candidate) {
+          const isNota = candidate.position === 'NOTA' || candidate.name?.startsWith('NOTA') || false
+          return { isNota }
+        }
+      }
+      return { isNota: false }
+    }
+
     const formatParticipationStatus = (hasZone: boolean, stats?: { total: number; nota: number }) => {
       if (!hasZone) return 'Not Eligible'
       if (!stats || stats.total === 0) return 'Not Voted'
@@ -931,7 +858,9 @@ export async function GET(request: NextRequest) {
     voterParticipationSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
     
     // ============================================
-    // SHEET 5: VOTER VOTING STATUS (Yes/No Format - Simplified)
+    // SHEET: VOTER ELECTION STATUS (All Voters with Eligibility & Voting Status)
+    // This sheet includes ALL voters with their eligibility and voting status (Yes/No)
+    // Does NOT show who voted to whom - only shows if they voted or not
     // ============================================
     const voterVotingStatusSheet = workbook.addWorksheet('Voter Election Status')
     voterVotingStatusSheet.columns = [
@@ -1183,45 +1112,8 @@ export async function GET(request: NextRequest) {
       }
     })
     
-    // Process each vote using lookup maps
-    allVotes.forEach(vote => {
-      const electionType = vote.election?.type || 'UNKNOWN'
-      const electionTitle = vote.election?.title || 'N/A'
-      const meta = getVoteMeta(vote)
-
-      const voter = vote.voterId ? voterMap.get(vote.voterId) : null
-      const voterName = voter?.name || voter?.user?.name || 'Unknown'
-      const voterPhone = voter?.phone || voter?.user?.phone || 'N/A'
-      const voterRegion = voter?.region || 'N/A'
-
-      votingDataSheet.addRow({
-        voteId: vote.id,
-        voterId: voter?.voterId || vote.voterId || 'N/A',
-        voterName,
-        voterPhone,
-        voterRegion,
-        electionType,
-        electionTitle,
-        voteCategory: meta.voteCategory,
-        candidateType: meta.candidateType,
-        zoneName: meta.zoneName,
-        zoneCode: meta.zoneCode,
-        timestamp: vote.timestamp.toISOString(),
-        ipAddress: vote.ipAddress || 'N/A',
-        userAgent: vote.userAgent || 'N/A',
-        latitude: vote.latitude ?? 'N/A',
-        longitude: vote.longitude ?? 'N/A'
-      })
-    })
-
-    // Style the header row
-    votingDataSheet.getRow(1).font = { bold: true, size: 12 }
-    votingDataSheet.getRow(1).fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FF3498DB' }
-    }
-    votingDataSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
+    // NOTE: Detailed Voting Data sheet removed for privacy - does not show who voted to whom
+    // All voting insights are available in other sheets without revealing individual vote choices
 
     // Clear timeout before generating buffer
     if (timeoutWarning) {

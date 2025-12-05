@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useVoterLanguage } from '@/hooks/useVoterLanguage'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -92,6 +92,39 @@ interface ResultsData {
   yuvaPankh: ElectionData;
   totalVotersInSystem?: number;
   timestamp: string;
+}
+
+// Helper function to calculate age as of a specific date (moved outside component to prevent redefinition)
+const calculateAgeAsOf = (dob: string | null | undefined, referenceDate: Date): number | null => {
+  if (!dob) return null
+  
+  try {
+    // Handle DD/MM/YYYY format
+    const parts = dob.split('/')
+    if (parts.length !== 3) return null
+    
+    const day = parseInt(parts[0], 10)
+    const month = parseInt(parts[1], 10) - 1 // JavaScript months are 0-indexed
+    const year = parseInt(parts[2], 10)
+    
+    if (isNaN(day) || isNaN(month) || isNaN(year)) return null
+    
+    const birthDate = new Date(year, month, day)
+    if (birthDate.getDate() !== day || birthDate.getMonth() !== month || birthDate.getFullYear() !== year) {
+      return null
+    }
+    
+    let age = referenceDate.getFullYear() - birthDate.getFullYear()
+    const monthDiff = referenceDate.getMonth() - birthDate.getMonth()
+    
+    if (monthDiff < 0 || (monthDiff === 0 && referenceDate.getDate() < birthDate.getDate())) {
+      age--
+    }
+    
+    return age
+  } catch {
+    return null
+  }
 }
 
 export default function VoterDashboard() {
@@ -378,38 +411,6 @@ export default function VoterDashboard() {
     )
   }
 
-  // Helper function to calculate age as of a specific date
-  const calculateAgeAsOf = (dob: string | null | undefined, referenceDate: Date): number | null => {
-    if (!dob) return null
-    
-    try {
-      // Handle DD/MM/YYYY format
-      const parts = dob.split('/')
-      if (parts.length !== 3) return null
-      
-      const day = parseInt(parts[0], 10)
-      const month = parseInt(parts[1], 10) - 1 // JavaScript months are 0-indexed
-      const year = parseInt(parts[2], 10)
-      
-      if (isNaN(day) || isNaN(month) || isNaN(year)) return null
-      
-      const birthDate = new Date(year, month, day)
-      if (birthDate.getDate() !== day || birthDate.getMonth() !== month || birthDate.getFullYear() !== year) {
-        return null
-      }
-      
-      let age = referenceDate.getFullYear() - birthDate.getFullYear()
-      const monthDiff = referenceDate.getMonth() - birthDate.getMonth()
-      
-      if (monthDiff < 0 || (monthDiff === 0 && referenceDate.getDate() < birthDate.getDate())) {
-        age--
-      }
-      
-      return age
-    } catch {
-      return null
-    }
-  }
 
   // Determine why Yuva Pankh is not available (if applicable)
   const getYuvaPankhEligibilityReason = () => {
@@ -444,18 +445,52 @@ export default function VoterDashboard() {
     return 'unknown' // Unknown reason (shouldn't happen if logic is correct)
   }
 
+  // Early return checks - must be before any voterData access
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">{content[selectedLanguage].loading}</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!voterData) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">{content[selectedLanguage].accessDenied}</h1>
+          <p className="text-gray-600 mb-4">{content[selectedLanguage].pleaseLogin}</p>
+          <Link href="/voter/login">
+            <Button className="bg-green-600 hover:bg-green-700 text-white">
+              {content[selectedLanguage].goToLogin}
+            </Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
   // Helper function to check if a Yuva Pankh zone is completed dynamically based on results
   // This checks the actual turnout percentage from the results data
+  // Made safe to handle null/undefined results
   const isYuvaPankhZoneCompleted = (zoneCode: string | null | undefined, zoneId: string | null | undefined): boolean => {
     if (!results?.yuvaPankh?.regions || (!zoneCode && !zoneId)) return false
     
-    // Find the zone in results by code or ID and check if turnout is 100%
-    const zoneResult = results.yuvaPankh.regions.find(
-      r => (zoneCode && r.zoneCode === zoneCode) || (zoneId && r.zoneId === zoneId)
-    )
-    
-    // Zone is completed if turnout is 100% or more
-    return zoneResult ? (Number(zoneResult.turnoutPercentage) >= 100) : false
+    try {
+      // Find the zone in results by code or ID and check if turnout is 100%
+      const zoneResult = results.yuvaPankh.regions.find(
+        r => (zoneCode && r.zoneCode === zoneCode) || (zoneId && r.zoneId === zoneId)
+      )
+      
+      // Zone is completed if turnout is 100% or more
+      return zoneResult ? (Number(zoneResult.turnoutPercentage) >= 100) : false
+    } catch (error) {
+      console.error('Error checking zone completion:', error)
+      return false
+    }
   }
 
   // Create elections array - show all elections (always show Yuva Pankh, even if not eligible)
@@ -505,64 +540,79 @@ export default function VoterDashboard() {
     }] : [])
   ]
 
-  // Calculate voting progress
+  // Calculate voting progress using useMemo to prevent unnecessary recalculations
   // For voters not eligible for Yuva Pankh (based on age): show X/2 format (Karobari + Trustee only)
   // For voters eligible for Yuva Pankh: show X/3 format (Karobari + Yuva Pankh + Trustee)
-  const voterAge = voterData.age || 0
-  
-  // Check age eligibility for Yuva Pankh (must be 39 or younger as of August 31, 2025)
-  const dob = voterData.dob
-  const cutoffDate = new Date('2025-08-31T23:59:59') // End of day cutoff for accurate age calculation
-  const ageAsOfCutoff = dob ? calculateAgeAsOf(dob, cutoffDate) : null
-  const isAgeEligibleForYuvaPankh = ageAsOfCutoff !== null && ageAsOfCutoff >= 18 && ageAsOfCutoff <= 39
-  
-  // Check if voter has zones for each election type
-  const hasKarobariZone = voterData.karobariZone !== null
-  const hasYuvaPankhZone = voterData.yuvaPankZone !== null
-  const hasTrusteeZone = voterData.trusteeZone !== null
-  
-  // Determine eligibility: voter must have zone AND meet age requirements
-  const isEligibleForKarobari = hasKarobariZone
-  const isEligibleForYuvaPankh = hasYuvaPankhZone && isAgeEligibleForYuvaPankh
-  const isEligibleForTrustee = hasTrusteeZone && voterAge >= 18
-  
-  // Count total eligible elections
-  // If age-eligible for Yuva Pankh: count all 3 elections they're eligible for
-  // If NOT age-eligible for Yuva Pankh: count only Karobari + Trustee (2 elections)
-  let totalElections = 0
-  if (isEligibleForKarobari) totalElections++
-  if (isEligibleForYuvaPankh) totalElections++
-  if (isEligibleForTrustee) totalElections++
-  
-  // Count completed votes:
-  // - Karobari: counted only if actually voted
-  // - Yuva Pankh: counted if voted OR if zone is completed (not Raigad/Karnataka pending zones) - only if age-eligible
-  // - Trustee: counted only if actually voted
-  let totalVotes = 0
-  
-  // Karobari: count only if voted
-  if (isEligibleForKarobari && voterData.hasVoted.karobariMembers) {
-    totalVotes += 1
-  }
-  
-  // Yuva Pankh: count if voted OR if zone is completed (100% turnout from results) - only if age-eligible
-  if (isEligibleForYuvaPankh && voterData.yuvaPankZone) {
-    // Check dynamically if the zone is completed based on actual results data (turnout >= 100%)
-    const zoneCompleted = isYuvaPankhZoneCompleted(
-      voterData.yuvaPankZone.code, 
-      voterData.yuvaPankZone.id
-    )
+  const { totalElections, totalVotes } = useMemo(() => {
+    if (!voterData) return { totalElections: 0, totalVotes: 0 }
     
-    // Count as done if voter voted OR if zone is completed (100% turnout)
-    if (voterData.hasVoted.yuvaPank || zoneCompleted) {
+    const voterAge = voterData.age || 0
+    
+    // Check age eligibility for Yuva Pankh (must be 39 or younger as of August 31, 2025)
+    const dob = voterData.dob
+    const cutoffDate = new Date('2025-08-31T23:59:59') // End of day cutoff for accurate age calculation
+    const ageAsOfCutoff = dob ? calculateAgeAsOf(dob, cutoffDate) : null
+    const isAgeEligibleForYuvaPankh = ageAsOfCutoff !== null && ageAsOfCutoff >= 18 && ageAsOfCutoff <= 39
+    
+    // Check if voter has zones for each election type
+    const hasKarobariZone = voterData.karobariZone !== null
+    const hasYuvaPankhZone = voterData.yuvaPankZone !== null
+    const hasTrusteeZone = voterData.trusteeZone !== null
+    
+    // Determine eligibility: voter must have zone AND meet age requirements
+    const isEligibleForKarobari = hasKarobariZone
+    const isEligibleForYuvaPankh = hasYuvaPankhZone && isAgeEligibleForYuvaPankh
+    const isEligibleForTrustee = hasTrusteeZone && voterAge >= 18
+    
+    // Count total eligible elections
+    // If age-eligible for Yuva Pankh: count all 3 elections they're eligible for
+    // If NOT age-eligible for Yuva Pankh: count only Karobari + Trustee (2 elections)
+    let totalElections = 0
+    if (isEligibleForKarobari) totalElections++
+    if (isEligibleForYuvaPankh) totalElections++
+    if (isEligibleForTrustee) totalElections++
+    
+    // Count completed votes:
+    // - Karobari: counted only if actually voted
+    // - Yuva Pankh: counted if voted OR if zone is completed (100% turnout from results) - only if age-eligible
+    // - Trustee: counted only if actually voted
+    let totalVotes = 0
+    
+    // Karobari: count only if voted
+    if (isEligibleForKarobari && voterData.hasVoted.karobariMembers) {
       totalVotes += 1
     }
-  }
-  
-  // Trustee: count only if voted
-  if (isEligibleForTrustee && voterData.hasVoted.trustees) {
-    totalVotes += 1
-  }
+    
+    // Yuva Pankh: count if voted OR if zone is completed (100% turnout from results) - only if age-eligible
+    if (isEligibleForYuvaPankh && voterData.yuvaPankZone) {
+      // Check dynamically if the zone is completed based on actual results data (turnout >= 100%)
+      // Only check if results are loaded to prevent errors - if results not loaded, only count if voted
+      let zoneCompleted = false
+      if (results?.yuvaPankh?.regions) {
+        try {
+          zoneCompleted = isYuvaPankhZoneCompleted(
+            voterData.yuvaPankZone.code, 
+            voterData.yuvaPankZone.id
+          )
+        } catch (error) {
+          console.error('Error checking zone completion in progress calc:', error)
+          zoneCompleted = false
+        }
+      }
+      
+      // Count as done if voter voted OR if zone is completed (100% turnout)
+      if (voterData.hasVoted.yuvaPank || zoneCompleted) {
+        totalVotes += 1
+      }
+    }
+    
+    // Trustee: count only if voted
+    if (isEligibleForTrustee && voterData.hasVoted.trustees) {
+      totalVotes += 1
+    }
+    
+    return { totalElections, totalVotes }
+  }, [voterData, results])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -909,19 +959,21 @@ export default function VoterDashboard() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
               <div className="text-center">
                 <div className="text-3xl font-bold text-green-600 mb-2">
-                  {totalVotes}/{totalElections}{totalElections > 0 && totalVotes === totalElections ? ' done' : ''}
+                  {totalVotes ?? 0}/{totalElections ?? 0}{totalElections > 0 && totalVotes === totalElections ? ' done' : ''}
                 </div>
                 <p className="text-sm text-gray-600">{content[selectedLanguage].electionsVoted}</p>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-blue-600 mb-2">
-                  {totalElections > 0 ? Math.round((totalVotes / totalElections) * 100) : 0}%
+                  {totalElections > 0 && totalVotes !== undefined && totalElections !== undefined 
+                    ? Math.round((totalVotes / totalElections) * 100) 
+                    : 0}%
                 </div>
                 <p className="text-sm text-gray-600">{content[selectedLanguage].participationRate}</p>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-purple-600 mb-2">
-                  {totalElections - totalVotes}
+                  {Math.max(0, (totalElections ?? 0) - (totalVotes ?? 0))}
                 </div>
                 <p className="text-sm text-gray-600">{content[selectedLanguage].remaining}</p>
               </div>
