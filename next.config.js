@@ -36,8 +36,6 @@ const nextConfig = {
       '@radix-ui/react-tabs',
       '@radix-ui/react-toast'
     ],
-    // Disable ISR to prevent static generation
-    isrMemoryCacheSize: 0,
     // Output file tracing - explicitly include critical dependencies
     // Vercel needs these explicitly listed to include them in serverless functions
     outputFileTracingIncludes: {
@@ -47,7 +45,9 @@ const nextConfig = {
         'node_modules/@prisma/client/**',
         'node_modules/.prisma/client/**',
         'node_modules/.prisma/client/libquery_engine-linux-musl*',
+        'node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x*',
         'node_modules/@prisma/engines/**/query-engine-linux-musl*',
+        'node_modules/@prisma/engines/**/query-engine-rhel-openssl-3.0.x*',
       ],
     },
     // Exclude unnecessary files from function bundle to reduce size
@@ -62,15 +62,15 @@ const nextConfig = {
         'node_modules/terser/**/*',
         'node_modules/webpack/**/*',
         'node_modules/.cache/**/*',
-        // Exclude Prisma engines for other platforms (keep linux-musl for Vercel)
+        // Exclude Prisma engines for other platforms (keep linux-musl and rhel for Vercel)
         'node_modules/.prisma/client/libquery_engine-darwin*',
         'node_modules/.prisma/client/libquery_engine-windows*',
         'node_modules/.prisma/client/libquery_engine-debian*',
-        'node_modules/.prisma/client/libquery_engine-rhel*',
+        // Keep rhel-openssl-3.0.x - needed for Vercel platform detection
         'node_modules/@prisma/engines/**/query-engine-darwin*',
         'node_modules/@prisma/engines/**/query-engine-windows*',
         'node_modules/@prisma/engines/**/query-engine-debian*',
-        'node_modules/@prisma/engines/**/query-engine-rhel*',
+        // Keep rhel-openssl-3.0.x - needed for Vercel platform detection
         'node_modules/@prisma/engines/**/migration-engine*',
         'node_modules/@prisma/engines/**/introspection-engine*',
         'node_modules/@prisma/engines/**/prisma-fmt*',
