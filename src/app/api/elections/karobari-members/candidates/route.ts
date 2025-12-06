@@ -29,7 +29,7 @@ const CANDIDATE_NAMES_GUJARATI: Record<string, string> = {
   // મુંબઈ - ૬/૬
   'Nandu Bhanji Gingal': 'નન્દુ ભાણજી ગીંગલ',
   'Deepak Kishor Karwa': 'દીપક કિશોર કરવા',
-  'Jaymin Ramji Mall': 'જયંતિલાલ રામજી મલ્લ',
+  'Jaymin Ramji Mall': 'જયમીન રામજી મલ્લ',
   'Kiran Jamnadas Rathi': 'કિરણ જમનાદાસ રાઠી',
   'Raghuvir Kiritbhai Zaveri': 'રઘુવીર કિરીટભાઇ ઝવેરી',
   'Girish Jethalal Rathi': 'ગિરીશ જેઠાલાલ રાઠી',

@@ -811,9 +811,9 @@ export default function VoterDashboard() {
                         <span>{election.title}</span>
                       </div>
                       {election.isFrozen ? (
-                        <Badge className="bg-amber-100 text-amber-800">
+                        <Badge className="bg-green-100 text-green-800">
                           <CheckCircle className="h-3 w-3 mr-1" />
-                          {content[selectedLanguage].votingCompleted}
+                          {selectedLanguage === 'english' ? 'Voted' : 'મત આપ્યો'}
                         </Badge>
                       ) : election.hasVoted ? (
                         <Badge className="bg-green-100 text-green-800">
@@ -862,22 +862,10 @@ export default function VoterDashboard() {
                           if (election.hasVoted) {
                             // After voting, show frozen state
                             return (
-                              <>
-                                <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-md">
-                                  <div className="flex items-start">
-                                    <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 mr-2 flex-shrink-0" />
-                                    <p className="text-sm text-amber-800">
-                                      {selectedLanguage === 'english' 
-                                        ? content[selectedLanguage].zoneVotingCompleted
-                                        : content[selectedLanguage].zoneVotingCompletedGuj}
-                                    </p>
-                                  </div>
-                                </div>
-                                <Button className="w-full" disabled>
-                                  <CheckCircle className="h-4 w-4 mr-2" />
-                                  {content[selectedLanguage].votingCompleted}
-                                </Button>
-                              </>
+                              <Button className="w-full" disabled>
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                {content[selectedLanguage].votingCompleted}
+                              </Button>
                             )
                           } else {
                             // Show "Cast Your Vote" button for Raigad and Karnataka zones
@@ -894,9 +882,11 @@ export default function VoterDashboard() {
                         }
                         
                         // For other zones, show "View Elected Members" if winners exist
+                        // BUT NOT for Raigad and Karnataka voters (winners should not be visible to them)
                         // Check if the zone code exists in yuvaPankhWinners object
                         const hasYuvaPankhWinners = zoneCode && zoneCode in yuvaPankhWinners && yuvaPankhWinners[zoneCode as keyof typeof yuvaPankhWinners]?.winners?.length > 0
-                        if (hasYuvaPankhWinners) {
+                        // Only show winners if NOT Raigad or Karnataka
+                        if (hasYuvaPankhWinners && !isRaigadOrKarnataka) {
                           return (
                             <Link href={election.href}>
                               <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
@@ -927,22 +917,10 @@ export default function VoterDashboard() {
                           </Button>
                         </>
                       ) : election.isFrozen ? (
-                        <>
-                          <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-md">
-                            <div className="flex items-start">
-                              <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 mr-2 flex-shrink-0" />
-                              <p className="text-sm text-amber-800">
-                                {selectedLanguage === 'english' 
-                                  ? content[selectedLanguage].zoneVotingCompleted
-                                  : content[selectedLanguage].zoneVotingCompletedGuj}
-                              </p>
-                            </div>
-                          </div>
-                          <Button className="w-full" disabled>
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            {content[selectedLanguage].votingCompleted}
-                          </Button>
-                        </>
+                        <Button className="w-full" disabled>
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          {content[selectedLanguage].votingCompleted}
+                        </Button>
                       ) : election.hasVoted ? (
                         <Button className="w-full" disabled>
                           <CheckCircle className="h-4 w-4 mr-2" />

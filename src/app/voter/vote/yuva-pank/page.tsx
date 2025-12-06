@@ -231,15 +231,15 @@ export default function YuvaPankVotingPage() {
       region: 'પ્રદેશ',
       loadingCandidates: 'ઉમેદવારો લોડ કરી રહ્યા છીએ...',
       error: 'ભૂલ',
-      rulesAndRegulations: 'નિયમો અને સુચનાઓ',
-      readRulesCarefully: 'કૃપા કરી ને મતદાન ની પ્રક્રિયા શરૂ કરવા પહેલા અહીં જણાવેલ નિયમો અને સુચનાઓ ધ્યાનપૂર્વક વાંચી લેશોજી.',
+      rulesAndRegulations: 'નિયમો અને સૂચનાઓ',
+      readRulesCarefully: 'કૃપા કરી ને મતદાન ની પ્રક્રિયા શરૂ કરવા પહેલા અહીં જણાવેલ નિયમો અને સૂચનાઓ ધ્યાનપૂર્વક વાંચી લેશોજી.',
       rule1: 'તમે માત્ર તમારા વિસ્તારના ઉમેદવાર ને મત આપી શકો છો.',
       rule2: 'તમારા વિસ્તાર ના ઉમેદવાર માટે જેટલી બેઠકો (સંખ્યા) ફાળવેલ છે, તેટલી બેઠકો માટે મતદાન કરવું આવશ્યક છે.',
       rule3: 'એક વાર તમારો અમુલ્ય મત સબમીટ બટન દ્વારા ક્લીક કર્યા બાદ તેમાં કોઈ પણ પ્રકારે ફેરફાર શક્ય નથી.',
       rule4: 'આપનો મત ગોપનીય અને સુરક્ષીત રહેશે. ચુંટણી સમિતિના કોઈ પણ સભ્ય ને જાણ નહી હોય કે તમે કયાં ઉમેદવાર ને મત આપેલ છે.',
       rule5: 'જો તમે કોઈ પણ ઉમેદવાર ને મત નથી આપતા તો તેની ગણતરી NOTA માં કરવામાં આવશે. (NOTA - None Of The Above) ઉપરોક્ત સભ્ય માથી કોઈ નહી',
       rule6: 'ઓનલાઇન મત પ્રક્રિયા માં કોઈપણ ટેકનીકલ પ્રકારે ચેડા કરવા અથવા ગેરરીતિ આચરી શકાશે નહી.',
-      rule7: 'આ સાથે તમે પુષ્ટિ ના ટેબ પર ક્લીક કરી સહમતી દર્શાવશોજી કે તમે નિયમો અને સુચનાઓ ધ્યાનપૂર્વક વાંચેલ છે.',
+      rule7: 'આ સાથે તમે પુષ્ટિ ના ટેબ પર ક્લીક કરી સહમતી દર્શાવશોજી કે તમે નિયમો અને સૂચનાઓ ધ્યાનપૂર્વક વાંચેલ છે.',
       acceptAndContinue: 'હું સ્વીકાર કરું છું',
       backToDashboard: 'ડેશબોર્ડ પર પાછા જાઓ',
       yuvaPankhWinners: 'યુવા પાંખ વિજેતાઓ',
@@ -299,9 +299,12 @@ export default function YuvaPankVotingPage() {
       // Check if zone is completed (has winners declared)
       const completedYuvaPankhZones = ['ABDASA_LAKHPAT_NAKHATRANA', 'KUTCH', 'BHUJ_ANJAR', 'ANYA_GUJARAT', 'MUMBAI']
       const isZoneCompleted = voterZone && completedYuvaPankhZones.includes(voterZone.code)
+      // Yuva Pankh winners should NOT be visible to Raigad and Karnataka zone voters
+      const isRaigadOrKarnataka = voterZone && (voterZone.code === 'RAIGAD' || voterZone.code === 'KARNATAKA_GOA')
 
       // If zone is completed or no zone assigned, show winners instead of voting
-      if (!voterZone || isZoneCompleted) {
+      // BUT NOT for Raigad/Karnataka voters (they should see voting interface)
+      if ((!voterZone || isZoneCompleted) && !isRaigadOrKarnataka) {
         // Show winners - create zones from winners data
         const winnerZones: Zone[] = Object.entries(yuvaPankhWinners).map(([zoneCode, zoneData]) => ({
           id: zoneCode,
@@ -808,9 +811,12 @@ export default function YuvaPankVotingPage() {
   }
 
   // Check if showing winners (skip rules for winners display)
+  // Yuva Pankh winners should be visible to all EXCEPT Raigad and Karnataka zone voters
   const completedYuvaPankhZones = ['ABDASA_LAKHPAT_NAKHATRANA', 'KUTCH', 'BHUJ_ANJAR', 'ANYA_GUJARAT', 'MUMBAI']
   const isZoneCompleted = voterZone && completedYuvaPankhZones.includes(voterZone.code)
-  const showWinners = !voterZone || isZoneCompleted
+  const isRaigadOrKarnataka = voterZone && (voterZone.code === 'RAIGAD' || voterZone.code === 'KARNATAKA_GOA')
+  // Show winners if: no zone OR zone is completed, BUT NOT for Raigad/Karnataka voters
+  const showWinners = (!voterZone || isZoneCompleted) && !isRaigadOrKarnataka
 
   // Show rules and regulations page if not accepted (only for voting, not for winners)
   if (!rulesAccepted && !showWinners) {
@@ -964,7 +970,9 @@ export default function YuvaPankVotingPage() {
           {(() => {
             const completedYuvaPankhZones = ['ABDASA_LAKHPAT_NAKHATRANA', 'KUTCH', 'BHUJ_ANJAR', 'ANYA_GUJARAT', 'MUMBAI']
             const isZoneCompleted = voterZone && completedYuvaPankhZones.includes(voterZone.code)
-            const showWinners = !voterZone || isZoneCompleted
+            // Yuva Pankh winners should NOT be visible to Raigad and Karnataka zone voters
+            const isRaigadOrKarnataka = voterZone && (voterZone.code === 'RAIGAD' || voterZone.code === 'KARNATAKA_GOA')
+            const showWinners = (!voterZone || isZoneCompleted) && !isRaigadOrKarnataka
 
             if (showWinners) {
               // Show winners display

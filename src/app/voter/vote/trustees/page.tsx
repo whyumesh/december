@@ -129,6 +129,7 @@ export default function TrusteesVotingPage() {
       phone: 'Phone',
       email: 'Email',
       region: 'Region',
+      city: 'City',
       vote: 'Vote',
       selected: 'Selected',
       unselect: 'Unselect',
@@ -211,6 +212,7 @@ export default function TrusteesVotingPage() {
       phone: 'ફોન',
       email: 'ઇમેઇલ',
       region: 'પ્રદેશ',
+      city: 'શહેર',
       vote: 'મત આપો',
       selected: 'પસંદ કર્યા',
       unselect: 'પસંદગી રદ કરો',
@@ -1371,7 +1373,7 @@ export default function TrusteesVotingPage() {
                                       {selectedLanguage === 'english' ? trustee.name : (trustee.nameGujarati || trustee.name)}
                                     </p>
                                     <p className="text-xs text-gray-600">
-                                      {content[selectedLanguage].seat}: {trustee.seat || '-'} | {content[selectedLanguage].age}: {trustee.age || '-'} | {content[selectedLanguage].zone}: {trustee.city || trustee.region || '-'}
+                                      {content[selectedLanguage].age}: {trustee.age || '-'} | {content[selectedLanguage].city}: {trustee.city || trustee.region || '-'}
                                     </p>
                                   </div>
                                 </div>
