@@ -12,10 +12,13 @@ const CANDIDATE_NAMES_GUJARATI: Record<string, string> = {
   'Ram Ashok Karva': 'રામ અશોક કરવા',
   'Dilip Haresh Bhutada': 'દિલીપ હરેશ ભૂતડા',
   'Hardik Mukesh Navdhare': 'હાર્દિક મુકેશ નવધરે',
+  'HARDIK MUKESH NAVDHARE': 'હાર્દિક મુકેશ નવધરે',
   'Jaymin Arvind Bhutada': 'જયમીન અરવિંદ ભુતડા',
   // Karnataka & Goa zone candidates
   'Viral Mahesh Karva': 'વિરલ મહેશ કરવા',
-  'Kaushal Ramesh Laddh': 'કૌશલ રમેશ લધ્ધ',
+  'Kaushal Ramesh Laddh': 'કૌશલ રમેશ લધ્ધડ',
+  'Kaushal Ramesh Laddhad': 'કૌશલ રમેશ લધ્ધડ',
+  'Kaushal Ramesh Ladhad': 'કૌશલ રમેશ લધ્ધડ',
   // Mumbai zone candidates (winners)
   'Keyur Chetan Navdhare': 'કેયુર ચેતન નવધરે',
   'Harsh Jaymin Mall': 'હર્ષ જયમીન મલ્લ',
@@ -196,7 +199,18 @@ export async function GET(request: NextRequest) {
         console.log(`   Experience data structure:`, JSON.stringify(experienceData).substring(0, 300))
       }
       
-      const candidateName = candidate.user?.name || candidate.name
+      let candidateName = candidate.user?.name || candidate.name
+      
+      // Normalize Kaushal's name to full name for display
+      if (candidateName === 'Kaushal Ramesh Laddh' || candidateName === 'Kaushal Ramesh Ladhad') {
+        candidateName = 'Kaushal Ramesh Laddhad'
+      }
+      
+      // Normalize Hardik's name to proper case for display
+      if (candidateName === 'HARDIK MUKESH NAVDHARE') {
+        candidateName = 'Hardik Mukesh Navdhare'
+      }
+      
       // Get Gujarati name from mapping if available (for ALL zones)
       const nameGujarati = CANDIDATE_NAMES_GUJARATI[candidateName] || null
 

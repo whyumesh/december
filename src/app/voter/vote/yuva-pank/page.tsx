@@ -197,7 +197,7 @@ export default function YuvaPankVotingPage() {
       zone: 'વિભાગ',
       vote: 'મત આપો',
       selected: 'પસંદ કર્યા',
-      submitVote: 'મતદાન ટકાવા',
+      submitVote: 'મતદાન કરો',
       submittingVote: 'મત સબમિટ કરી રહ્યા છીએ...',
       totalCandidatesSelected: 'કુલ પસંદ કરેલા ઉમેદવારો',
       confirmYourSelections: 'તમારી યુવા પાંખ પસંદગીઓની પુષ્ટિ કરો',
