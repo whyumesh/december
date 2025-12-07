@@ -174,6 +174,7 @@ export default function YuvaPankVotingPage() {
       rule5: 'If you do not select all required candidates, the remaining votes will be automatically counted as NOTA (None of the Above).',
       rule6: 'Any attempt to manipulate or tamper with the voting process is strictly prohibited.',
       rule7: 'By proceeding, you confirm that you have read and understood all the rules and regulations.',
+      rule8: 'The right to take decisions in any circumstances or situations will remain with the election management, which will be final and binding on all.',
       acceptAndContinue: 'I Accept and Continue',
       backToDashboard: 'Back to Dashboard',
       yuvaPankhWinners: 'Yuva Pankh Winners',
@@ -240,6 +241,7 @@ export default function YuvaPankVotingPage() {
       rule5: 'જો તમે કોઈ પણ ઉમેદવાર ને મત નથી આપતા તો તેની ગણતરી NOTA માં કરવામાં આવશે. (NOTA - None Of The Above) ઉપરોક્ત સભ્ય માથી કોઈ નહી',
       rule6: 'ઓનલાઇન મત પ્રક્રિયા માં કોઈપણ ટેકનીકલ પ્રકારે ચેડા કરવા અથવા ગેરરીતિ આચરી શકાશે નહી.',
       rule7: 'આ સાથે તમે પુષ્ટિ ના ટેબ પર ક્લીક કરી સહમતી દર્શાવશોજી કે તમે નિયમો અને સૂચનાઓ ધ્યાનપૂર્વક વાંચેલ છે.',
+      rule8: 'કોઈ પણ પરિસ્થિતિ તથા લોકહિત માં નિર્ણય લેવાનો અધિકાર ચુંટણી નિયામક પાસે રહેશે જે આખરી અને સર્વે ને બંધનકર્તા રહેશે.',
       acceptAndContinue: 'હું સ્વીકાર કરું છું',
       backToDashboard: 'ડેશબોર્ડ પર પાછા જાઓ',
       yuvaPankhWinners: 'યુવા પાંખ વિજેતાઓ',
@@ -906,6 +908,12 @@ export default function YuvaPankVotingPage() {
                     7
                   </div>
                   <p className="font-semibold text-gray-900">{content[selectedLanguage].rule7}</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-6 h-6 bg-green-100 text-green-700 rounded-full flex items-center justify-center font-semibold text-xs mt-0.5">
+                    8
+                  </div>
+                  <p className="font-semibold text-gray-900">{content[selectedLanguage].rule8}</p>
                 </div>
               </div>
 

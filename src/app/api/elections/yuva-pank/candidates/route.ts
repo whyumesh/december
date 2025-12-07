@@ -10,6 +10,10 @@ const STORJ_BUCKET_NAME = process.env.STORJ_BUCKET_NAME || 'kmselection'
 const CANDIDATE_NAMES_GUJARATI: Record<string, string> = {
   // Raigad zone candidates
   'Ram Ashok Karva': 'રામ અશોક કરવા',
+  'RAM ASHOK KARVA': 'રામ અશોક કરવા',
+  'Ram Ashok Karwa': 'રામ અશોક કરવા',
+  'RAM ASHOK KARWA': 'રામ અશોક કરવા',
+  'Ram Ahok Karwa': 'રામ અશોક કરવા',
   'Dilip Haresh Bhutada': 'દિલીપ હરેશ ભૂતડા',
   'Hardik Mukesh Navdhare': 'હાર્દિક મુકેશ નવધરે',
   'HARDIK MUKESH NAVDHARE': 'હાર્દિક મુકેશ નવધરે',
@@ -200,15 +204,22 @@ export async function GET(request: NextRequest) {
       }
       
       let candidateName = candidate.user?.name || candidate.name
+      const candidateNameUpper = candidateName.toUpperCase()
       
       // Normalize Kaushal's name to full name for display
-      if (candidateName === 'Kaushal Ramesh Laddh' || candidateName === 'Kaushal Ramesh Ladhad') {
+      if (candidateName === 'Kaushal Ramesh Laddh' || candidateName === 'Kaushal Ramesh Ladhad' || candidateNameUpper === 'KAUSHAL RAMESH LADDH' || candidateNameUpper === 'KAUSHAL RAMESH LADHAD') {
         candidateName = 'Kaushal Ramesh Laddhad'
       }
       
-      // Normalize Hardik's name to proper case for display
-      if (candidateName === 'HARDIK MUKESH NAVDHARE') {
+      // Normalize Hardik's name to proper case for display (case-insensitive)
+      if (candidateNameUpper === 'HARDIK MUKESH NAVDHARE' || candidateName === 'Hardik Mukesh Navdhare') {
         candidateName = 'Hardik Mukesh Navdhare'
+      }
+      
+      // Normalize Ram Ashok's name variations to proper case for display (case-insensitive)
+      if (candidateNameUpper === 'RAM ASHOK KARVA' || candidateNameUpper === 'RAM ASHOK KARWA' || candidateNameUpper === 'RAM AHOK KARWA' || 
+          candidateName === 'Ram Ashok Karwa' || candidateName === 'Ram Ahok Karwa') {
+        candidateName = 'Ram Ashok Karva'
       }
       
       // Get Gujarati name from mapping if available (for ALL zones)
