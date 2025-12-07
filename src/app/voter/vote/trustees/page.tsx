@@ -224,7 +224,7 @@ export default function TrusteesVotingPage() {
       step: 'પગલું',
       of: 'માંથી',
       rulesAndRegulations: 'નિયમો અને સૂચનાઓ',
-      readRulesCarefully: 'કૃપા કરીને મતદાન કરવા માટે આગળ વધતા પહેલા નીચેના નિયમો અને નિયમનો કાળજીપૂર્વક વાંચો.',
+      readRulesCarefully: 'કૃપા કરીને મતદાન કરવા માટે આગળ વધતા પહેલા નીચેના નિયમો અને સૂચનાઓ કાળજીપૂર્વક વાંચો.',
       rule1: 'તા ૩૧.૦૮.૨૦૨૫  સુધી ૧૮ વર્ષ પુર્ણ કરેલ આપણા સમાજ ના સભ્યો ને મતદાન કરવાનો અધિકાર રહેશે.',
       rule2: 'આપણો સમાજ એક શિક્ષિત સમાજ છે, અને આજ ની યુવા પેઢી ને અનુકુળ આ ડિજિટલ યુગ માં સર્વે જ્ઞાતિજનો ને વિનંતી કે ઓનલાઈન પદ્ધતિ અપનાવી પોતાના મતદાન ની નૈતિક ફરજ નિભાવશોજી.',
       rule3: 'ઓનલાઇન માધ્યમથી ચુંટણી આયોજીત કરવાની રૂપરેખા અલગ થી એક વિડિયોમાં જણાવવામાં આવશે. જે વિડીયો અન્ય જરૂરી માહિતીઓ સહિત આપણા જ્ઞાતિ ના વૉટ્સ એપ કમ્યુનિટિ માં પ્રસારિત કરવામાં આવશે.',
@@ -232,7 +232,7 @@ export default function TrusteesVotingPage() {
       rule5: 'વિદેશ માં વસતા જ્ઞાતિજનો ને આગ્રહ છે કે ચૂંટણી માં મત આપવા ઓનલાઇન પધ્ધતિ અપનાવે.',
       rule6: 'મતપત્રક દ્વારા મત આપવાનો વિકલ્પ જરૂરિયાત મુજબ અને સંજોગો ને આધીન  જાહેર કરવામાં આવશે.',
       rule7: 'કોઈ પણ પરિસ્થિતિ તથા લોકહિત માં નિર્ણય લેવાનો અધિકાર ચુંટણી નિયામક પાસે રહેશે જે આખરી અને સર્વે ને બંધનકર્તા રહેશે.',
-      rule8: 'આગળ વધીને, તમે પુષ્ટિ કરો છો કે તમે બધા નિયમો અને નિયમનો વાંચ્યા છે અને સમજ્યા છે.',
+      rule8: 'આગળ વધીને, તમે પુષ્ટિ કરો છો કે તમે બધા નિયમો અને સૂચનાઓ વાંચ્યા છે અને સમજ્યા છે.',
       electionManagers: 'ચૂંટણી નિયામક',
       electionManagerEmail: 'ચુંટણી નિયામક ઈ-મેલ આયડી',
       zoneSeatAllocation: 'ટ્રસ્ટમંડળ બેઠક ફાળવણી વિભાગ વાર (કુલ બેઠક- ૦૭)',
@@ -1202,6 +1202,21 @@ export default function TrusteesVotingPage() {
               
               const zoneArea = getZoneArea(zone.code || '')
               
+              // Zone color scheme for visual distinction
+              const zoneColors = [
+                { border: 'border-blue-500', focus: 'focus:border-blue-600 focus:ring-blue-500' },
+                { border: 'border-purple-500', focus: 'focus:border-purple-600 focus:ring-purple-500' },
+                { border: 'border-green-500', focus: 'focus:border-green-600 focus:ring-green-500' },
+                { border: 'border-orange-500', focus: 'focus:border-orange-600 focus:ring-orange-500' },
+                { border: 'border-indigo-500', focus: 'focus:border-indigo-600 focus:ring-indigo-500' },
+                { border: 'border-pink-500', focus: 'focus:border-pink-600 focus:ring-pink-500' },
+                { border: 'border-teal-500', focus: 'focus:border-teal-600 focus:ring-teal-500' },
+                { border: 'border-cyan-500', focus: 'focus:border-cyan-600 focus:ring-cyan-500' },
+                { border: 'border-red-500', focus: 'focus:border-red-600 focus:ring-red-500' },
+                { border: 'border-yellow-500', focus: 'focus:border-yellow-600 focus:ring-yellow-500' }
+              ]
+              const zoneColor = zoneColors[zoneIndex % zoneColors.length]
+              
               return (
                 <Card key={zone.id} className="border-purple-200">
                   <CardHeader>
@@ -1228,7 +1243,7 @@ export default function TrusteesVotingPage() {
                           ref={(el) => {
                             searchInputRefs.current[zone.id] = el
                           }}
-                          className="pl-9 text-sm py-2"
+                          className={`pl-9 text-sm py-2 border-2 ${zoneColor.border} ${zoneColor.focus}`}
                         />
                         {zoneSearchTerms[zone.id] && (
                           <Button
@@ -1336,7 +1351,7 @@ export default function TrusteesVotingPage() {
                                       <Search className="h-8 w-8 text-gray-300 mb-2" />
                                       {hasSearch ? (
                                         <>
-                                      <p>{content[selectedLanguage].noTrusteesFound} "{zoneSearchTerms[zone.id]}"</p>
+                                      <p>{content[selectedLanguage].noTrusteesFound} &quot;{zoneSearchTerms[zone.id]}&quot;</p>
                                       <p className="text-sm mt-1">{content[selectedLanguage].tryDifferentSearch}</p>
                                         </>
                                       ) : (

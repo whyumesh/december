@@ -278,7 +278,7 @@ export default function NominationPage() {
             declarationAgreementText: "I agree to the above declaration and confirm that all information provided is accurate and complete."
         },
         gujarati: {
-            rulesTitle: "નિયમો અને નિયમાવલી",
+            rulesTitle: "નિયમો અને સૂચનાઓ",
             declarationTitle: "ઘોષણા",
             candidateDetails: "ઉમેદવારની વિગતો",
             proposerDetails: "ટેકેદારની વિગતો",
@@ -370,7 +370,7 @@ export default function NominationPage() {
                 "એક સભ્ય માત્ર એકજ ઉમેદવાર માટે પ્રપોઝર ટેકેદાર બની શકશે."
             ],
             declaration: "હું, {name} શ્રી કચ્છી માહેશ્વરી મધ્યસ્થ મહાજન સમિતિના યુવા પાંખ સમિતિ માટે ૨૦૨૬-૨૦૨૯ ના કાર્યકાળ માટે {zone} વિભાગમાંથી પોતાની ઉમેદવારી માટે નામાંકન કરું છું. હું ઘોષણા કરું છું કે મારા દ્વારા રજૂ કરવામાં આવેલી બધી માહિતી મારા જ્ઞાન મુજબ સંપૂર્ણ સાચી અને વાસ્તવિક છે. હું શ્રી કચ્છી માહેશ્વરી મધ્યસ્થ મહાજન સમિતિ અને યુવા પાંખના બંધારણમાં વિશ્વાસ રાખવાનું અને તેનું પાલન કરવાનું વચન આપું છું અને હું સમુદાયની એકતા અને અખંડતાને જાળવીશ.",
-            agreementText: "મેં યુવા પાંખ સમિતિ ચૂંટણી (૨૦૨૬-૨૦૨૯) માટેના બધા નિયમો અને નિયમાવલી વાંચી અને સમજી છે. હું ઉપર ઉલ્લેખિત બધા નિયમો અને શરતોનું પાલન કરવા માટે સહમત છું અને ખાતરી કરું છું કે હું બધી યોગ્યતા માપદંડ પૂરા કરું છું.",
+            agreementText: "મેં યુવા પાંખ સમિતિ ચૂંટણી (૨૦૨૬-૨૦૨૯) માટેના બધા નિયમો અને સૂચનાઓ વાંચી અને સમજી છે. હું ઉપર ઉલ્લેખિત બધા નિયમો અને શરતોનું પાલન કરવા માટે સહમત છું અને ખાતરી કરું છું કે હું બધી યોગ્યતા માપદંડ પૂરા કરું છું.",
             declarationAgreementText: "હું ઉપરની ઘોષણા સાથે સહમત છું અને ખાતરી કરું છું કે આપવામાં આવેલી બધી માહિતી સચોટ અને સંપૂર્ણ છે."
         }
     };
@@ -1732,7 +1732,7 @@ export default function NominationPage() {
                                 {currentStep === 0 &&
                                     (selectedLanguage === 'english' 
                                         ? "Please read and accept the rules and regulations before proceeding"
-                                        : "આગળ વધતા પહેલા કૃપા કરીને નિયમો અને નિયમાવલી વાંચો અને સ્વીકારો")}
+                                        : "આગળ વધતા પહેલા કૃપા કરીને નિયમો અને સૂચનાઓ વાંચો અને સ્વીકારો")}
                                 {currentStep === 1 &&
                                     (selectedLanguage === 'english'
                                         ? "Fill in your personal information"

@@ -261,7 +261,7 @@ export default function VoterDashboard() {
       zoneNameGujarati: 'અબડાસા, લખપત અને નખત્રાણા',
       seats: 2,
       winners: [
-        { name: 'Jigar Arvind Bhedakiya', nameGujarati: 'જીગર અરવિંદ ભેડાકિયા' }
+        { name: 'Jigar Arvind Bhedakiya', nameGujarati: 'જીગર અરવિંદ ભેડકિયા' }
       ]
     },
     'BHUJ_ANJAR': {
@@ -881,11 +881,23 @@ export default function VoterDashboard() {
                           }
                         }
                         
-                        // For other zones, show "View Elected Members" if winners exist
-                        // BUT NOT for Raigad and Karnataka voters (winners should not be visible to them)
-                        // Check if the zone code exists in yuvaPankhWinners object
-                        const hasYuvaPankhWinners = zoneCode && zoneCode in yuvaPankhWinners && yuvaPankhWinners[zoneCode as keyof typeof yuvaPankhWinners]?.winners?.length > 0
-                        // Only show winners if NOT Raigad or Karnataka
+                        // Check if there are any winners in completed zones
+                        // For voters with a zone: check if their zone has winners
+                        // For voters without a zone: check if any winners exist (they can view all winners)
+                        let hasYuvaPankhWinners = false
+                        if (zoneCode) {
+                          // Voter has a zone - check if their zone has winners
+                          hasYuvaPankhWinners = zoneCode in yuvaPankhWinners && yuvaPankhWinners[zoneCode as keyof typeof yuvaPankhWinners]?.winners?.length > 0
+                        } else {
+                          // Voter doesn't have a zone - check if any winners exist
+                          hasYuvaPankhWinners = Object.keys(yuvaPankhWinners).some(key => {
+                            const zoneData = yuvaPankhWinners[key as keyof typeof yuvaPankhWinners]
+                            return zoneData?.winners?.length > 0
+                          })
+                        }
+                        
+                        // Show "View Elected Members" if winners exist (for all except Raigad/Karnataka voters)
+                        // Winners should be visible to all, except for Raigad and Karnataka zone voters
                         if (hasYuvaPankhWinners && !isRaigadOrKarnataka) {
                           return (
                             <Link href={election.href}>
@@ -894,6 +906,28 @@ export default function VoterDashboard() {
                                 {content[selectedLanguage].viewElectedMembers}
                               </Button>
                             </Link>
+                          )
+                        }
+                        
+                        // If no winners and voter is not eligible, show disabled button
+                        if (election.isNotEligible) {
+                          return (
+                            <>
+                              <div className="mb-3 p-3 bg-gray-50 border border-gray-200 rounded-md">
+                                <div className="flex items-start">
+                                  <AlertCircle className="h-4 w-4 text-gray-600 mt-0.5 mr-2 flex-shrink-0" />
+                                  <p className="text-sm text-gray-700">
+                                    {election.eligibilityReason === 'age' 
+                                      ? content[selectedLanguage].yuvaPankhNotAvailableAge
+                                      : content[selectedLanguage].yuvaPankhNotAvailable}
+                                  </p>
+                                </div>
+                              </div>
+                              <Button className="w-full" disabled>
+                                <AlertCircle className="h-4 w-4 mr-2" />
+                                {selectedLanguage === 'english' ? 'Not Eligible' : 'પાત્ર નથી'}
+                              </Button>
+                            </>
                           )
                         }
                         

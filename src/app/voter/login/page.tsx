@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Vote, AlertCircle, MapPin, ArrowLeft } from 'lucide-react'
+import { Vote, AlertCircle, MapPin, ArrowLeft, RefreshCw } from 'lucide-react'
 import { getHiddenLocation } from '@/lib/geolocation'
 import Logo from '@/components/Logo'
 import Footer from '@/components/Footer'
@@ -22,6 +22,9 @@ export default function VoterLoginPage() {
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const [location, setLocation] = useState<{lat: number, lng: number} | null>(null)
+  const [otpSentTime, setOtpSentTime] = useState<number | null>(null)
+  const [resendCooldown, setResendCooldown] = useState<number>(0) // in seconds
+  const cooldownIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   const handlePhoneChange = (value: string) => {
     // Remove all non-digit characters
@@ -38,6 +41,37 @@ export default function VoterLoginPage() {
     // Silently get location in background
     getCurrentLocation()
   }, [])
+
+  // Handle resend OTP cooldown timer
+  useEffect(() => {
+    if (otpSentTime && resendCooldown > 0) {
+      // Start countdown timer
+      cooldownIntervalRef.current = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - otpSentTime) / 1000)
+        const remaining = Math.max(0, 120 - elapsed) // 2 minutes = 120 seconds
+        
+        setResendCooldown(remaining)
+        
+        if (remaining === 0) {
+          if (cooldownIntervalRef.current) {
+            clearInterval(cooldownIntervalRef.current)
+            cooldownIntervalRef.current = null
+          }
+        }
+      }, 1000) // Update every second
+    } else if (resendCooldown === 0 && cooldownIntervalRef.current) {
+      // Clean up interval when cooldown reaches 0
+      clearInterval(cooldownIntervalRef.current)
+      cooldownIntervalRef.current = null
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (cooldownIntervalRef.current) {
+        clearInterval(cooldownIntervalRef.current)
+      }
+    }
+  }, [otpSentTime, resendCooldown])
 
   const getCurrentLocation = async () => {
     try {
@@ -123,6 +157,9 @@ export default function VoterLoginPage() {
           : 'OTP has been sent to your registered phone number'
         setSuccessMessage(data.message || defaultMessage)
         setStep('otp')
+        // Set OTP sent time and start cooldown timer (2 minutes = 120 seconds)
+        setOtpSentTime(Date.now())
+        setResendCooldown(120)
       } else {
         // Show the actual error message from the API
         let errorMessage = data.error || data.message || 'Failed to send OTP'
@@ -255,6 +292,10 @@ export default function VoterLoginPage() {
         console.log('Login successful, redirecting to dashboard...')
         console.log('Response cookies:', document.cookie)
         
+        // Clear OTP sent time and cooldown on successful login
+        setOtpSentTime(null)
+        setResendCooldown(0)
+        
         // Small delay to ensure cookie is set before redirect
         setTimeout(() => {
           router.push('/voter/dashboard')
@@ -274,6 +315,20 @@ export default function VoterLoginPage() {
       }
       setIsLoading(false)
     }
+  }
+
+  const handleResendOTP = async () => {
+    // Reset OTP input
+    setOtp('')
+    // Call sendOTP function
+    await sendOTP()
+  }
+
+  // Format countdown timer (MM:SS)
+  const formatCountdown = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
   return (
@@ -343,6 +398,9 @@ export default function VoterLoginPage() {
                     setLoginMethod('phone')
                     setEmail('')
                     setError('')
+                    setOtpSentTime(null)
+                    setResendCooldown(0)
+                    setStep('phone')
                   }}
                   className="flex-1"
                 >
@@ -355,6 +413,9 @@ export default function VoterLoginPage() {
                     setLoginMethod('email')
                     setPhone('')
                     setError('')
+                    setOtpSentTime(null)
+                    setResendCooldown(0)
+                    setStep('phone')
                   }}
                   className="flex-1"
                 >
@@ -450,7 +511,11 @@ export default function VoterLoginPage() {
                   id="otp"
                   type="text"
                   value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
+                  onChange={(e) => {
+                    // Only allow digits
+                    const digitsOnly = e.target.value.replace(/\D/g, '')
+                    setOtp(digitsOnly.slice(0, 6))
+                  }}
                   placeholder="Enter 6-digit OTP"
                   maxLength={6}
                   required
@@ -463,10 +528,49 @@ export default function VoterLoginPage() {
               <Button 
                 onClick={verifyOTP}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                disabled={isLoading}
+                disabled={isLoading || otp.length !== 6}
               >
                 {isLoading ? 'Verifying...' : 'Verify OTP'}
               </Button>
+              
+              {/* Back and Resend OTP Buttons */}
+              <div className="pt-2 border-t border-gray-200 space-y-2">
+                <Button
+                  onClick={() => {
+                    setStep('phone')
+                    setOtp('')
+                    setOtpSentTime(null)
+                    setResendCooldown(0)
+                    setError('')
+                    setSuccessMessage('')
+                  }}
+                  variant="outline"
+                  className="w-full"
+                  disabled={isLoading}
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back / પાછળ
+                </Button>
+                <Button
+                  onClick={handleResendOTP}
+                  variant="outline"
+                  className="w-full"
+                  disabled={isLoading || resendCooldown > 0}
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${resendCooldown > 0 ? '' : ''}`} />
+                  {resendCooldown > 0 
+                    ? `Resend OTP in ${formatCountdown(resendCooldown)} / ${formatCountdown(resendCooldown)} માં OTP ફરીથી મોકલો`
+                    : 'Resend OTP / OTP ફરીથી મોકલો'
+                  }
+                </Button>
+                {resendCooldown > 0 && (
+                  <p className="text-xs text-gray-500 text-center mt-2">
+                    Didn't receive OTP? You can resend after the timer expires.
+                    <br />
+                    <span className="text-gray-400">OTP પ્રાપ્ત થયો નથી? ટાઈમર સમાપ્ત થયા પછી તમે ફરીથી મોકલી શકો છો.</span>
+                  </p>
+                )}
+              </div>
               
             </div>
           )}

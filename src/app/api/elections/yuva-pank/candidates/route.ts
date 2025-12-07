@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 const STORJ_BUCKET_NAME = process.env.STORJ_BUCKET_NAME || 'kmselection'
 
-// Gujarati name mappings for Raigad and Karnataka & Goa zone candidates
+// Gujarati name mappings for ALL Yuva Pankh candidates across all zones
 const CANDIDATE_NAMES_GUJARATI: Record<string, string> = {
   // Raigad zone candidates
   'Ram Ashok Karva': 'રામ અશોક કરવા',
@@ -15,11 +15,21 @@ const CANDIDATE_NAMES_GUJARATI: Record<string, string> = {
   'Jaymin Arvind Bhutada': 'જયમીન અરવિંદ ભુતડા',
   // Karnataka & Goa zone candidates
   'Viral Mahesh Karva': 'વિરલ મહેશ કરવા',
-  'Kaushal Ramesh Laddh': 'કૌશલ રમેશ લધ્ધ'
+  'Kaushal Ramesh Laddh': 'કૌશલ રમેશ લધ્ધ',
+  // Mumbai zone candidates (winners)
+  'Keyur Chetan Navdhare': 'કેયુર ચેતન નવધરે',
+  'Harsh Jaymin Mall': 'હર્ષ જયમીન મલ્લ',
+  'Drashti Kiran Rathi': 'દ્રષ્ટિ કિરણ રાઠી',
+  'Vidhi Kirit Mall': 'વિધિ કિરીટ મલ્લ',
+  // Bhuj-Anjar zone candidates (winners)
+  'Harsh Rajendra Navdhare': 'હર્ષ રાજેન્દ્ર નવધરે',
+  'Hetvi Mehul Bhutada': 'હેત્વી મેહુલ ભૂતડા',
+  // Anya Gujarat zone candidates (winners)
+  'Vatsal Manoj Gingal': 'વત્સલ મનોજ ગિંગલ',
+  'Rushik Dhirajlal Mall': 'રુષિક ધીરજલાલ મલ્લ',
+  // Abdasa-Lakhpat-Nakhatrana zone candidates (winners)
+  'Jigar Arvind Bhedakiya': 'જીગર અરવિંદ ભેડકિયા'
 }
-
-// Zones that use the Gujarati name mapping
-const ZONES_WITH_GUJARATI_NAMES = ['RAIGAD', 'KARNATAKA_GOA']
 
 export async function GET(request: NextRequest) {
   try {
@@ -187,10 +197,8 @@ export async function GET(request: NextRequest) {
       }
       
       const candidateName = candidate.user?.name || candidate.name
-      // Get Gujarati name from mapping if available (for Raigad and Karnataka & Goa zones)
-      const nameGujarati = candidate.zone?.code && ZONES_WITH_GUJARATI_NAMES.includes(candidate.zone.code) && CANDIDATE_NAMES_GUJARATI[candidateName]
-        ? CANDIDATE_NAMES_GUJARATI[candidateName]
-        : null
+      // Get Gujarati name from mapping if available (for ALL zones)
+      const nameGujarati = CANDIDATE_NAMES_GUJARATI[candidateName] || null
 
       return {
         id: candidate.id,
