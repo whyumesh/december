@@ -148,8 +148,8 @@ export default function TrusteesVotingPage() {
       rule4: 'Voters can vote for appropriate candidates as trustees in each zone according to the allocated seats. Only members who are 45 years or older as of 31.08.2025 can be voted as members of the Trust Mandal.',
       rule5: 'Request to all Overseas members that they adopt the online method for voting in elections.',
       rule6: 'The method of voting by postal ballot will be announced separately if necessary and subject to circumstances.',
-      rule7: 'The right to take decisions in any circumstances or situations will remain with the election management, which will be final and binding on all.',
-      rule8: 'Any attempt to manipulate or tamper with the voting process is strictly prohibited.',
+      rule7: 'Any attempt to manipulate or tamper with the voting process is strictly prohibited.',
+      rule8: 'The right to take decisions in any circumstances or situations will remain with the election management, which will be final and binding on all.',
       electionManagers: 'Election Commissioner',
       electionManagerEmail: 'Election Management Email ID',
       zoneSeatAllocation: 'Zone-wise Seat Allocation',
@@ -231,8 +231,8 @@ export default function TrusteesVotingPage() {
       rule4: 'મતદાતા દરેક ઝોન માં ફાળવેલ બેઠક પ્રમાણે  યોગ્ય ઉમેદવાર ને ટ્રસ્ટી તરીકે મત આપી શકશે. તા.૩૧.૦૮.૨૦૨૫  સુધી ઉંમર વર્ષ ૪૫  પુર્ણ કરેલ સભ્ય નેજ ટ્રસ્ટ મંડળ ના સભ્ય તરીકે  મત આપી શકાશે.',
       rule5: 'વિદેશ માં વસતા જ્ઞાતિજનો ને આગ્રહ છે કે ચૂંટણી માં મત આપવા ઓનલાઇન પધ્ધતિ અપનાવે.',
       rule6: 'મતપત્રક દ્વારા મત આપવાનો વિકલ્પ જરૂરિયાત મુજબ અને સંજોગો ને આધીન  જાહેર કરવામાં આવશે.',
-      rule7: 'કોઈ પણ પરિસ્થિતિ તથા લોકહિત માં નિર્ણય લેવાનો અધિકાર ચુંટણી નિયામક પાસે રહેશે જે આખરી અને સર્વે ને બંધનકર્તા રહેશે.',
-      rule8: 'ઓનલાઇન મત પ્રક્રિયા માં કોઈપણ ટેકનીકલ પ્રકારે ચેડા કરવા અથવા ગેરરીતિ આચરી શકાશે નહી.',
+      rule7: 'ઓનલાઇન મત પ્રક્રિયા માં કોઈપણ ટેકનીકલ પ્રકારે ચેડા કરવા અથવા ગેરરીતિ આચરી શકાશે નહી.',
+      rule8: 'કોઈ પણ પરિસ્થિતિ તથા લોકહિત માં નિર્ણય લેવાનો અધિકાર ચુંટણી નિયામક પાસે રહેશે જે આખરી અને સર્વે ને બંધનકર્તા રહેશે.',
       electionManagers: 'ચૂંટણી નિયામક',
       electionManagerEmail: 'ચુંટણી નિયામક ઈ-મેલ આયડી',
       zoneSeatAllocation: 'ટ્રસ્ટમંડળ બેઠક ફાળવણી વિભાગ વાર (કુલ બેઠક- ૦૭)',
@@ -1224,7 +1224,7 @@ export default function TrusteesVotingPage() {
                       {selectedLanguage === 'english' ? `Zone ${zoneIndex + 1} - ${zone.name}` : `વિભાગ ${zoneIndex + 1} - ${zone.nameGujarati}`}
                     </CardTitle>
                     <CardDescription>
-                      {zone.seats} {zone.seats > 1 ? content[selectedLanguage].seats : content[selectedLanguage].seat}
+                      <strong>{zone.seats} {zone.seats > 1 ? content[selectedLanguage].seats : content[selectedLanguage].seat}</strong>
                     </CardDescription>
                     {zoneArea.en && (
                       <p className="text-xs text-gray-500 mt-2">
