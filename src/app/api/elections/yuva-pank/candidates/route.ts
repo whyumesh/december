@@ -23,6 +23,7 @@ const CANDIDATE_NAMES_GUJARATI: Record<string, string> = {
   'Kaushal Ramesh Laddh': 'કૌશલ રમેશ લધ્ધડ',
   'Kaushal Ramesh Laddhad': 'કૌશલ રમેશ લધ્ધડ',
   'Kaushal Ramesh Ladhad': 'કૌશલ રમેશ લધ્ધડ',
+  'KAUSHAL RAMESH LADHAD': 'કૌશલ રમેશ લધ્ધડ',
   // Mumbai zone candidates (winners)
   'Keyur Chetan Navdhare': 'કેયુર ચેતન નવધરે',
   'Harsh Jaymin Mall': 'હર્ષ જયમીન મલ્લ',
@@ -207,8 +208,8 @@ export async function GET(request: NextRequest) {
       const candidateNameUpper = candidateName.toUpperCase()
       
       // Normalize Kaushal's name to full name for display
-      if (candidateName === 'Kaushal Ramesh Laddh' || candidateName === 'Kaushal Ramesh Ladhad' || candidateNameUpper === 'KAUSHAL RAMESH LADDH' || candidateNameUpper === 'KAUSHAL RAMESH LADHAD') {
-        candidateName = 'Kaushal Ramesh Laddhad'
+      if (candidateName === 'Kaushal Ramesh Laddh' || candidateName === 'Kaushal Ramesh Laddhad' || candidateNameUpper === 'KAUSHAL RAMESH LADDH' || candidateNameUpper === 'KAUSHAL RAMESH LADDHAD' || candidateNameUpper === 'KAUSHAL RAMESH LADHAD') {
+        candidateName = 'Kaushal Ramesh Ladhad'
       }
       
       // Normalize Hardik's name to proper case for display (case-insensitive)
@@ -217,8 +218,11 @@ export async function GET(request: NextRequest) {
       }
       
       // Normalize Ram Ashok's name variations to proper case for display (case-insensitive)
-      if (candidateNameUpper === 'RAM ASHOK KARVA' || candidateNameUpper === 'RAM ASHOK KARWA' || candidateNameUpper === 'RAM AHOK KARWA' || 
-          candidateName === 'Ram Ashok Karwa' || candidateName === 'Ram Ahok Karwa') {
+      // Handle "Ram Karwa" (without Ashok) and other variations
+      if (candidateNameUpper === 'RAM ASHOK KARVA' || candidateNameUpper === 'RAM ASHOK KARWA' || 
+          candidateNameUpper === 'RAM AHOK KARWA' || candidateNameUpper === 'RAM KARWA' || candidateNameUpper === 'RAM KARVA' ||
+          candidateName === 'Ram Ashok Karwa' || candidateName === 'Ram Ahok Karwa' || 
+          candidateName === 'Ram Karwa' || candidateName === 'Ram Karva') {
         candidateName = 'Ram Ashok Karva'
       }
       

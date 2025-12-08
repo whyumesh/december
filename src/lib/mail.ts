@@ -3,12 +3,36 @@ export const runtime = "nodejs";
 
 // Create transporter using Gmail SMTP
 const createTransporter = () => {
+  const gmailUser = process.env.GMAIL_USER
+  const gmailAppPassword = process.env.GMAIL_APP_PASSWORD
+
+  if (!gmailUser || !gmailAppPassword) {
+    console.error('❌ Gmail SMTP configuration missing:')
+    console.error('   GMAIL_USER:', gmailUser ? '***' : 'NOT SET')
+    console.error('   GMAIL_APP_PASSWORD:', gmailAppPassword ? '***' : 'NOT SET')
+    throw new Error('Gmail SMTP configuration is missing. Please set GMAIL_USER and GMAIL_APP_PASSWORD environment variables.')
+  }
+
+  // Validate email format
+  if (!gmailUser.includes('@gmail.com') && !gmailUser.includes('@googlemail.com')) {
+    console.warn('⚠️  GMAIL_USER does not appear to be a Gmail address:', gmailUser)
+  }
+
+  // Validate app password format (should be 16 characters, no spaces)
+  if (gmailAppPassword.length !== 16 || gmailAppPassword.includes(' ')) {
+    console.warn('⚠️  GMAIL_APP_PASSWORD format may be incorrect. App passwords should be 16 characters with no spaces.')
+    console.warn('   Current length:', gmailAppPassword.length)
+  }
+
   return nodemailer.createTransport({
     service: 'gmail',
     auth: {
-      user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_APP_PASSWORD, // Use App Password, not regular password
+      user: gmailUser.trim(),
+      pass: gmailAppPassword.trim(), // Use App Password, not regular password
     },
+    // Add connection timeout and retry options
+    connectionTimeout: 10000, // 10 seconds
+    socketTimeout: 10000, // 10 seconds
   });
 };
 
@@ -19,7 +43,16 @@ export async function sendVoterOTP(
   voterName: string
 ): Promise<{ success: boolean; message: string }> {
   try {
+    console.log('📧 Preparing to send voter OTP email...')
+    console.log('   Recipient:', email)
+    console.log('   Voter Name:', voterName)
+    
     const transporter = createTransporter();
+    
+    // Verify transporter connection
+    console.log('🔍 Verifying SMTP connection...')
+    await transporter.verify();
+    console.log('✅ SMTP connection verified successfully')
 
     const mailOptions = {
       from: {
@@ -79,11 +112,48 @@ export async function sendVoterOTP(
       success: true, 
       message: 'OTP has been sent to your registered email address' 
     };
-  } catch (error) {
-    console.error('Error sending voter OTP email:', error);
+  } catch (error: any) {
+    console.error('❌ Error sending voter OTP email:', error);
+    console.error('Error details:', {
+      message: error?.message,
+      code: error?.code,
+      responseCode: error?.responseCode,
+      response: error?.response,
+      command: error?.command
+    });
+    
+    // Provide more specific error messages
+    let errorMessage = 'Failed to send OTP email. Please try again.'
+    
+    if (error?.message?.includes('Gmail SMTP configuration')) {
+      errorMessage = 'Email service is not configured. Please contact administrator.'
+    } else if (error?.code === 'EAUTH' || error?.responseCode === 535) {
+      errorMessage = 'Email authentication failed. Please check Gmail credentials and ensure you are using an App Password (not your regular password).'
+      
+      console.error('🔐 Gmail Authentication Failed - Troubleshooting Steps:')
+      console.error('   1. Go to: https://myaccount.google.com/apppasswords')
+      console.error('   2. Ensure 2-Step Verification is enabled on your Google Account')
+      console.error('   3. Generate a new App Password for "Mail" application')
+      console.error('   4. Copy the 16-character password (no spaces)')
+      console.error('   5. Verify GMAIL_USER is your full email address (e.g., yourname@gmail.com)')
+      console.error('   6. Update GMAIL_APP_PASSWORD environment variable with the app password')
+      console.error('   7. Restart the application/server after updating environment variables')
+      console.error('')
+      console.error('   Common Issues:')
+      console.error('   - Using regular Gmail password instead of App Password')
+      console.error('   - App password has spaces (should be 16 characters, no spaces)')
+      console.error('   - 2-Step Verification not enabled')
+      console.error('   - App password was revoked or expired')
+      console.error('   - Wrong email address in GMAIL_USER')
+    } else if (error?.code === 'ECONNECTION' || error?.code === 'ETIMEDOUT') {
+      errorMessage = 'Unable to connect to email service. Please try again later.'
+    } else if (error?.responseCode === 550) {
+      errorMessage = 'Invalid email address. Please check your email and try again.'
+    }
+    
     return { 
       success: false, 
-      message: 'Failed to send OTP email. Please try again.' 
+      message: errorMessage 
     };
   }
 }
