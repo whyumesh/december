@@ -352,92 +352,7 @@ export async function GET(request: NextRequest) {
     yuvaPankhResultsSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
 
     // ============================================
-    // SHEET 4: ELECTION RESULTS - KAROBARI
-    // ============================================
-    const karobariResultsSheet = workbook.addWorksheet('Karobari Results')
-    
-    // Use aggregation query instead of fetching all votes
-    const karobariVoteCounts = await prisma.vote.groupBy({
-      by: ['karobariCandidateId'],
-      where: { karobariCandidateId: { not: null } },
-      _count: { id: true }
-    })
-
-    // Get candidate and zone info in parallel
-    const karobariCandidateIds = karobariVoteCounts.map(v => v.karobariCandidateId!).filter(Boolean)
-    const karobariCandidates = await prisma.karobariCandidate.findMany({
-      where: { id: { in: karobariCandidateIds } },
-      select: {
-        id: true,
-        name: true,
-        position: true,
-        zoneId: true,
-        user: { select: { name: true } }
-      }
-    })
-
-    // Build results map
-    const karobariResults = new Map<string, Array<{ name: string; position: string; votes: number }>>()
-    
-    karobariVoteCounts.forEach(voteCount => {
-      if (!voteCount.karobariCandidateId) return
-      const candidate = karobariCandidates.find(c => c.id === voteCount.karobariCandidateId)
-      if (!candidate) return
-      
-      const zoneId = candidate.zoneId || 'Unknown'
-      const candidateName = candidate.user?.name || candidate.name || 'Unknown'
-      const position = candidate.position || 'Unknown'
-      const voteCountNum = voteCount._count.id
-
-      if (!karobariResults.has(zoneId)) {
-        karobariResults.set(zoneId, [])
-      }
-      karobariResults.get(zoneId)!.push({ name: candidateName, position, votes: voteCountNum })
-    })
-
-    karobariResultsSheet.columns = [
-      { header: 'Zone', key: 'zone', width: 25 },
-      { header: 'Position', key: 'position', width: 25 },
-      { header: 'Candidate Name', key: 'candidate', width: 30 },
-      { header: 'Vote Count', key: 'votes', width: 15 },
-      { header: 'Rank', key: 'rank', width: 10 }
-    ]
-
-    // Get zones for karobari
-    const karobariZoneIds = [...new Set(karobariCandidates.map(c => c.zoneId).filter(Boolean) as string[])]
-    const karobariZones = await prisma.zone.findMany({
-      where: { id: { in: karobariZoneIds } },
-      select: { id: true, name: true }
-    })
-    const karobariZoneMap = new Map(karobariZones.map(z => [z.id, z.name]))
-
-    for (const [zoneId, candidates] of karobariResults.entries()) {
-      const zoneName = karobariZoneMap.get(zoneId) || zoneId
-      const sortedCandidates = candidates.sort((a, b) => b.votes - a.votes)
-      
-      sortedCandidates.forEach((candidate, index) => {
-        karobariResultsSheet.addRow({
-          zone: zoneName,
-          position: candidate.position,
-          candidate: candidate.name,
-          votes: candidate.votes,
-          rank: index + 1
-        })
-      })
-      
-      karobariResultsSheet.addRow({ zone: '', position: '', candidate: '', votes: '', rank: '' })
-    }
-
-    karobariResultsSheet.getRow(1).font = { bold: true, size: 12 }
-    karobariResultsSheet.getRow(1).fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FF0070C0' }
-    }
-    karobariResultsSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
-
-    // ============================================
-    // SHEET 5: ELECTION RESULTS - TRUSTEE
+    // SHEET 4: ELECTION RESULTS - TRUSTEE
     // ============================================
     const trusteeResultsSheet = workbook.addWorksheet('Trustee Results')
     
@@ -710,6 +625,8 @@ export async function GET(request: NextRequest) {
         yuvaPankhCandidateId: true,
         karobariCandidateId: true,
         trusteeCandidateId: true,
+        ipAddress: true,
+        timestamp: true,
         election: {
           select: {
             type: true
@@ -889,6 +806,61 @@ export async function GET(request: NextRequest) {
       fgColor: { argb: 'FF9B59B6' }
     }
     voterParticipationSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
+    
+    // ============================================
+    // SHEET: VOTER VOTE DETAILS (IP Address, Timestamp, MAC ID)
+    // ============================================
+    const voterVoteDetailsSheet = workbook.addWorksheet('Voter Vote Details')
+    
+    // Fetch all votes with voter information and IP/timestamp
+    const votesWithDetails = await prisma.vote.findMany({
+      include: {
+        voter: {
+          select: {
+            voterId: true,
+            name: true,
+            phone: true
+          }
+        }
+      },
+      orderBy: { timestamp: 'desc' }
+    })
+    
+    voterVoteDetailsSheet.columns = [
+      { header: 'Voter ID', key: 'voterId', width: 18 },
+      { header: 'Voter Name', key: 'name', width: 28 },
+      { header: 'Phone', key: 'phone', width: 18 },
+      { header: 'MAC ID', key: 'macId', width: 20 },
+      { header: 'IP Address', key: 'ipAddress', width: 18 },
+      { header: 'Vote Timestamp', key: 'timestamp', width: 25 }
+    ]
+    
+    votesWithDetails.forEach(vote => {
+      voterVoteDetailsSheet.addRow({
+        voterId: vote.voter.voterId,
+        name: vote.voter.name,
+        phone: vote.voter.phone || 'N/A',
+        macId: 'N/A (Not available from browsers)', // MAC addresses cannot be captured from web browsers
+        ipAddress: vote.ipAddress || 'N/A',
+        timestamp: vote.timestamp.toLocaleString('en-US', { 
+          timeZone: 'Asia/Kolkata',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        })
+      })
+    })
+    
+    voterVoteDetailsSheet.getRow(1).font = { bold: true, size: 12 }
+    voterVoteDetailsSheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF2E75B6' }
+    }
+    voterVoteDetailsSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
     
     // ============================================
     // SHEET: VOTER ELECTION STATUS (All Voters with Eligibility & Voting Status)

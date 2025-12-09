@@ -907,7 +907,7 @@ export default function YuvaPankVotingPage() {
                   <div className="flex-shrink-0 w-6 h-6 bg-green-100 text-green-700 rounded-full flex items-center justify-center font-semibold text-xs mt-0.5">
                     7
                   </div>
-                  <p className="font-semibold text-gray-900">{content[selectedLanguage].rule7}</p>
+                  <p>{content[selectedLanguage].rule7}</p>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0 w-6 h-6 bg-green-100 text-green-700 rounded-full flex items-center justify-center font-semibold text-xs mt-0.5">
