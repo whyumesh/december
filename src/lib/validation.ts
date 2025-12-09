@@ -188,3 +188,13 @@ export function checkRateLimit(
   record.count++;
   return true;
 }
+
+// Overseas voter validation helper
+// Checks if a voter has an email address registered in the database
+// Only voters with email addresses (from Mail ID column) are considered overseas voters
+export function hasRegisteredEmail(email: string | null | undefined): boolean {
+  if (!email) return false;
+  const trimmedEmail = email.trim().toLowerCase();
+  // Valid email must have @ and be non-empty
+  return trimmedEmail.includes('@') && trimmedEmail.length > 5;
+}

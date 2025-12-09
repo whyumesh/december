@@ -169,6 +169,20 @@ export default function VoterLoginPage() {
           errorMessage = data.message || 'Too many requests. Please wait a few minutes and try again.'
         }
         
+        // Handle database/server configuration errors
+        if (response.status === 503 || response.status === 500) {
+          if (errorMessage.includes('Database') || errorMessage.includes('database') || errorMessage.includes('configuration')) {
+            errorMessage = 'Server is temporarily unavailable. Please try again in a few moments. If the problem persists, please contact support.'
+          }
+        }
+        
+        // Provide helpful guidance for email OTP errors
+        if (loginMethod === 'email' && response.status === 400) {
+          if (errorMessage.includes('overseas') || errorMessage.includes('registered email')) {
+            errorMessage += ' Please use phone number OTP if you are an Indian voter.'
+          }
+        }
+        
         console.error('Send OTP failed:', {
           status: response.status,
           error: errorMessage,
@@ -405,6 +419,7 @@ export default function VoterLoginPage() {
                   className="flex-1"
                 >
                   Phone / ફોન
+                  <span className="text-xs ml-1 opacity-75">(Indian Voters)</span>
                 </Button>
                 <Button
                   type="button"
@@ -420,6 +435,7 @@ export default function VoterLoginPage() {
                   className="flex-1"
                 >
                   Email / ઈ-મેલ
+                  <span className="text-xs ml-1 opacity-75">(Overseas Only)</span>
                 </Button>
               </div>
 
@@ -427,6 +443,7 @@ export default function VoterLoginPage() {
                 <div className="space-y-2">
                   <Label htmlFor="phone">
                     Phone Number / ફોન નંબર
+                    <span className="text-xs text-gray-500 ml-2">(For Indian Voters)</span>
                   </Label>
                   <Input
                     id="phone"
@@ -439,15 +456,15 @@ export default function VoterLoginPage() {
                     required
                   />
                   {/* Note for Indian users */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
-                    <p className="text-xs text-blue-800 font-medium mb-1">
-                      Note / નોંધ:
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-2">
+                    <p className="text-xs text-green-800 font-medium mb-1">
+                      ✓ Indian Voters / ભારતીય સભ્યો:
                     </p>
-                    <p className="text-xs text-blue-700 mb-1">
-                      Email service is only available for overseas users. For Indian users, please use mobile number.
+                    <p className="text-xs text-green-700">
+                      Use your registered mobile number to receive OTP via SMS.
                     </p>
-                    <p className="text-xs text-blue-700">
-                      ઈ-મેલ સેવા ફક્ત વિદેશી સભ્યો માટે ઉપલબ્ધ છે. ભારતીય સભ્યો માટે, કૃપા કરીને મોબાઇલ નંબરનો ઉપયોગ કરો.
+                    <p className="text-xs text-green-700 mt-1">
+                      તમારા નોંધાયેલા મોબાઇલ નંબરનો ઉપયોગ કરીને SMS દ્વારા OTP પ્રાપ્ત કરો.
                     </p>
                   </div>
                 </div>
@@ -455,6 +472,7 @@ export default function VoterLoginPage() {
                 <div className="space-y-2">
                   <Label htmlFor="email">
                     Email Address / ઈ-મેલ સરનામું
+                    <span className="text-xs text-orange-600 ml-2 font-semibold">(Overseas Voters Only)</span>
                   </Label>
                   <Input
                     id="email"
@@ -466,15 +484,17 @@ export default function VoterLoginPage() {
                     required
                   />
                   {/* Note for overseas users */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
-                    <p className="text-xs text-blue-800 font-medium mb-1">
-                      Note / નોંધ:
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mt-2">
+                    <p className="text-xs text-orange-800 font-medium mb-1">
+                      ⚠ Overseas Voters Only / ફક્ત વિદેશી સભ્યો:
                     </p>
-                    <p className="text-xs text-blue-700 mb-1">
-                      Email service is only available for overseas users. For Indian users, please use mobile number.
+                    <p className="text-xs text-orange-700 mb-1">
+                      Email OTP is only available for overseas voters who have a registered email address in the database. 
+                      If you don't have an email registered, please use phone number OTP instead.
                     </p>
-                    <p className="text-xs text-blue-700">
-                      ઈ-મેલ સેવા ફક્ત વિદેશી સભ્યો માટે ઉપલબ્ધ છે. ભારતીય સભ્યો માટે, કૃપા કરીને મોબાઇલ નંબરનો ઉપયોગ કરો.
+                    <p className="text-xs text-orange-700">
+                      ઈ-મેલ OTP ફક્ત તે વિદેશી સભ્યો માટે ઉપલબ્ધ છે જેમનું ઈ-મેલ ડેટાબેસમાં નોંધાયેલું છે. 
+                      જો તમારું ઈ-મેલ નોંધાયેલું નથી, તો કૃપા કરીને ફોન નંબર OTP નો ઉપયોગ કરો.
                     </p>
                   </div>
                 </div>
