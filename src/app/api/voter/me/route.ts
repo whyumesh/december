@@ -52,6 +52,13 @@ export async function GET(request: NextRequest) {
       trustees: voter.votes.some(vote => vote.trusteeCandidateId !== null)
     }
 
+    // Helper function to fix Karnataka Gujarati spelling (remove extra 'ક')
+    const fixKarnatakaGujarati = (nameGujarati: string | null): string | null => {
+      if (!nameGujarati) return nameGujarati
+      // Fix "કકર્ણાટક" (with extra 'ક') to "કર્ણાટક"
+      return nameGujarati.replace(/કકર્ણાટક/g, 'કર્ણાટક')
+    }
+
     // Mark Yuva Pankh zone as frozen:
     // - If it's not KARNATAKA_GOA or RAIGAD: always frozen (completed zones)
     // - If it's KARNATAKA_GOA or RAIGAD: frozen only if voter has voted
@@ -62,6 +69,7 @@ export async function GET(request: NextRequest) {
       const isFrozen = !isRaigadOrKarnataka || (isRaigadOrKarnataka && hasVoted.yuvaPank)
       yuvaPankZoneWithStatus = {
         ...voter.yuvaPankZone,
+        nameGujarati: fixKarnatakaGujarati(voter.yuvaPankZone.nameGujarati),
         isFrozen
       }
     }
@@ -71,7 +79,17 @@ export async function GET(request: NextRequest) {
     if (voter.karobariZone) {
       karobariZoneWithStatus = {
         ...voter.karobariZone,
+        nameGujarati: fixKarnatakaGujarati(voter.karobariZone.nameGujarati),
         isFrozen: false // Allow voting for uncontested winners
+      }
+    }
+
+    // Fix trustee zone Gujarati spelling as well
+    let trusteeZoneFixed = null
+    if (voter.trusteeZone) {
+      trusteeZoneFixed = {
+        ...voter.trusteeZone,
+        nameGujarati: fixKarnatakaGujarati(voter.trusteeZone.nameGujarati)
       }
     }
 
@@ -84,10 +102,13 @@ export async function GET(request: NextRequest) {
         region: voter.region, // Include region for eligibility checks
         age: voter.user?.age || voter.age, // Include age for eligibility checks
         dob: voter.user?.dateOfBirth || voter.dob || null, // Include DOB for age eligibility checks
-        zone: voter.zone, // Keep for backward compatibility
+        zone: voter.zone ? {
+          ...voter.zone,
+          nameGujarati: fixKarnatakaGujarati(voter.zone.nameGujarati)
+        } : null, // Keep for backward compatibility
         yuvaPankZone: yuvaPankZoneWithStatus, // Include all zones with frozen status
         karobariZone: karobariZoneWithStatus, // Mark all Karobari zones as frozen/completed
-        trusteeZone: voter.trusteeZone,
+        trusteeZone: trusteeZoneFixed,
         hasVoted
       }
     })

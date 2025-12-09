@@ -17,13 +17,27 @@ const CANDIDATE_NAMES_GUJARATI: Record<string, string> = {
   'Dilip Haresh Bhutada': 'દિલીપ હરેશ ભૂતડા',
   'Hardik Mukesh Navdhare': 'હાર્દિક મુકેશ નવધરે',
   'HARDIK MUKESH NAVDHARE': 'હાર્દિક મુકેશ નવધરે',
+  'HARDIK MUKESH NAVADHARE': 'હાર્દિક મુકેશ નવધરે',
+  'Hardik Mukesh Navadhare': 'હાર્દિક મુકેશ નવધરે',
   'Jaymin Arvind Bhutada': 'જયમીન અરવિંદ ભુતડા',
+  'Jaymin Arvind Shah': 'જયમીન અરવિંદ શાહ',
+  'JAYMIN ARVIND SHAH': 'જયમીન અરવિંદ શાહ',
+  'Jaymin Arvind Sha': 'જયમીન અરવિંદ શાહ',
+  'JAYMIN ARVIND SHA': 'જયમીન અરવિંદ શાહ',
   // Karnataka & Goa zone candidates
   'Viral Mahesh Karva': 'વિરલ મહેશ કરવા',
+  'Viral Mahesh Karwa': 'વિરલ મહેશ કરવા',
+  'Viral Mahesh Kurwa': 'વિરલ મહેશ કરવા',
+  'VIRAL MAHESH KARVA': 'વિરલ મહેશ કરવા',
+  'VIRAL MAHESH KARWA': 'વિરલ મહેશ કરવા',
+  'VIRAL MAHESH KURWA': 'વિરલ મહેશ કરવા',
   'Kaushal Ramesh Laddh': 'કૌશલ રમેશ લધ્ધડ',
   'Kaushal Ramesh Laddhad': 'કૌશલ રમેશ લધ્ધડ',
   'Kaushal Ramesh Ladhad': 'કૌશલ રમેશ લધ્ધડ',
+  'Kaushal Ladhad': 'કૌશલ રમેશ લધ્ધડ',
+  'Kaushal Laddh': 'કૌશલ રમેશ લધ્ધડ',
   'KAUSHAL RAMESH LADHAD': 'કૌશલ રમેશ લધ્ધડ',
+  'KAUSHAL LADHAD': 'કૌશલ રમેશ લધ્ધડ',
   // Mumbai zone candidates (winners)
   'Keyur Chetan Navdhare': 'કેયુર ચેતન નવધરે',
   'Harsh Jaymin Mall': 'હર્ષ જયમીન મલ્લ',
@@ -205,16 +219,44 @@ export async function GET(request: NextRequest) {
       }
       
       let candidateName = candidate.user?.name || candidate.name
+      // Trim any extra spaces
+      candidateName = candidateName.trim()
       const candidateNameUpper = candidateName.toUpperCase()
       
-      // Normalize Kaushal's name to full name for display
-      if (candidateName === 'Kaushal Ramesh Laddh' || candidateName === 'Kaushal Ramesh Laddhad' || candidateNameUpper === 'KAUSHAL RAMESH LADDH' || candidateNameUpper === 'KAUSHAL RAMESH LADDHAD' || candidateNameUpper === 'KAUSHAL RAMESH LADHAD') {
+      // Normalize Kaushal's name to full name for display (Karnataka zone)
+      // Handle all variations: Laddh, Laddhad, Ladhad, and case variations
+      if (candidateNameUpper.includes('KAUSHAL') && 
+          (candidateNameUpper.includes('LADDH') || candidateNameUpper.includes('LADHAD'))) {
         candidateName = 'Kaushal Ramesh Ladhad'
+        console.log('✅ Normalized Kaushal name to:', candidateName)
+      }
+      
+      // Normalize Viral's name variations (Karnataka zone) - Karva/Karwa/Kurwa
+      if (candidateNameUpper.includes('VIRAL') && candidateNameUpper.includes('MAHESH') &&
+          (candidateNameUpper.includes('KARVA') || candidateNameUpper.includes('KARWA') || 
+           candidateNameUpper.includes('KURWA'))) {
+        candidateName = 'Viral Mahesh Karva'
+        console.log('✅ Normalized Viral name to:', candidateName)
       }
       
       // Normalize Hardik's name to proper case for display (case-insensitive)
-      if (candidateNameUpper === 'HARDIK MUKESH NAVDHARE' || candidateName === 'Hardik Mukesh Navdhare') {
+      // Handle both NAVDHARE and NAVADHARE variations
+      if (candidateNameUpper === 'HARDIK MUKESH NAVDHARE' || 
+          candidateNameUpper === 'HARDIK MUKESH NAVADHARE' ||
+          candidateName === 'Hardik Mukesh Navdhare' ||
+          candidateName === 'Hardik Mukesh Navadhare') {
         candidateName = 'Hardik Mukesh Navdhare'
+      }
+      
+      // Normalize Jaymin's name variations (must happen before Gujarati lookup)
+      // Handle various spellings and case variations - check uppercase first for better matching
+      if ((candidateNameUpper.includes('JAYMIN') && candidateNameUpper.includes('ARVIND') && 
+           (candidateNameUpper.includes('SHAH') || candidateNameUpper.includes('SHA'))) ||
+          (candidateName.includes('Jaymin') && candidateName.includes('Arvind') && 
+           (candidateName.includes('Shah') || candidateName.includes('Sha')))) {
+        const originalName = candidateName
+        candidateName = 'Jaymin Arvind Shah'
+        console.log('✅ Normalized Jaymin name:', originalName, '→', candidateName)
       }
       
       // Normalize Ram Ashok's name variations to proper case for display (case-insensitive)
@@ -226,8 +268,28 @@ export async function GET(request: NextRequest) {
         candidateName = 'Ram Ashok Karva'
       }
       
+      // Recalculate uppercase after all normalizations
+      const normalizedNameUpper = candidateName.toUpperCase()
+      
       // Get Gujarati name from mapping if available (for ALL zones)
-      const nameGujarati = CANDIDATE_NAMES_GUJARATI[candidateName] || null
+      // Try exact match first, then try case-insensitive lookup with normalized name
+      let nameGujarati = CANDIDATE_NAMES_GUJARATI[candidateName] || 
+                         CANDIDATE_NAMES_GUJARATI[normalizedNameUpper] || 
+                         null
+      
+      // Debug logging for Jaymin specifically
+      if (candidateName.includes('Jaymin') && (candidateName.includes('Shah') || candidateName.includes('Sha'))) {
+        if (nameGujarati) {
+          console.log('✅ Jaymin Arvind Shah - Gujarati name found:', nameGujarati)
+        } else {
+          console.log('⚠️ Jaymin Arvind Shah - Gujarati mapping not found:', {
+            normalizedName: candidateName,
+            uppercaseName: normalizedNameUpper,
+            originalName: candidate.user?.name || candidate.name,
+            availableJayminKeys: Object.keys(CANDIDATE_NAMES_GUJARATI).filter(k => k.includes('Jaymin'))
+          })
+        }
+      }
 
       return {
         id: candidate.id,

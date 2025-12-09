@@ -136,6 +136,13 @@ export default function VoterDashboard() {
   const { selectedLanguage, setSelectedLanguage } = useVoterLanguage()
   const router = useRouter()
 
+  // Helper function to fix Karnataka Gujarati spelling (remove extra 'ક')
+  const fixKarnatakaGujarati = (nameGujarati: string | null | undefined): string | null | undefined => {
+    if (!nameGujarati) return nameGujarati
+    // Fix "કકર્ણાટક" (with extra 'ક') to "કર્ણાટક"
+    return nameGujarati.replace(/કકર્ણાટક/g, 'કર્ણાટક')
+  }
+
   // Language-specific content
   const content = {
     english: {
@@ -721,13 +728,13 @@ export default function VoterDashboard() {
               {voterData.yuvaPankZone && (
                 <div className="border-l-4 border-green-500 pl-4">
                   <h5 className="font-medium text-gray-900">{content[selectedLanguage].yuvaPankhZone}</h5>
-                  <p className="text-lg text-gray-900">{selectedLanguage === 'english' ? voterData.yuvaPankZone.name : voterData.yuvaPankZone.nameGujarati}</p>
+                  <p className="text-lg text-gray-900">{selectedLanguage === 'english' ? voterData.yuvaPankZone.name : fixKarnatakaGujarati(voterData.yuvaPankZone.nameGujarati)}</p>
                 </div>
               )}
               {voterData.karobariZone && (
                 <div className="border-l-4 border-blue-500 pl-4">
                   <h5 className="font-medium text-gray-900">{content[selectedLanguage].karobariZone}</h5>
-                  <p className="text-lg text-gray-900">{selectedLanguage === 'english' ? voterData.karobariZone.name : voterData.karobariZone.nameGujarati}</p>
+                  <p className="text-lg text-gray-900">{selectedLanguage === 'english' ? voterData.karobariZone.name : fixKarnatakaGujarati(voterData.karobariZone.nameGujarati)}</p>
                   {results?.karobari?.regions && Array.isArray(results.karobari.regions) && (() => {
                     const zoneResult = results.karobari.regions.find(r => r.zoneId === voterData.karobariZone?.id);
                     const isCompleted = zoneResult && zoneResult.turnoutPercentage >= 100;
@@ -746,7 +753,7 @@ export default function VoterDashboard() {
               {voterData.trusteeZone && (
                 <div className="border-l-4 border-purple-500 pl-4">
                   <h5 className="font-medium text-gray-900">{content[selectedLanguage].trusteeZone}</h5>
-                  <p className="text-lg text-gray-900">{selectedLanguage === 'english' ? voterData.trusteeZone.name : voterData.trusteeZone.nameGujarati}</p>
+                  <p className="text-lg text-gray-900">{selectedLanguage === 'english' ? voterData.trusteeZone.name : fixKarnatakaGujarati(voterData.trusteeZone.nameGujarati)}</p>
                 </div>
               )}
             </div>
@@ -840,7 +847,7 @@ export default function VoterDashboard() {
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">{content[selectedLanguage].zone}</span>
-                        <span className="font-medium">{selectedLanguage === 'english' ? (election.zone?.name || content[selectedLanguage].notAssigned) : (election.zone?.nameGujarati || content[selectedLanguage].notAssigned)}</span>
+                        <span className="font-medium">{selectedLanguage === 'english' ? (election.zone?.name || content[selectedLanguage].notAssigned) : (fixKarnatakaGujarati(election.zone?.nameGujarati) || content[selectedLanguage].notAssigned)}</span>
                       </div>
                       {election.tenure && (
                         <div className="flex justify-between text-sm">
