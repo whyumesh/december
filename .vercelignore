@@ -39,3 +39,6 @@ Thumbs.db
 *.swp
 *.swo
 
+# Video files (hosted on YouTube, not needed in deployment)
+public/videos/*.mp4
+

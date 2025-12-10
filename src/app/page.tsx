@@ -38,6 +38,10 @@ export default function HomePage() {
     // Target date: December 11, 2025, 7:00 AM IST (IST is UTC+5:30, so 1:30 AM UTC)
     const targetDate = new Date('2025-12-11T01:30:00Z');
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    
+    // Get YouTube video IDs from environment variables
+    const yuvaPankhVideoId = process.env.NEXT_PUBLIC_YOUTUBE_YUVA_PANKH_ID;
+    const trustMandalVideoId = process.env.NEXT_PUBLIC_YOUTUBE_TRUST_MANDAL_ID;
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -252,15 +256,26 @@ export default function HomePage() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden mb-4">
-                                        <video
-                                            className="w-full h-full object-contain"
-                                            controls
-                                            preload="metadata"
-                                            poster=""
-                                        >
-                                            <source src="/videos/Yuva Pankh Demo.mp4" type="video/mp4" />
-                                            Your browser does not support the video tag.
-                                        </video>
+                                        {yuvaPankhVideoId ? (
+                                            <iframe
+                                                className="w-full h-full"
+                                                src={`https://www.youtube.com/embed/${yuvaPankhVideoId}`}
+                                                title="Yuva Pankh Election Tutorial"
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                allowFullScreen
+                                                loading="lazy"
+                                            ></iframe>
+                                        ) : (
+                                            <video
+                                                className="w-full h-full object-contain"
+                                                controls
+                                                preload="metadata"
+                                                poster=""
+                                            >
+                                                <source src="/videos/Yuva Pankh Demo.mp4" type="video/mp4" />
+                                                Your browser does not support the video tag.
+                                            </video>
+                                        )}
                                     </div>
                                     <p className="text-sm text-gray-600 text-center">
                                         Watch this tutorial to understand the voting process for Yuva Pankh Samiti elections
@@ -281,15 +296,26 @@ export default function HomePage() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden mb-4">
-                                        <video
-                                            className="w-full h-full object-contain"
-                                            controls
-                                            preload="metadata"
-                                            poster=""
-                                        >
-                                            <source src="/videos/Trust Mandal Demo.mp4" type="video/mp4" />
-                                            Your browser does not support the video tag.
-                                        </video>
+                                        {trustMandalVideoId ? (
+                                            <iframe
+                                                className="w-full h-full"
+                                                src={`https://www.youtube.com/embed/${trustMandalVideoId}`}
+                                                title="Trust Mandal Election Tutorial"
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                allowFullScreen
+                                                loading="lazy"
+                                            ></iframe>
+                                        ) : (
+                                            <video
+                                                className="w-full h-full object-contain"
+                                                controls
+                                                preload="metadata"
+                                                poster=""
+                                            >
+                                                <source src="/videos/Trust Mandal Demo.mp4" type="video/mp4" />
+                                                Your browser does not support the video tag.
+                                            </video>
+                                        )}
                                     </div>
                                     <p className="text-sm text-gray-600 text-center">
                                         Watch this tutorial to understand the voting process for Trust Mandal elections

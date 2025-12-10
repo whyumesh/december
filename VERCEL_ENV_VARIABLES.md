@@ -101,6 +101,16 @@ MAX_FILE_SIZE=5242880
 ALLOWED_FILE_TYPES=image/jpeg,image/png,application/pdf
 ```
 
+#### YouTube Video IDs (For Landing Page Tutorials)
+```bash
+NEXT_PUBLIC_YOUTUBE_YUVA_PANKH_ID=QZJSfZsjrcQ
+NEXT_PUBLIC_YOUTUBE_TRUST_MANDAL_ID=HH1bMm35-QA
+```
+
+**Videos:**
+- Yuva Pankh: https://www.youtube.com/watch?v=QZJSfZsjrcQ
+- Trust Mandal: https://www.youtube.com/watch?v=HH1bMm35-QA
+
 ---
 
 ## Environment-Specific Setup
@@ -249,6 +259,8 @@ Copy-paste this list to track which variables you've set:
 [ ] BCRYPT_ROUNDS (optional)
 [ ] MAX_FILE_SIZE (optional)
 [ ] ALLOWED_FILE_TYPES (optional)
+[ ] NEXT_PUBLIC_YOUTUBE_YUVA_PANKH_ID
+[ ] NEXT_PUBLIC_YOUTUBE_TRUST_MANDAL_ID
 ```
 
 ---
