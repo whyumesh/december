@@ -28,8 +28,11 @@ import {
     X,
 } from "lucide-react";
 import Logo from "@/components/Logo";
+import CountdownTimer from "@/components/CountdownTimer";
 
 export default function LandingPage() {
+    // Target date: December 11, 2025, 7:00 AM IST (IST is UTC+5:30, so 1:30 AM UTC)
+    const targetDate = new Date('2025-12-11T01:30:00Z');
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     return (
@@ -179,6 +182,7 @@ export default function LandingPage() {
                         <h2 className="text-lg sm:text-2xl md:text-3xl font-semibold text-blue-600 mb-3 sm:mb-4">
                             Election 2026
                         </h2>
+                        <CountdownTimer targetDate={targetDate} />
                         <p className="text-base sm:text-xl text-gray-600 mb-6 sm:mb-8 max-w-3xl mx-auto px-4">
                             Participate in our democratic process and help shape the
                             future of our community through secure, transparent, and
@@ -357,6 +361,72 @@ export default function LandingPage() {
                                             </Link>
                                         </div>
                                     </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </div>
+
+                    {/* How to Vote Videos */}
+                    <div className="mb-8 sm:mb-16">
+                        <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-6 sm:mb-12">
+                            Demo Videos
+                        </h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+                            {/* Yuva Pankh Video */}
+                            <Card className="hover:shadow-lg transition-shadow">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center space-x-2">
+                                        <Users className="h-6 w-6 text-green-600" />
+                                        <span>Yuva Pankh Election</span>
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Learn how to vote for Yuva Pankh Samiti elections
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden mb-4">
+                                        <video
+                                            className="w-full h-full object-contain"
+                                            controls
+                                            preload="metadata"
+                                            poster=""
+                                        >
+                                            <source src="/videos/Yuva Pankh Demo.mp4" type="video/mp4" />
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    </div>
+                                    <p className="text-sm text-gray-600 text-center">
+                                        Watch this tutorial to understand the voting process for Yuva Pankh Samiti elections
+                                    </p>
+                                </CardContent>
+                            </Card>
+
+                            {/* Trust Mandal Video */}
+                            <Card className="hover:shadow-lg transition-shadow">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center space-x-2">
+                                        <Award className="h-6 w-6 text-purple-600" />
+                                        <span>Trust Mandal Election</span>
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Learn how to vote for Trust Mandal elections
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden mb-4">
+                                        <video
+                                            className="w-full h-full object-contain"
+                                            controls
+                                            preload="metadata"
+                                            poster=""
+                                        >
+                                            <source src="/videos/Trust Mandal Demo.mp4" type="video/mp4" />
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    </div>
+                                    <p className="text-sm text-gray-600 text-center">
+                                        Watch this tutorial to understand the voting process for Trust Mandal elections
+                                    </p>
                                 </CardContent>
                             </Card>
                         </div>
@@ -589,17 +659,28 @@ export default function LandingPage() {
                                 Election 2026: Shree Panvel Kutchi Maheshwari Mahajan
                             </p>
                             <p>
-                                &copy; 2025 SKMMMS Election 2026. All rights reserved.
+                                &copy; 2025-26 SKMMMS Election 2026. All rights reserved.
                             </p>
                             <p className="mt-2">
-                                Designed & Developed by{" "}
+                                Designed and Developed with ❤️ in 🇮🇳 by
+                            </p>
+                            <p className="mt-1 flex items-center justify-center gap-2 flex-wrap">
                                 <Link 
                                     href="https://www.teamfullstack.in" 
                                     target="_blank" 
                                     rel="noopener noreferrer"
                                     className="text-blue-400 hover:text-blue-300 hover:underline transition-colors font-semibold"
                                 >
-                                    Parth Chetna Piyush Gagdani, Team FullStack (Thane)
+                                    Parth Chetna Piyush Gagdani, (Thane)
+                                </Link>
+                                <span className="text-gray-600">|</span>
+                                <Link 
+                                    href="https://www.teamfullstack.in" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="font-bold text-blue-400 hover:text-blue-300 hover:underline transition-colors"
+                                >
+                                    પાર્થ ચેતના પિયુષ ગગડાની, (થાણા)
                                 </Link>
                             </p>
                         </div>

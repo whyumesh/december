@@ -375,17 +375,28 @@ export default function PrivacyPolicyPage() {
               <p className="text-xs text-gray-500 mb-2">
                 Election 2026: Shree Panvel Kutchi Maheshwari Mahajan
               </p>
-              <p>&copy; 2025 SKMMMS Election 2026. All rights reserved.</p>
+              <p>&copy; 2025-26 SKMMMS Election 2026. All rights reserved.</p>
             </p>
             <p className="mt-2">
-              Designed & Developed by{" "}
+              Designed and Developed with ❤️ in 🇮🇳 by
+            </p>
+            <p className="mt-1 flex items-center justify-center gap-2 flex-wrap">
               <Link 
                 href="https://www.teamfullstack.in" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-blue-400 hover:text-blue-300 hover:underline transition-colors font-semibold"
               >
-                Parth Chetna Piyush Gagdani, Team FullStack (Thane)
+                Parth Chetna Piyush Gagdani, (Thane)
+              </Link>
+              <span className="text-gray-600">|</span>
+              <Link 
+                href="https://www.teamfullstack.in" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="font-bold text-blue-400 hover:text-blue-300 hover:underline transition-colors"
+              >
+                પાર્થ ચેતના પિયુષ ગગડાની, (થાણા)
               </Link>
             </p>
           </div>

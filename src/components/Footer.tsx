@@ -22,7 +22,7 @@ export default function Footer({ language }: FooterProps) {
             candidateRegistration: 'Candidate Registration',
             contact: 'Contact',
             election2026: 'Election 2026: Shree Panvel Kutchi Maheshwari Mahajan',
-            copyright: '© 2025 SKMMMS Election 2026. All rights reserved.',
+            copyright: '© 2025-26 SKMMMS Election 2026. All rights reserved.',
             designedBy: 'Designed & Developed by'
         },
         gujarati: {
@@ -35,7 +35,7 @@ export default function Footer({ language }: FooterProps) {
             candidateRegistration: 'ઉમેદવાર નોંધણી',
             contact: 'સંપર્ક',
             election2026: 'ચૂંટણી ૨૦૨૬: શ્રી પનવેલ કચ્છી મહેશ્વરી મહાજન',
-            copyright: '© ૨૦૨૫ SKMMMS ચૂંટણી ૨૦૨૬. બધા અધિકારો સુરક્ષિત.',
+            copyright: '© ૨૦૨૫-૨૬ SKMMMS ચૂંટણી ૨૦૨૬. બધા અધિકારો સુરક્ષિત.',
             designedBy: 'ડિઝાઇન અને વિકસિત'
         }
     }
@@ -112,14 +112,25 @@ export default function Footer({ language }: FooterProps) {
                         {t.copyright}
                     </p>
                     <p className="mt-2">
-                        {t.designedBy}{" "}
+                        Designed and Developed with ❤️ in 🇮🇳 by
+                    </p>
+                    <p className="mt-1 flex items-center justify-center gap-2 flex-wrap">
                         <Link 
                             href="https://www.teamfullstack.in" 
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="text-blue-400 hover:text-blue-300 hover:underline transition-colors font-semibold"
                         >
-                            Parth Chetna Piyush Gagdani, Team FullStack (Thane)
+                            Parth Chetna Piyush Gagdani, (Thane)
+                        </Link>
+                        <span className="text-gray-600">|</span>
+                        <Link 
+                            href="https://www.teamfullstack.in" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="font-bold text-blue-400 hover:text-blue-300 hover:underline transition-colors"
+                        >
+                            પાર્થ ચેતના પિયુષ ગગડાની, (થાણા)
                         </Link>
                     </p>
                 </div>
