@@ -1,46 +1,22 @@
 'use client'
 
 import Link from "next/link";
-import { useVoterLanguage } from '@/hooks/useVoterLanguage'
-
-interface FooterProps {
-    language?: 'english' | 'gujarati'
-}
 
 export default function Footer({ language }: FooterProps) {
-    const { selectedLanguage } = useVoterLanguage()
-    const currentLanguage = language || selectedLanguage
-
     const content = {
-        english: {
-            title: 'SKMMMS Election 2026',
-            description: 'A secure, transparent, and accessible digital democracy platform for our community.',
-            elections: 'Elections',
-            trustees: 'Trustees',
-            quickLinks: 'Quick Links',
-            voterLogin: 'Voter Login',
-            candidateRegistration: 'Candidate Registration',
-            contact: 'Contact',
-            election2026: 'Election 2026: Shree Panvel Kutchi Maheshwari Mahajan',
-            copyright: '© 2025-26 SKMMMS Election 2026. All rights reserved.',
-            designedBy: 'Designed & Developed by'
-        },
-        gujarati: {
-            title: 'SKMMMS ચૂંટણી ૨૦૨૬',
-            description: 'અમારા સમુદાય માટે એક સુરક્ષિત, પારદર્શક અને સુલભ ડિજિટલ લોકશાહી પ્લેટફોર્મ.',
-            elections: 'ચૂંટણીઓ',
-            trustees: 'ટ્રસ્ટીઓ',
-            quickLinks: 'ઝડપી લિંક્સ',
-            voterLogin: 'મતદાતા લોગિન',
-            candidateRegistration: 'ઉમેદવાર નોંધણી',
-            contact: 'સંપર્ક',
-            election2026: 'ચૂંટણી ૨૦૨૬: શ્રી પનવેલ કચ્છી મહેશ્વરી મહાજન',
-            copyright: '© ૨૦૨૫-૨૬ SKMMMS ચૂંટણી ૨૦૨૬. બધા અધિકારો સુરક્ષિત.',
-            designedBy: 'ડિઝાઇન અને વિકસિત'
-        }
+        title: 'SKMMMS Election 2026',
+        description: 'A secure, transparent, and accessible digital democracy platform for our community.',
+        elections: 'Elections',
+        trustees: 'Trustees',
+        quickLinks: 'Quick Links',
+        voterLogin: 'Voter Login',
+        candidateRegistration: 'Candidate Registration',
+        contact: 'Contact',
+        election2026: 'Election 2026: Shree Panvel Kutchi Maheshwari Mahajan',
+        copyright: '© 2025-26 SKMMMS Election 2026. All rights reserved.'
     }
 
-    const t = content[currentLanguage]
+    const t = content
 
     return (
         <footer className="bg-gray-900 text-white py-8 sm:py-12">

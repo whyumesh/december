@@ -57,7 +57,9 @@ export default function CountdownTimer({ targetDate }: CountdownTimerProps) {
 
   return (
     <div className="mt-4 mb-6">
-      <p className="text-sm sm:text-base text-gray-600 mb-3">Election starts in:</p>
+      <p className="text-sm sm:text-base text-gray-600 mb-3 font-bold">
+        Election ends in: | ચૂંટણી પૂરી થાય છે:
+      </p>
       <div className="flex items-center justify-center gap-2 sm:gap-4">
         <div className="bg-white rounded-lg shadow-md px-3 sm:px-4 py-2 sm:py-3 min-w-[60px] sm:min-w-[70px]">
           <div className="text-2xl sm:text-3xl font-bold text-blue-600">
@@ -88,7 +90,7 @@ export default function CountdownTimer({ targetDate }: CountdownTimerProps) {
         </div>
       </div>
       <p className="text-xs sm:text-sm text-gray-500 mt-3">
-        7:00 AM IST, 11th December 2025
+        11:59 PM IST, 25th December 2025
       </p>
     </div>
   )

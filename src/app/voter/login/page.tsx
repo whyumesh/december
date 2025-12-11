@@ -436,6 +436,7 @@ export default function VoterLoginPage() {
                     placeholder="7875XXXXXX"
                     autoComplete="tel"
                     maxLength={10}
+                    className="!border-2 !border-blue-500 !ring-2 !ring-blue-200 !bg-blue-50 focus-visible:!ring-blue-200 focus-visible:!ring-offset-2"
                     required
                   />
                   {/* Note for Indian users */}
@@ -463,6 +464,7 @@ export default function VoterLoginPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="your.email@example.com"
                     autoComplete="email"
+                    className="!border-2 !border-blue-500 !ring-2 !ring-blue-200 !bg-blue-50 focus-visible:!ring-blue-200 focus-visible:!ring-offset-2"
                     required
                   />
                   {/* Note for overseas users */}
@@ -518,6 +520,7 @@ export default function VoterLoginPage() {
                   }}
                   placeholder="Enter 6-digit OTP"
                   maxLength={6}
+                  className="!border-2 !border-blue-500 !ring-2 !ring-blue-200 !bg-blue-50 text-center text-lg tracking-widest font-semibold focus-visible:!ring-blue-200 focus-visible:!ring-offset-2"
                   required
                 />
                 <p className="text-xs text-gray-500">

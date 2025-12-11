@@ -300,11 +300,11 @@ export default function TermsAndConditionsPage() {
       <footer className="bg-gray-900 text-white py-6 sm:py-8 mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="border-t border-gray-800 pt-6 text-center text-sm text-gray-400">
+            <p className="text-xs text-gray-500 mb-2">
+              Election 2026: Shree Panvel Kutchi Maheshwari Mahajan
+            </p>
             <p>
-              <p className="text-xs text-gray-500 mb-2">
-                Election 2026: Shree Panvel Kutchi Maheshwari Mahajan
-              </p>
-              <p>&copy; 2025-26 SKMMMS Election 2026. All rights reserved.</p>
+              &copy; 2025-26 SKMMMS Election 2026. All rights reserved.
             </p>
             <p className="mt-2">
               Designed and Developed with ❤️ in 🇮🇳 by
