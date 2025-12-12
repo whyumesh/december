@@ -147,7 +147,7 @@ async function checkStorage() {
 async function checkExternalServices() {
   const services = {
     otp: process.env.OTP_SERVICE_API_KEY ? 'configured' : 'not_configured',
-    email: (process.env.ZOHO_EMAIL || process.env.GMAIL_USER) ? 'configured' : 'not_configured',
+    email: process.env.GMAIL_USER ? 'configured' : 'not_configured',
     storj: process.env.STORJ_ACCESS_KEY_ID ? 'configured' : 'not_configured'
   }
   

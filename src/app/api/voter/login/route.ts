@@ -5,6 +5,7 @@ import { handleError, ValidationError, AuthenticationError, NotFoundError } from
 import { logger, logAuth, logRequest } from '@/lib/logger'
 import { sessionManager } from '@/lib/session'
 import { buildPhoneWhereFilters, normalizePhone } from '@/lib/phone'
+import { hasCompletedAllEligibleVotes } from '@/lib/voter-eligibility'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -111,6 +112,19 @@ async function handler(request: NextRequest) {
 
     if (!voter) {
       throw new NotFoundError('Voter not found. Please contact administrator.')
+    }
+
+    // Check if voter has completed all eligible votes
+    const completionStatus = await hasCompletedAllEligibleVotes(voter.id)
+    if (completionStatus.completed) {
+      console.log('Login blocked - voter has completed all eligible votes:', {
+        voterId: voter.voterId,
+        completedElections: completionStatus.completedElections,
+      })
+      throw new AuthenticationError(
+        completionStatus.message || 
+        'You have completed voting in all eligible elections. Login is no longer available.'
+      )
     }
 
     // Update voter's last login

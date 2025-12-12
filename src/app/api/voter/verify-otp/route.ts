@@ -1,54 +1,62 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { verifyOTP } from '@/lib/otp-utils'
 import { normalizePhone } from '@/lib/phone'
+import { createRateLimitedRoute, rateLimitConfigs } from '@/lib/rate-limit'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-export async function POST(request: NextRequest) {
+async function handler(request: NextRequest) {
   try {
     const { phone, email, otp } = await request.json()
 
+    // Validate input
     if ((!phone && !email) || !otp) {
-      return NextResponse.json({ error: 'Phone number or email and OTP are required' }, { status: 400 })
+      return NextResponse.json({ 
+        error: 'Phone number or email and OTP are required' 
+      }, { status: 400 })
     }
 
-    // For email OTPs, we stored the email in the phone field
-    // For phone OTPs, use normalized phone
+    if (!otp || otp.length !== 6 || !/^\d{6}$/.test(otp)) {
+      return NextResponse.json({ 
+        error: 'Invalid OTP format. OTP must be 6 digits.' 
+      }, { status: 400 })
+    }
+
+    // Determine identifier (email or phone)
     const otpIdentifier = email 
-      ? email.toLowerCase().trim() // Use email for email OTPs
+      ? email.toLowerCase().trim()
       : normalizePhone(phone)
 
-    // Find the OTP record
-    const otpRecord = await prisma.oTP.findFirst({
-      where: {
-        phone: otpIdentifier,
-        code: otp,
-        isUsed: false,
-        expiresAt: {
-          gt: new Date()
-        }
-      },
-      orderBy: {
-        createdAt: 'desc' // Get the most recent OTP
-      }
+    console.log('🔍 Verifying OTP:', {
+      identifier: otpIdentifier.slice(0, 3) + '***',
+      otpLength: otp.length,
     })
 
-    if (!otpRecord) {
-      return NextResponse.json({ error: 'Invalid or expired OTP' }, { status: 400 })
+    // Verify OTP using utility function
+    const verificationResult = await verifyOTP(otpIdentifier, otp)
+
+    if (!verificationResult.success) {
+      return NextResponse.json({ 
+        error: verificationResult.message || 'Invalid or expired OTP' 
+      }, { status: 400 })
     }
 
-    // Mark OTP as used
-    await prisma.oTP.update({
-      where: { id: otpRecord.id },
-      data: { isUsed: true }
+    console.log('✅ OTP verified successfully')
+
+    return NextResponse.json({ 
+      message: 'OTP verified successfully',
+      success: true
     })
 
-    return NextResponse.json({ message: 'OTP verified successfully' })
-
-  } catch (error) {
-    console.error('Error verifying OTP:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  } catch (error: any) {
+    console.error('❌ Error verifying OTP:', error)
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      message: error?.message || 'Failed to verify OTP'
+    }, { status: 500 })
   }
 }
+
+export const POST = createRateLimitedRoute(handler, rateLimitConfigs.otp)

@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { generateOTP } from '@/lib/utils'
-import { sendOTP } from '@/lib/otp'
-import { sendVoterOTP } from '@/lib/mail'
+import { sendOTP as sendEmailOTP } from '@/lib/email'
+import { sendOTP as sendSMSOTP } from '@/lib/otp'
+import { 
+  generateOTP, 
+  createOTPExpiry, 
+  saveOTP, 
+  canResendOTP, 
+  incrementResendCount 
+} from '@/lib/otp-utils'
 import { createRateLimitedRoute, rateLimitConfigs } from '@/lib/rate-limit'
 import { logRequest } from '@/lib/logger'
 import { buildPhoneWhereFilters, normalizePhone } from '@/lib/phone'
+import { hasCompletedAllEligibleVotes } from '@/lib/voter-eligibility'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -99,15 +106,38 @@ async function handler(request: NextRequest) {
       return NextResponse.json({ error: 'Your voter registration is inactive' }, { status: 403 })
     }
 
-    // Generate OTP
-    const otpCode = generateOTP()
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+    // Check if voter has completed all eligible votes
+    const completionStatus = await hasCompletedAllEligibleVotes(voter.id)
+    if (completionStatus.completed) {
+      console.log('OTP request blocked - voter has completed all eligible votes:', {
+        voterId: voter.voterId,
+        completedElections: completionStatus.completedElections,
+      })
+      return NextResponse.json({ 
+        error: completionStatus.message || 
+        'You have completed voting in all eligible elections. Login is no longer available.' 
+      }, { status: 403 })
+    }
 
     // Determine OTP delivery method
-    // If email is provided in request, use email; otherwise use SMS (phone)
     const useEmail = !!email
     const targetEmail = email || null
-    
+    const otpIdentifier = useEmail && targetEmail 
+      ? targetEmail.toLowerCase().trim()
+      : normalizePhone((voter.phone || phone || '').toString())
+
+    // Check resend limit
+    const resendCheck = canResendOTP(otpIdentifier)
+    if (!resendCheck.allowed) {
+      return NextResponse.json({ 
+        error: resendCheck.message || 'Resend limit exceeded. Please wait before requesting again.' 
+      }, { status: 429 })
+    }
+
+    // Generate OTP
+    const otpCode = generateOTP()
+    const expiresAt = createOTPExpiry(5) // 5 minutes expiry
+
     // Display OTP in terminal for development/testing
     const recipient = useEmail ? targetEmail : (voter.phone || phone)
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
@@ -117,29 +147,30 @@ async function handler(request: NextRequest) {
     console.log(`   Expires at: ${expiresAt.toLocaleString()}`)
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
     
-    // Store OTP identifier (phone for SMS, email for email OTPs)
-    // Note: OTP table uses 'phone' field but we can store email there for email-based OTPs
-    const otpIdentifier = useEmail && targetEmail 
-      ? targetEmail.toLowerCase().trim() // Store email for email OTPs
-      : normalizePhone((voter.phone || phone || '').toString())
-    
-    // Store OTP in database
-    await prisma.oTP.create({
-      data: {
-        phone: otpIdentifier, // Store phone or email as identifier
-        code: otpCode,
-        expiresAt
-      }
-    })
+    // Save OTP to database
+    await saveOTP(otpIdentifier, otpCode, expiresAt)
 
     let result
     let message
 
     if (useEmail && targetEmail) {
-      // Send OTP via email
-      console.log('Sending OTP via email to:', targetEmail)
-      result = await sendVoterOTP(targetEmail, otpCode, voter.name)
-      message = result.message || 'OTP has been sent to your registered email address.'
+      // Send OTP via email using new email utility
+      console.log('📧 Sending OTP via email to:', targetEmail)
+      try {
+        result = await sendEmailOTP(targetEmail, otpCode, {
+          recipientName: voter.name,
+          expiryMinutes: 5,
+        })
+        message = result.message || 'OTP has been sent to your registered email address.'
+        console.log('📧 Email send result:', { success: result.success, message: result.message })
+      } catch (emailError: any) {
+        console.error('❌ Email sending error caught in API route:', emailError)
+        return NextResponse.json({ 
+          error: 'Failed to send OTP email',
+          message: emailError?.message || 'Email service error. Please try again later.',
+          details: process.env.NODE_ENV === 'development' ? emailError?.stack : undefined
+        }, { status: 500 })
+      }
     } else {
       // Send OTP via SMS service
       const smsTarget = voter.phone || phone
@@ -148,10 +179,13 @@ async function handler(request: NextRequest) {
           error: 'Phone number is required for SMS delivery' 
         }, { status: 400 })
       }
-      console.log('Sending OTP via SMS to:', smsTarget)
-      result = await sendOTP(smsTarget, otpCode)
+      console.log('📱 Sending OTP via SMS to:', smsTarget)
+      result = await sendSMSOTP(smsTarget, otpCode)
       message = result.message || 'OTP has been sent to your registered phone number.'
     }
+
+    // Increment resend count if this is a resend
+    incrementResendCount(otpIdentifier)
 
     // If sending failed, return error (OTP is still stored in DB for retry scenarios)
     if (!result.success) {

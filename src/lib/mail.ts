@@ -1,45 +1,47 @@
 import nodemailer from 'nodemailer';
 export const runtime = "nodejs";
 
-// Create transporter using Zoho Mail SMTP
+// Create transporter using Gmail SMTP
 const createTransporter = () => {
-  // Support both old Gmail vars (for backward compatibility) and new Zoho vars
-  const emailUser = process.env.ZOHO_EMAIL || process.env.GMAIL_USER
-  const emailPassword = process.env.ZOHO_PASSWORD || process.env.GMAIL_APP_PASSWORD
-  const smtpHost = process.env.SMTP_HOST || 'smtp.zoho.com'
-  const smtpPort = parseInt(process.env.SMTP_PORT || '587', 10)
-  const smtpSecure = process.env.SMTP_SECURE === 'true' || smtpPort === 465
+  const gmailUser = process.env.GMAIL_USER || 'no.reply.electkms@gmail.com'
+  const gmailAppPassword = process.env.GMAIL_APP_PASSWORD || 'sempfpspspderyiw'
 
-  if (!emailUser || !emailPassword) {
-    console.error('❌ Email SMTP configuration missing:')
-    console.error('   ZOHO_EMAIL (or GMAIL_USER):', emailUser ? '***' : 'NOT SET')
-    console.error('   ZOHO_PASSWORD (or GMAIL_APP_PASSWORD):', emailPassword ? '***' : 'NOT SET')
-    throw new Error('Email SMTP configuration is missing. Please set ZOHO_EMAIL and ZOHO_PASSWORD environment variables.')
+  if (!gmailUser || !gmailAppPassword) {
+    console.error('❌ Gmail SMTP configuration missing:')
+    console.error('   GMAIL_USER:', gmailUser ? '***' : 'NOT SET')
+    console.error('   GMAIL_APP_PASSWORD:', gmailAppPassword ? '***' : 'NOT SET')
+    throw new Error('Gmail SMTP configuration is missing. Please set GMAIL_USER and GMAIL_APP_PASSWORD environment variables.')
   }
 
   // Validate email format
-  if (!emailUser.includes('@')) {
-    console.warn('⚠️  Email address format may be incorrect:', emailUser)
+  if (!gmailUser.includes('@gmail.com') && !gmailUser.includes('@googlemail.com')) {
+    console.warn('⚠️  GMAIL_USER does not appear to be a Gmail address:', gmailUser)
   }
 
-  // Clean password (remove spaces if present)
-  const cleanedPassword = emailPassword.replace(/\s/g, '').trim()
+  // Validate app password format (should be 16 characters, no spaces)
+  const cleanedPassword = gmailAppPassword.replace(/\s/g, '') // Remove spaces
+  if (cleanedPassword.length !== 16) {
+    console.warn('⚠️  GMAIL_APP_PASSWORD format may be incorrect. App passwords should be 16 characters with no spaces.')
+    console.warn('   Current length:', cleanedPassword.length)
+  }
+  
+  // Use cleaned password (without spaces) for authentication
+  const finalPassword = cleanedPassword.length === 16 ? cleanedPassword : gmailAppPassword.trim()
+  
+  // Log configuration (without exposing password)
+  console.log('📧 Gmail SMTP Configuration:')
+  console.log('   Email:', gmailUser.trim())
+  console.log('   Password Length:', finalPassword.length, 'characters')
   
   return nodemailer.createTransport({
-    host: smtpHost,
-    port: smtpPort,
-    secure: smtpSecure, // true for 465, false for other ports
+    service: 'gmail',
     auth: {
-      user: emailUser.trim(),
-      pass: cleanedPassword,
+      user: gmailUser.trim(),
+      pass: finalPassword, // Use App Password (cleaned, no spaces), not regular password
     },
     // Add connection timeout and retry options
     connectionTimeout: 10000, // 10 seconds
     socketTimeout: 10000, // 10 seconds
-    tls: {
-      // Do not fail on invalid certs
-      rejectUnauthorized: false
-    }
   });
 };
 
@@ -54,14 +56,29 @@ export async function sendVoterOTP(
     console.log('   Recipient:', email)
     console.log('   Voter Name:', voterName)
     
-    const transporter = createTransporter();
+    let transporter
+    try {
+      transporter = createTransporter();
+    } catch (configError: any) {
+      console.error('❌ Failed to create email transporter:', configError)
+      return {
+        success: false,
+        message: configError?.message || 'Email service configuration error. Please contact administrator.'
+      }
+    }
     
     // Verify transporter connection
     console.log('🔍 Verifying SMTP connection...')
-    await transporter.verify();
-    console.log('✅ SMTP connection verified successfully')
+    try {
+      await transporter.verify();
+      console.log('✅ SMTP connection verified successfully')
+    } catch (verifyError: any) {
+      console.error('❌ SMTP connection verification failed:', verifyError)
+      // Continue anyway - verification failure doesn't always mean send will fail
+      console.warn('⚠️  Continuing with email send despite verification failure...')
+    }
 
-    const emailUser = process.env.ZOHO_EMAIL || process.env.GMAIL_USER || 'noreply@electkms.org'
+      const emailUser = process.env.GMAIL_USER || 'no.reply.electkms@gmail.com'
     const mailOptions = {
       from: {
         name: 'KMS Election Commission 2026',
@@ -113,21 +130,29 @@ export async function sendVoterOTP(
       `,
     };
 
-    const result = await transporter.sendMail(mailOptions);
-    console.log('Voter OTP email sent successfully:', result.messageId);
-    
-    return { 
-      success: true, 
-      message: 'OTP has been sent to your registered email address' 
-    };
+    let result
+    try {
+      result = await transporter.sendMail(mailOptions);
+      console.log('✅ Voter OTP email sent successfully:', result.messageId);
+      
+      return { 
+        success: true, 
+        message: 'OTP has been sent to your registered email address' 
+      };
+    } catch (sendError: any) {
+      console.error('❌ Error during email send:', sendError);
+      throw sendError; // Re-throw to be caught by outer catch
+    }
   } catch (error: any) {
     console.error('❌ Error sending voter OTP email:', error);
+    console.error('Error type:', error?.constructor?.name);
     console.error('Error details:', {
       message: error?.message,
       code: error?.code,
       responseCode: error?.responseCode,
       response: error?.response,
-      command: error?.command
+      command: error?.command,
+      stack: error?.stack
     });
     
     // Provide more specific error messages
@@ -136,26 +161,23 @@ export async function sendVoterOTP(
     if (error?.message?.includes('Email SMTP configuration')) {
       errorMessage = 'Email service is not configured. Please contact administrator.'
     } else if (error?.code === 'EAUTH' || error?.responseCode === 535) {
-      errorMessage = 'Email authentication failed. Please check Zoho Mail credentials and ensure you are using an App Password (not your regular password).'
+      errorMessage = 'Email authentication failed. Please check Gmail credentials and ensure you are using an App Password (not your regular password).'
       
-      console.error('🔐 Zoho Mail Authentication Failed - Troubleshooting Steps:')
-      console.error('   1. Go to: https://accounts.zoho.com/home#security/app-passwords')
-      console.error('   2. Ensure 2-Factor Authentication (2FA) is enabled on your Zoho account')
+      console.error('🔐 Gmail Authentication Failed - Troubleshooting Steps:')
+      console.error('   1. Go to: https://myaccount.google.com/apppasswords')
+      console.error('   2. Ensure 2-Step Verification is enabled on your Google Account')
       console.error('   3. Generate a new App Password for "Mail" application')
-      console.error('   4. Copy the app password (remove any spaces)')
-      console.error('   5. Verify ZOHO_EMAIL is your full email address (e.g., yourname@zoho.com)')
-      console.error('   6. Update ZOHO_PASSWORD environment variable with the app password')
-      console.error('   7. Verify SMTP_HOST is set to smtp.zoho.com (or smtp.zoho.in for India)')
-      console.error('   8. Verify SMTP_PORT is set to 587 (TLS) or 465 (SSL)')
-      console.error('   9. Restart the application/server after updating environment variables')
+      console.error('   4. Copy the 16-character password (no spaces)')
+      console.error('   5. Verify GMAIL_USER is your full email address (e.g., yourname@gmail.com)')
+      console.error('   6. Update GMAIL_APP_PASSWORD environment variable with the app password')
+      console.error('   7. Restart the application/server after updating environment variables')
       console.error('')
       console.error('   Common Issues:')
-      console.error('   - Using regular Zoho password instead of App Password')
-      console.error('   - App password has spaces (remove all spaces)')
-      console.error('   - 2FA not enabled on Zoho account')
+      console.error('   - Using regular Gmail password instead of App Password')
+      console.error('   - App password has spaces (should be 16 characters, no spaces)')
+      console.error('   - 2-Step Verification not enabled')
       console.error('   - App password was revoked or expired')
-      console.error('   - Wrong email address in ZOHO_EMAIL')
-      console.error('   - Incorrect SMTP host or port')
+      console.error('   - Wrong email address in GMAIL_USER')
     } else if (error?.code === 'ECONNECTION' || error?.code === 'ETIMEDOUT') {
       errorMessage = 'Unable to connect to email service. Please try again later.'
     } else if (error?.responseCode === 550) {
@@ -178,7 +200,7 @@ export async function sendForgotPasswordOTP(
   try {
     const transporter = createTransporter();
 
-    const emailUser = process.env.ZOHO_EMAIL || process.env.GMAIL_USER || 'noreply@electkms.org'
+      const emailUser = process.env.GMAIL_USER || 'no.reply.electkms@gmail.com'
     const mailOptions = {
       from: {
         name: 'KMS Election Commission 2026',
@@ -255,7 +277,7 @@ export async function sendPasswordResetConfirmation(
   try {
     const transporter = createTransporter();
 
-    const emailUser = process.env.ZOHO_EMAIL || process.env.GMAIL_USER || 'noreply@electkms.org'
+      const emailUser = process.env.GMAIL_USER || 'no.reply.electkms@gmail.com'
     const mailOptions = {
       from: {
         name: 'KMS Election Commission 2026',
@@ -333,7 +355,7 @@ export async function sendCandidateRejectionEmail(
   try {
     const transporter = createTransporter();
 
-    const emailUser = process.env.ZOHO_EMAIL || process.env.GMAIL_USER || 'noreply@electkms.org'
+      const emailUser = process.env.GMAIL_USER || 'no.reply.electkms@gmail.com'
     const mailOptions = {
       from: {
         name: 'KMS Election Commission 2026',
