@@ -15,6 +15,7 @@ import Link from 'next/link'
 import Logo from '@/components/Logo'
 import CandidateProfileModal from '@/components/CandidateProfileModal'
 import Footer from '@/components/Footer'
+import SelfieBooth from '@/components/SelfieBooth'
 
 interface Trustee {
   id: string
@@ -61,6 +62,18 @@ export default function TrusteesVotingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [showSelfieBooth, setShowSelfieBooth] = useState(false)
+
+  // Auto-open selfie booth after successful vote
+  useEffect(() => {
+    if (success) {
+      // Small delay to show thank you message first
+      const timer = setTimeout(() => {
+        setShowSelfieBooth(true)
+      }, 2000) // 2 seconds delay
+      return () => clearTimeout(timer)
+    }
+  }, [success])
   const [voter, setVoter] = useState<any>(null)
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [showNotaWarning, setShowNotaWarning] = useState(false)
@@ -540,9 +553,7 @@ export default function TrusteesVotingPage() {
           localStorage.removeItem('trustees-selections')
         }
         setSuccess(true)
-        setTimeout(() => {
-          router.push('/voter/dashboard')
-        }, 3000)
+        // Don't auto-redirect - wait for user to close selfie booth
       } else {
         const errorData = await response.json()
         const errorMessage = errorData.error || 'Failed to submit vote'
@@ -629,6 +640,18 @@ export default function TrusteesVotingPage() {
   }
 
   if (success) {
+    // Show selfie booth directly, no thank you message
+    if (showSelfieBooth) {
+      return (
+        <SelfieBooth onClose={() => {
+          setShowSelfieBooth(false)
+          // Redirect to dashboard after selfie booth is closed
+          router.push('/voter/dashboard')
+        }} />
+      )
+    }
+    
+    // Show brief thank you message before selfie booth opens
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Card className="max-w-md w-full mx-4">
@@ -637,13 +660,7 @@ export default function TrusteesVotingPage() {
               <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
               <h2 className="text-2xl font-bold text-gray-900 mb-2">{content[selectedLanguage].voteSubmittedSuccessfully}</h2>
               <h3 className="text-xl font-semibold text-purple-600 mb-3">{content[selectedLanguage].thankYou}</h3>
-              <p className="text-gray-600 mb-4">
-                {content[selectedLanguage].voteRecorded}
-              </p>
-              <p className="text-gray-700 mb-4 italic">
-                {content[selectedLanguage].thankYouMessage}
-              </p>
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+              <p className="text-sm text-gray-500">Preparing your selfie booth...</p>
             </div>
           </CardContent>
         </Card>

@@ -13,6 +13,7 @@ import Link from 'next/link'
 import Logo from '@/components/Logo'
 import CandidateProfileModal from '@/components/CandidateProfileModal'
 import Footer from '@/components/Footer'
+import SelfieBooth from '@/components/SelfieBooth'
 
 interface Candidate {
   id: string
@@ -57,7 +58,19 @@ export default function KarobariMembersVotingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [showSelfieBooth, setShowSelfieBooth] = useState(false)
   const [voter, setVoter] = useState<any>(null)
+
+  // Auto-open selfie booth after successful vote
+  useEffect(() => {
+    if (success) {
+      // Small delay to show thank you message first
+      const timer = setTimeout(() => {
+        setShowSelfieBooth(true)
+      }, 2000) // 2 seconds delay
+      return () => clearTimeout(timer)
+    }
+  }, [success])
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [showNotaWarning, setShowNotaWarning] = useState(false)
   const [selectedCandidateProfile, setSelectedCandidateProfile] = useState<Candidate | null>(null)
@@ -282,9 +295,7 @@ export default function KarobariMembersVotingPage() {
 
       if (response.ok) {
         setSuccess(true)
-        setTimeout(() => {
-          router.push('/voter/dashboard')
-        }, 3000)
+        // Don't auto-redirect - wait for user to close selfie booth
       } else {
         const errorData = await response.json()
         setError(errorData.error || 'Failed to submit vote')
@@ -347,6 +358,18 @@ export default function KarobariMembersVotingPage() {
   }
 
   if (success) {
+    // Show selfie booth directly, no thank you message
+    if (showSelfieBooth) {
+      return (
+        <SelfieBooth onClose={() => {
+          setShowSelfieBooth(false)
+          // Redirect to dashboard after selfie booth is closed
+          router.push('/voter/dashboard')
+        }} />
+      )
+    }
+    
+    // Show brief thank you message before selfie booth opens
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Card className="max-w-md w-full mx-4">
@@ -355,13 +378,7 @@ export default function KarobariMembersVotingPage() {
               <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Vote Submitted Successfully!</h2>
               <h3 className="text-xl font-semibold text-purple-600 mb-3">Thank You!</h3>
-              <p className="text-gray-600 mb-4">
-                Your vote for Karobari Samiti elections has been recorded. You will be redirected to your dashboard shortly.
-              </p>
-              <p className="text-gray-700 mb-4 italic">
-                Thank you for participating in the election. Your vote has been successfully recorded and will help shape our community's future.
-              </p>
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+              <p className="text-sm text-gray-500">Preparing your selfie booth...</p>
             </div>
           </CardContent>
         </Card>
