@@ -5,9 +5,9 @@ import { prisma } from '@/lib/db'
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-// Note: maxDuration is only available in Next.js 15+
-// For Next.js 14, Vercel has a default timeout of 10 seconds for Hobby plan, 60 seconds for Pro
-// For longer operations, consider using Vercel Pro plan or optimizing the export
+// Extend timeout to 60 seconds (Vercel Pro plan limit)
+// For Next.js 14.2+, maxDuration is supported for API routes
+export const maxDuration = 60
 
 export async function GET(request: NextRequest) {
   const startTime = Date.now()
@@ -44,9 +44,9 @@ export async function GET(request: NextRequest) {
     workbook.modified = new Date()
 
     // ============================================
-    // SHEET 1: SUMMARY STATISTICS
+    // SHEET 1: ELECTION OVERVIEW (Merged: Summary Statistics, Voters by Region, Zone-wise Turnout)
     // ============================================
-    const summarySheet = workbook.addWorksheet('Summary Statistics')
+    const overviewSheet = workbook.addWorksheet('Election Overview')
     
     // Get all statistics - split into two Promise.all calls to avoid hoisting issues
     const [
@@ -144,38 +144,132 @@ export async function GET(request: NextRequest) {
     const approvedYuvaPankh = approvedYuvaPankhCandidates + approvedYuvaPankhNominees
     const rejectedYuvaPankh = rejectedYuvaPankhCandidates + rejectedYuvaPankhNominees
 
-    // Voter statistics
-    const votersWithYuvaPankZone = await prisma.voter.count({ where: { yuvaPankZoneId: { not: null } } })
-    const votersWithKarobariZone = await prisma.voter.count({ where: { karobariZoneId: { not: null } } })
-    const votersWithTrusteeZone = await prisma.voter.count({ where: { trusteeZoneId: { not: null } } })
+    // Voter statistics - optimized with parallel queries
+    const [votersWithYuvaPankZone, votersWithKarobariZone, votersWithTrusteeZone] = await Promise.all([
+      prisma.voter.count({ where: { yuvaPankZoneId: { not: null } } }),
+      prisma.voter.count({ where: { karobariZoneId: { not: null } } }),
+      prisma.voter.count({ where: { trusteeZoneId: { not: null } } })
+    ])
     
-    // Voters who have voted (count distinct voters)
+    // Voters who have voted (count distinct voters) - optimized with parallel queries
     // Note: Prisma distinct doesn't work with select, so we fetch and deduplicate
-    const yuvaPankhVotesForCount = await prisma.vote.findMany({
-      where: { election: { type: 'YUVA_PANK' } },
-      select: { voterId: true }
-    })
-    const karobariVotesForCount = await prisma.vote.findMany({
-      where: { election: { type: 'KAROBARI_MEMBERS' } },
-      select: { voterId: true }
-    })
-    const trusteeVotesForCount = await prisma.vote.findMany({
-      where: { election: { type: 'TRUSTEES' } },
-      select: { voterId: true }
-    })
+    const [yuvaPankhVotesForCount, karobariVotesForCount, trusteeVotesForCount] = await Promise.all([
+      prisma.vote.findMany({
+        where: { election: { type: 'YUVA_PANK' } },
+        select: { voterId: true }
+      }),
+      prisma.vote.findMany({
+        where: { election: { type: 'KAROBARI_MEMBERS' } },
+        select: { voterId: true }
+      }),
+      prisma.vote.findMany({
+        where: { election: { type: 'TRUSTEES' } },
+        select: { voterId: true }
+      })
+    ])
     
     // Deduplicate by voterId
     const votersVotedYuvaPankh = new Set(yuvaPankhVotesForCount.map(v => v.voterId)).size
     const votersVotedKarobari = new Set(karobariVotesForCount.map(v => v.voterId)).size
     const votersVotedTrustee = new Set(trusteeVotesForCount.map(v => v.voterId)).size
 
-    // Add summary data
-    summarySheet.columns = [
+    // Get voters by region data
+    const votersByRegion = await prisma.voter.groupBy({
+      by: ['region'],
+      _count: { id: true },
+      orderBy: { _count: { id: 'desc' } }
+    })
+
+    // Get zone-wise turnout data
+    const allZones = await prisma.zone.findMany({
+      where: { isActive: true },
+      orderBy: [{ electionType: 'asc' }, { name: 'asc' }]
+    })
+
+    // Process zones for turnout data
+    const zonePromises = allZones.map(async (zone) => {
+      let voterCount = 0
+      let voteCount = 0
+
+      try {
+        if (zone.electionType === 'YUVA_PANK') {
+          voterCount = await prisma.voter.count({ where: { yuvaPankZoneId: zone.id } })
+          const uniqueVoters = await prisma.vote.findMany({
+            where: {
+              yuvaPankhCandidate: { zoneId: zone.id }
+            },
+            select: { voterId: true },
+            distinct: ['voterId']
+          })
+          voteCount = uniqueVoters.length
+        } else if (zone.electionType === 'KAROBARI_MEMBERS') {
+          voterCount = await prisma.voter.count({ where: { karobariZoneId: zone.id } })
+          const uniqueVoters = await prisma.vote.findMany({
+            where: {
+              karobariCandidate: { zoneId: zone.id }
+            },
+            select: { voterId: true },
+            distinct: ['voterId']
+          })
+          voteCount = uniqueVoters.length
+        } else if (zone.electionType === 'TRUSTEES') {
+          voterCount = await prisma.voter.count({ where: { trusteeZoneId: zone.id } })
+          const uniqueVoters = await prisma.vote.findMany({
+            where: {
+              trusteeCandidate: { zoneId: zone.id }
+            },
+            select: { voterId: true },
+            distinct: ['voterId']
+          })
+          voteCount = uniqueVoters.length
+        }
+
+        const turnout = voterCount > 0 ? ((voteCount / voterCount) * 100).toFixed(2) + '%' : '0%'
+
+        return {
+          electionType: zone.electionType,
+          zoneName: zone.name,
+          totalVoters: voterCount,
+          votesCast: voteCount,
+          turnout,
+          seats: zone.seats
+        }
+      } catch (zoneError) {
+        console.error(`Error processing zone ${zone.id}:`, zoneError)
+        return {
+          electionType: zone.electionType,
+          zoneName: zone.name,
+          totalVoters: 0,
+          votesCast: 0,
+          turnout: 'Error',
+          seats: zone.seats
+        }
+      }
+    })
+
+    const zoneResults = await Promise.all(zonePromises)
+
+    // Set column widths for all sections
+    overviewSheet.columns = [
       { header: 'Metric', key: 'metric', width: 30 },
-      { header: 'Value', key: 'value', width: 20 }
+      { header: 'Value', key: 'value', width: 20 },
+      { header: 'Region', key: 'region', width: 25 },
+      { header: 'Total Voters', key: 'total', width: 15 },
+      { header: 'With Yuva Pankh Zone', key: 'yuvaPank', width: 20 },
+      { header: 'With Karobari Zone', key: 'karobari', width: 20 },
+      { header: 'With Trustee Zone', key: 'trustee', width: 20 },
+      { header: 'Election Type', key: 'electionType', width: 20 },
+      { header: 'Zone Name', key: 'zoneName', width: 25 },
+      { header: 'Total Voters (Zone)', key: 'totalVoters', width: 15 },
+      { header: 'Votes Cast', key: 'votesCast', width: 15 },
+      { header: 'Turnout %', key: 'turnout', width: 15 },
+      { header: 'Seats', key: 'seats', width: 10 }
     ]
 
-    summarySheet.addRows([
+    // SECTION 1: Summary Statistics
+
+    const summaryStartRow = 1
+    overviewSheet.addRows([
       { metric: 'Total Voters', value: totalVoters },
       { metric: 'Active Voters', value: activeVoters },
       { metric: 'Inactive Voters', value: totalVoters - activeVoters },
@@ -216,58 +310,85 @@ export async function GET(request: NextRequest) {
       { metric: 'Trustee - Rejected', value: rejectedTrustee }
     ])
 
-    // Style summary sheet
-    summarySheet.getRow(1).font = { bold: true, size: 12 }
-    summarySheet.getRow(1).fill = {
+    // Style summary section header
+    overviewSheet.getRow(summaryStartRow).font = { bold: true, size: 12 }
+    overviewSheet.getRow(summaryStartRow).fill = {
       type: 'pattern',
       pattern: 'solid',
       fgColor: { argb: 'FF4472C4' }
     }
-    summarySheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
+    overviewSheet.getRow(summaryStartRow).font = { bold: true, color: { argb: 'FFFFFFFF' } }
 
-    // ============================================
-    // SHEET 2: VOTER STATISTICS BY REGION
-    // ============================================
-    const voterRegionSheet = workbook.addWorksheet('Voters by Region')
-    
-    const votersByRegion = await prisma.voter.groupBy({
-      by: ['region'],
-      _count: { id: true },
-      orderBy: { _count: { id: 'desc' } }
-    })
+    // SECTION 2: Voters by Region
+    const regionStartRow = overviewSheet.rowCount + 3 // Add 3 rows spacing
+    overviewSheet.getCell(`A${regionStartRow}`).value = 'VOTERS BY REGION'
+    overviewSheet.getCell(`A${regionStartRow}`).font = { bold: true, size: 14 }
+    overviewSheet.mergeCells(`A${regionStartRow}:E${regionStartRow}`)
 
-    voterRegionSheet.columns = [
-      { header: 'Region', key: 'region', width: 25 },
-      { header: 'Total Voters', key: 'total', width: 15 },
-      { header: 'With Yuva Pankh Zone', key: 'yuvaPank', width: 20 },
-      { header: 'With Karobari Zone', key: 'karobari', width: 20 },
-      { header: 'With Trustee Zone', key: 'trustee', width: 20 }
-    ]
+    const regionHeaderRow = regionStartRow + 1
+    overviewSheet.getRow(regionHeaderRow).values = ['Region', 'Total Voters', 'With Yuva Pankh Zone', 'With Karobari Zone', 'With Trustee Zone']
+    overviewSheet.getRow(regionHeaderRow).font = { bold: true, size: 12 }
+    overviewSheet.getRow(regionHeaderRow).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF4472C4' }
+    }
+    overviewSheet.getRow(regionHeaderRow).font = { bold: true, color: { argb: 'FFFFFFFF' } }
 
-    for (const regionGroup of votersByRegion) {
+    // Batch all region queries in parallel for better performance
+    const regionQueries = votersByRegion.map(async (regionGroup) => {
       const region = regionGroup.region
       const [yuvaPank, karobari, trustee] = await Promise.all([
         prisma.voter.count({ where: { region, yuvaPankZoneId: { not: null } } }),
         prisma.voter.count({ where: { region, karobariZoneId: { not: null } } }),
         prisma.voter.count({ where: { region, trusteeZoneId: { not: null } } })
       ])
-
-      voterRegionSheet.addRow({
+      return {
         region: region || 'Unknown',
         total: regionGroup._count.id,
         yuvaPank,
         karobari,
         trustee
-      })
-    }
+      }
+    })
+    
+    const regionResults = await Promise.all(regionQueries)
+    regionResults.forEach(result => {
+      overviewSheet.addRow([
+        result.region,
+        result.total,
+        result.yuvaPank,
+        result.karobari,
+        result.trustee
+      ])
+    })
 
-    voterRegionSheet.getRow(1).font = { bold: true, size: 12 }
-    voterRegionSheet.getRow(1).fill = {
+    // SECTION 3: Zone-wise Turnout
+    const turnoutStartRow = overviewSheet.rowCount + 3 // Add 3 rows spacing
+    overviewSheet.getCell(`A${turnoutStartRow}`).value = 'ZONE-WISE TURNOUT'
+    overviewSheet.getCell(`A${turnoutStartRow}`).font = { bold: true, size: 14 }
+    overviewSheet.mergeCells(`A${turnoutStartRow}:F${turnoutStartRow}`)
+
+    const turnoutHeaderRow = turnoutStartRow + 1
+    overviewSheet.getRow(turnoutHeaderRow).values = ['Election Type', 'Zone Name', 'Total Voters', 'Votes Cast', 'Turnout %', 'Seats']
+    overviewSheet.getRow(turnoutHeaderRow).font = { bold: true, size: 12 }
+    overviewSheet.getRow(turnoutHeaderRow).fill = {
       type: 'pattern',
       pattern: 'solid',
-      fgColor: { argb: 'FF4472C4' }
+      fgColor: { argb: 'FFFFC000' }
     }
-    voterRegionSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
+    overviewSheet.getRow(turnoutHeaderRow).font = { bold: true, color: { argb: 'FFFFFFFF' } }
+
+    zoneResults.forEach(result => {
+      overviewSheet.addRow([
+        result.electionType,
+        result.zoneName,
+        result.totalVoters,
+        result.votesCast,
+        result.turnout,
+        result.seats
+      ])
+    })
 
     // ============================================
     // SHEET 3: ELECTION RESULTS - YUVA PANKH
@@ -432,185 +553,6 @@ export async function GET(request: NextRequest) {
     }
     trusteeResultsSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
 
-    // ============================================
-    // SHEET 6: ZONE-WISE TURNOUT
-    // ============================================
-    const turnoutSheet = workbook.addWorksheet('Zone-wise Turnout')
-    
-    const allZones = await prisma.zone.findMany({
-      where: { isActive: true },
-      orderBy: [{ electionType: 'asc' }, { name: 'asc' }]
-    })
-
-    turnoutSheet.columns = [
-      { header: 'Election Type', key: 'electionType', width: 20 },
-      { header: 'Zone Name', key: 'zoneName', width: 25 },
-      { header: 'Total Voters', key: 'totalVoters', width: 15 },
-      { header: 'Votes Cast', key: 'votesCast', width: 15 },
-      { header: 'Turnout %', key: 'turnout', width: 15 },
-      { header: 'Seats', key: 'seats', width: 10 }
-    ]
-
-    // Process zones in parallel batches
-    const zonePromises = allZones.map(async (zone) => {
-      let voterCount = 0
-      let voteCount = 0
-
-      try {
-        if (zone.electionType === 'YUVA_PANK') {
-          voterCount = await prisma.voter.count({ where: { yuvaPankZoneId: zone.id } })
-          // Use distinct count query instead of fetching all votes
-          const uniqueVoters = await prisma.vote.findMany({
-            where: {
-              yuvaPankhCandidate: { zoneId: zone.id }
-            },
-            select: { voterId: true },
-            distinct: ['voterId']
-          })
-          voteCount = uniqueVoters.length
-        } else if (zone.electionType === 'KAROBARI_MEMBERS') {
-          voterCount = await prisma.voter.count({ where: { karobariZoneId: zone.id } })
-          const uniqueVoters = await prisma.vote.findMany({
-            where: {
-              karobariCandidate: { zoneId: zone.id }
-            },
-            select: { voterId: true },
-            distinct: ['voterId']
-          })
-          voteCount = uniqueVoters.length
-        } else if (zone.electionType === 'TRUSTEES') {
-          voterCount = await prisma.voter.count({ where: { trusteeZoneId: zone.id } })
-          const uniqueVoters = await prisma.vote.findMany({
-            where: {
-              trusteeCandidate: { zoneId: zone.id }
-            },
-            select: { voterId: true },
-            distinct: ['voterId']
-          })
-          voteCount = uniqueVoters.length
-        }
-
-        const turnout = voterCount > 0 ? ((voteCount / voterCount) * 100).toFixed(2) + '%' : '0%'
-
-        return {
-          electionType: zone.electionType,
-          zoneName: zone.name,
-          totalVoters: voterCount,
-          votesCast: voteCount,
-          turnout,
-          seats: zone.seats
-        }
-      } catch (zoneError) {
-        console.error(`Error processing zone ${zone.id}:`, zoneError)
-        return {
-          electionType: zone.electionType,
-          zoneName: zone.name,
-          totalVoters: 0,
-          votesCast: 0,
-          turnout: 'Error',
-          seats: zone.seats
-        }
-      }
-    })
-
-    const zoneResults = await Promise.all(zonePromises)
-    zoneResults.forEach(result => {
-      turnoutSheet.addRow(result)
-    })
-
-    turnoutSheet.getRow(1).font = { bold: true, size: 12 }
-    turnoutSheet.getRow(1).fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFFFC000' }
-    }
-    turnoutSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
-
-    // ============================================
-    // SHEET 7: CANDIDATE STATUS BREAKDOWN
-    // ============================================
-    const candidateStatusSheet = workbook.addWorksheet('Candidate Status')
-    
-    candidateStatusSheet.columns = [
-      { header: 'Election Type', key: 'electionType', width: 20 },
-      { header: 'Zone', key: 'zone', width: 25 },
-      { header: 'Candidate Name', key: 'name', width: 30 },
-      { header: 'Status', key: 'status', width: 15 },
-      { header: 'Position', key: 'position', width: 20 },
-      { header: 'Region', key: 'region', width: 20 },
-      { header: 'Submitted Date', key: 'submitted', width: 20 }
-    ]
-
-    // Yuva Pankh Candidates
-    const yuvaPankhCandidates = await prisma.yuvaPankhCandidate.findMany({
-      include: {
-        user: { select: { name: true } },
-        zone: { select: { name: true } }
-      },
-      orderBy: { createdAt: 'desc' }
-    })
-
-    yuvaPankhCandidates.forEach(candidate => {
-      candidateStatusSheet.addRow({
-        electionType: 'YUVA_PANKH',
-        zone: candidate.zone?.name || 'N/A',
-        name: candidate.user?.name || candidate.name || 'Unknown',
-        status: candidate.status,
-        position: 'Member',
-        region: candidate.region || 'N/A',
-        submitted: candidate.createdAt.toLocaleDateString()
-      })
-    })
-
-    // Karobari Candidates
-    const karobariCandidatesForStatus = await prisma.karobariCandidate.findMany({
-      include: {
-        user: { select: { name: true } },
-        zone: { select: { name: true } }
-      },
-      orderBy: { createdAt: 'desc' }
-    })
-
-    karobariCandidatesForStatus.forEach(candidate => {
-      candidateStatusSheet.addRow({
-        electionType: 'KAROBARI',
-        zone: candidate.zone?.name || 'N/A',
-        name: candidate.user?.name || candidate.name || 'Unknown',
-        status: candidate.status,
-        position: candidate.position || 'N/A',
-        region: candidate.region || 'N/A',
-        submitted: candidate.createdAt.toLocaleDateString()
-      })
-    })
-
-    // Trustee Candidates
-    const trusteeCandidatesForStatus = await prisma.trusteeCandidate.findMany({
-      include: {
-        user: { select: { name: true } },
-        zone: { select: { name: true } }
-      },
-      orderBy: { createdAt: 'desc' }
-    })
-
-    trusteeCandidatesForStatus.forEach(candidate => {
-      candidateStatusSheet.addRow({
-        electionType: 'TRUSTEE',
-        zone: candidate.zone?.name || 'N/A',
-        name: candidate.user?.name || candidate.name || 'Unknown',
-        status: candidate.status,
-        position: 'Trustee',
-        region: candidate.region || 'N/A',
-        submitted: candidate.createdAt.toLocaleDateString()
-      })
-    })
-
-    candidateStatusSheet.getRow(1).font = { bold: true, size: 12 }
-    candidateStatusSheet.getRow(1).fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFE74C3C' }
-    }
-    candidateStatusSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
 
     // ============================================
     // SHEET 4: VOTER PARTICIPATION STATUS
@@ -808,11 +750,11 @@ export async function GET(request: NextRequest) {
     voterParticipationSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
     
     // ============================================
-    // SHEET: VOTER VOTE DETAILS (IP Address, Timestamp, MAC ID)
+    // SHEET: VOTER VOTE DETAILS (IP Address, Timestamp, MAC ID, Browser Details)
     // ============================================
     const voterVoteDetailsSheet = workbook.addWorksheet('Voter Vote Details')
     
-    // Fetch all votes with voter information and IP/timestamp
+    // Fetch all votes with voter information, IP, timestamp, and user agent
     const votesWithDetails = await prisma.vote.findMany({
       include: {
         voter: {
@@ -830,8 +772,8 @@ export async function GET(request: NextRequest) {
       { header: 'Voter ID', key: 'voterId', width: 18 },
       { header: 'Voter Name', key: 'name', width: 28 },
       { header: 'Phone', key: 'phone', width: 18 },
-      { header: 'MAC ID', key: 'macId', width: 20 },
       { header: 'IP Address', key: 'ipAddress', width: 18 },
+      { header: 'Browser Details', key: 'userAgent', width: 50 },
       { header: 'Vote Timestamp', key: 'timestamp', width: 25 }
     ]
     
@@ -840,8 +782,8 @@ export async function GET(request: NextRequest) {
         voterId: vote.voter.voterId,
         name: vote.voter.name,
         phone: vote.voter.phone || 'N/A',
-        macId: 'N/A (Not available from browsers)', // MAC addresses cannot be captured from web browsers
         ipAddress: vote.ipAddress || 'N/A',
+        userAgent: vote.userAgent || 'N/A',
         timestamp: vote.timestamp.toLocaleString('en-US', { 
           timeZone: 'Asia/Kolkata',
           year: 'numeric',
@@ -998,124 +940,8 @@ export async function GET(request: NextRequest) {
     }
     voterVotingStatusSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
 
-    // Apply conditional formatting to Yes/No cells (eligibility and voted status)
-    allVoters.forEach((voter, index) => {
-      const rowIndex = index + 2 // +2 because row 1 is header
-      
-      // Get eligibility status
-      const dob = voter.user?.dateOfBirth || voter.dob
-      const yuvaEligible = isEligibleForYuvaPankh(dob, voter.yuvaPankZoneId) ? 'Yes' : 'No'
-      const karobariEligible = voter.karobariZoneId ? 'Yes' : 'No'
-      const trusteeEligible = isEligibleForTrustee(dob, voter.trusteeZoneId) ? 'Yes' : 'No'
-      
-      // Get voted status
-      const yuvaVoted = votersVotedMap.get('YUVA_PANK')?.has(voter.id) ? 'Yes' : 'No'
-      const karobariVoted = votersVotedMap.get('KAROBARI_MEMBERS')?.has(voter.id) ? 'Yes' : 'No'
-      const trusteeVoted = votersVotedMap.get('TRUSTEES')?.has(voter.id) ? 'Yes' : 'No'
-
-      // Color code: Green for Yes, Red for No
-      // Column E: Yuva Pankh Eligible
-      if (yuvaEligible === 'Yes') {
-        voterVotingStatusSheet.getCell(`E${rowIndex}`).fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FF10B981' }
-        }
-        voterVotingStatusSheet.getCell(`E${rowIndex}`).font = { color: { argb: 'FFFFFFFF' }, bold: true }
-      } else {
-        voterVotingStatusSheet.getCell(`E${rowIndex}`).fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFEF4444' }
-        }
-        voterVotingStatusSheet.getCell(`E${rowIndex}`).font = { color: { argb: 'FFFFFFFF' }, bold: true }
-      }
-
-      // Column F: Karobari Eligible
-      if (karobariEligible === 'Yes') {
-        voterVotingStatusSheet.getCell(`F${rowIndex}`).fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FF10B981' }
-        }
-        voterVotingStatusSheet.getCell(`F${rowIndex}`).font = { color: { argb: 'FFFFFFFF' }, bold: true }
-      } else {
-        voterVotingStatusSheet.getCell(`F${rowIndex}`).fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFEF4444' }
-        }
-        voterVotingStatusSheet.getCell(`F${rowIndex}`).font = { color: { argb: 'FFFFFFFF' }, bold: true }
-      }
-
-      // Column G: Trustee Eligible
-      if (trusteeEligible === 'Yes') {
-        voterVotingStatusSheet.getCell(`G${rowIndex}`).fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FF10B981' }
-        }
-        voterVotingStatusSheet.getCell(`G${rowIndex}`).font = { color: { argb: 'FFFFFFFF' }, bold: true }
-      } else {
-        voterVotingStatusSheet.getCell(`G${rowIndex}`).fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFEF4444' }
-        }
-        voterVotingStatusSheet.getCell(`G${rowIndex}`).font = { color: { argb: 'FFFFFFFF' }, bold: true }
-      }
-
-      // Column H: Yuva Pankh Voted
-      if (yuvaVoted === 'Yes') {
-        voterVotingStatusSheet.getCell(`H${rowIndex}`).fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FF10B981' }
-        }
-        voterVotingStatusSheet.getCell(`H${rowIndex}`).font = { color: { argb: 'FFFFFFFF' }, bold: true }
-      } else {
-        voterVotingStatusSheet.getCell(`H${rowIndex}`).fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFEF4444' }
-        }
-        voterVotingStatusSheet.getCell(`H${rowIndex}`).font = { color: { argb: 'FFFFFFFF' }, bold: true }
-      }
-
-      // Column I: Karobari Voted
-      if (karobariVoted === 'Yes') {
-        voterVotingStatusSheet.getCell(`I${rowIndex}`).fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FF10B981' }
-        }
-        voterVotingStatusSheet.getCell(`I${rowIndex}`).font = { color: { argb: 'FFFFFFFF' }, bold: true }
-      } else {
-        voterVotingStatusSheet.getCell(`I${rowIndex}`).fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFEF4444' }
-        }
-        voterVotingStatusSheet.getCell(`I${rowIndex}`).font = { color: { argb: 'FFFFFFFF' }, bold: true }
-      }
-
-      // Column J: Trustee Voted
-      if (trusteeVoted === 'Yes') {
-        voterVotingStatusSheet.getCell(`J${rowIndex}`).fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FF10B981' }
-        }
-        voterVotingStatusSheet.getCell(`J${rowIndex}`).font = { color: { argb: 'FFFFFFFF' }, bold: true }
-      } else {
-        voterVotingStatusSheet.getCell(`J${rowIndex}`).fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFEF4444' }
-        }
-        voterVotingStatusSheet.getCell(`J${rowIndex}`).font = { color: { argb: 'FFFFFFFF' }, bold: true }
-      }
-    })
+    // Note: Conditional formatting removed for performance optimization
+    // The Yes/No values are still clearly visible without color coding
     
     // NOTE: Detailed Voting Data sheet removed for privacy - does not show who voted to whom
     // All voting insights are available in other sheets without revealing individual vote choices
