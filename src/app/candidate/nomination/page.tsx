@@ -1505,7 +1505,7 @@ export default function NominationPage() {
                     <CardContent className="pt-6">
                         <div className="text-center">
                             <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                            <h2 className="text-xl text-gray-900 mb-2">
+                            <h2 className="text-xl font-bold text-gray-900 mb-2">
                                 {authLoading
                                     ? "Checking Authentication..."
                                     : "Loading Security Token..."}
@@ -1529,7 +1529,7 @@ export default function NominationPage() {
                     <CardContent className="pt-6">
                         <div className="text-center">
                             <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-                            <h2 className="text-xl text-gray-900 mb-2">
+                            <h2 className="text-xl font-bold text-gray-900 mb-2">
                                 Authentication Required
                             </h2>
                             <p className="text-gray-600 mb-4">
@@ -1554,7 +1554,7 @@ export default function NominationPage() {
                     <CardContent className="pt-6">
                         <div className="text-center">
                             <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-                            <h2 className="text-2xl text-gray-900 mb-2">
+                            <h2 className="text-2xl font-bold text-gray-900 mb-2">
                                 Nomination Submitted Successfully!
                             </h2>
                             <p className="text-gray-600 mb-4">
@@ -1630,7 +1630,7 @@ export default function NominationPage() {
 </Button>
                             )}
                             <div>
-                                <h1 className="text-xl sm:text-2xl text-gray-900">
+                                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
                                     Nomination Form
                                 </h1>
                                 <p className="text-gray-600 text-xs sm:text-sm">

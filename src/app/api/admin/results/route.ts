@@ -332,9 +332,22 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Error fetching voter turnout data:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    // Check if it's a database connection error
+    if (errorMessage.includes('DATABASE_URL') || errorMessage.includes('connection') || errorMessage.includes('P1001')) {
+      return NextResponse.json({ 
+        error: 'Database connection error',
+        details: 'Please check your DATABASE_URL configuration in .env.local',
+        message: errorMessage,
+        timestamp: new Date().toISOString()
+      }, { status: 500 });
+    }
+    
     return NextResponse.json({ 
       error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error',
+      details: errorMessage,
       timestamp: new Date().toISOString()
     }, { status: 500 });
   }

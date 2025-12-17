@@ -146,7 +146,7 @@ export default function CandidateSignupPage() {
                     <CardContent className="pt-6">
                         <div className="text-center">
                             <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-                            <h2 className="text-2xl text-gray-900 mb-2">
+                            <h2 className="text-2xl font-bold text-gray-900 mb-2">
                                 Account Created Successfully!
                             </h2>
                             <p className="text-gray-600 mb-4">
@@ -176,7 +176,7 @@ export default function CandidateSignupPage() {
                         <div className="flex items-center space-x-2 sm:space-x-4">
                             <Logo size="md" />
                             <div>
-                                <h1 className="text-lg sm:text-2xl text-gray-900">
+                                <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
                                     SKMMMS Election 2026
                                 </h1>
                                 <p className="text-xs text-gray-600 mt-0.5">Election Commission : Shree Panvel Kutchi Maheshwari Mahajan</p>

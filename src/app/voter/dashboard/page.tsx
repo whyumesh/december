@@ -568,7 +568,7 @@ export default function VoterDashboard() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl text-gray-900 mb-4">{content[selectedLanguage].accessDenied}</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">{content[selectedLanguage].accessDenied}</h1>
           <p className="text-gray-600 mb-4">{content[selectedLanguage].pleaseLogin}</p>
           <Link href="/voter/login">
             <Button className="bg-green-600 hover:bg-green-700 text-white">
@@ -669,8 +669,8 @@ export default function VoterDashboard() {
             <div className="flex items-center space-x-2 sm:space-x-4">
               <Logo size="sm" />
               <div>
-                <h1 className="text-lg sm:text-2xl text-gray-900">{content[selectedLanguage].electionTitle}</h1>
-                <p className="text-xs text-gray-600 mt-0.5">{content[selectedLanguage].electionCommission}</p>
+                <h1 className="text-lg sm:text-2xl font-bold text-gray-900">{content[selectedLanguage].electionTitle}</h1>
+                <p className="text-xs text-gray-600 mt-0.5 font-bold">{content[selectedLanguage].electionCommission}</p>
               </div>
             </div>
             <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
@@ -699,7 +699,7 @@ export default function VoterDashboard() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Welcome Section */}
         <div className="mb-4">
-          <h2 className="text-2xl sm:text-3xl text-gray-900">{content[selectedLanguage].voterDashboard}</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">{content[selectedLanguage].voterDashboard}</h2>
           <p className="text-gray-600">
             {selectedLanguage === 'gujarati' 
               ? `${voterData.name}, સ્વાગત છે`
@@ -798,7 +798,7 @@ export default function VoterDashboard() {
 
         {/* Elections */}
         <div className="mb-6 sm:mb-8">
-          <h2 className="text-xl sm:text-2xl text-gray-900 mb-4 sm:mb-6">{content[selectedLanguage].individualElections}</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">{content[selectedLanguage].individualElections}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {elections.map((election) => {
               const IconComponent = election.icon

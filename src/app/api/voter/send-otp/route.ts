@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { sendOTP as sendEmailOTP } from '@/lib/email'
-import { sendOTP as sendSMSOTP } from '@/lib/otp'
+// import { sendOTP as sendSMSOTP } from '@/lib/otp' // Twilio - Inactive for now, kept for future use
+import { sendOTPViaSMSIndiaHub } from '@/lib/sms-indiahub'
 import { 
   generateOTP, 
   createOTPExpiry, 
@@ -154,7 +155,7 @@ async function handler(request: NextRequest) {
     let message
 
     if (useEmail && targetEmail) {
-      // Send OTP via email using new email utility
+      // Send OTP via email
       console.log('📧 Sending OTP via email to:', targetEmail)
       try {
         result = await sendEmailOTP(targetEmail, otpCode, {
@@ -172,16 +173,26 @@ async function handler(request: NextRequest) {
         }, { status: 500 })
       }
     } else {
-      // Send OTP via SMS service
-      const smsTarget = voter.phone || phone
-      if (!smsTarget) {
-        return NextResponse.json({ 
-          error: 'Phone number is required for SMS delivery' 
-        }, { status: 400 })
-      }
-      console.log('📱 Sending OTP via SMS to:', smsTarget)
-      result = await sendSMSOTP(smsTarget, otpCode)
-      message = result.message || 'OTP has been sent to your registered phone number.'
+        // Send OTP via SMS (SMSINDIAHUB preferred, Twilio as fallback)
+        const smsTarget = voter.phone || phone
+        if (!smsTarget) {
+          return NextResponse.json({ 
+            error: 'Phone number is required for SMS delivery' 
+          }, { status: 400 })
+        }
+        
+        // Send OTP via SMSINDIAHUB (only active SMS provider)
+        console.log('📱 Sending OTP via SMSINDIAHUB to:', smsTarget)
+        result = await sendOTPViaSMSIndiaHub(smsTarget, otpCode)
+        
+        if (result.success) {
+          message = result.message || 'OTP has been sent to your registered phone number via SMS.'
+          console.log('✅ SMSINDIAHUB SMS sent successfully')
+        } else {
+          // SMSINDIAHUB failed - return error
+          console.error('❌ SMSINDIAHUB failed:', result.error || result.message)
+          message = result.message || 'Failed to send OTP via SMS. Please try again or contact support.'
+        }
     }
 
     // Increment resend count if this is a resend

@@ -133,7 +133,7 @@ export default function TrusteesPage() {
                 </Button>
               </Link>
               <div>
-                <h1 className="text-2xl text-gray-900">Trustees Election</h1>
+                <h1 className="text-2xl font-bold text-gray-900">Trustees Election</h1>
                 <p className="text-gray-600">Select your regional trustees based on zones and seats</p>
               </div>
             </div>

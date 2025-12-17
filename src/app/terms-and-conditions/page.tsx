@@ -36,7 +36,7 @@ export default function TermsAndConditionsPage() {
         <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
           <div className="flex items-center space-x-3 mb-6">
             <FileText className="h-8 w-8 text-blue-600" />
-            <h2 className="text-2xl sm:text-3xl text-gray-900">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
               Terms and Conditions
             </h2>
           </div>

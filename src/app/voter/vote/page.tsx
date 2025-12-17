@@ -581,7 +581,7 @@ export default function UnifiedVotingPage() {
             <div className="bg-green-100 rounded-full p-6 w-24 h-24 mx-auto mb-6 flex items-center justify-center">
               <CheckCircle className="h-12 w-12 text-green-600" />
             </div>
-            <h1 className="text-3xl text-gray-900 mb-4">{content[selectedLanguage].voteSubmitted}</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">{content[selectedLanguage].voteSubmitted}</h1>
             <h2 className="text-2xl font-semibold text-purple-600 mb-3">{content[selectedLanguage].thankYou}</h2>
             <p className="text-gray-700 mb-4 italic text-lg">
               {content[selectedLanguage].thankYouMessage}
@@ -605,7 +605,7 @@ export default function UnifiedVotingPage() {
               <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <AlertCircle className="h-8 w-8 text-yellow-600" />
               </div>
-              <h2 className="text-2xl text-gray-900 mb-2">Incomplete Selection</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Incomplete Selection</h2>
               <p className="text-gray-600 mb-4">
                 You have incomplete selections in some elections. The remaining votes will be automatically added as "None of the Above" (NOTA).
               </p>
@@ -655,7 +655,7 @@ export default function UnifiedVotingPage() {
               <div className="flex items-center space-x-2 sm:space-x-4">
                 <Logo size="sm" />
                 <div>
-                  <h1 className="text-lg sm:text-2xl text-gray-900">SKMMMS Election 2026</h1>
+                  <h1 className="text-lg sm:text-2xl font-bold text-gray-900">SKMMMS Election 2026</h1>
                   <p className="text-xs text-gray-600 mt-0.5">Election Commission : Shree Panvel Kutchi Maheshwari Mahajan</p>
                   <p className="text-xs sm:text-sm text-gray-600 mt-1">Unified Voting System</p>
                 </div>
@@ -884,7 +884,7 @@ export default function UnifiedVotingPage() {
           {currentStep === 'preview' && (
             <div className="space-y-6">
               <div className="text-center mb-8">
-                <h2 className="text-3xl text-gray-900 mb-2">Confirm Your Vote Selections</h2>
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">Confirm Your Vote Selections</h2>
                 <p className="text-gray-600">Please review your selections before submitting all votes</p>
               </div>
 

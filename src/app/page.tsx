@@ -82,6 +82,7 @@ export default function HomePage() {
     const [results, setResults] = useState<ResultsData | null>(null);
     const [isLoadingResults, setIsLoadingResults] = useState(false);
     const [resultsError, setResultsError] = useState<string | null>(null);
+    const [electionPeriod, setElectionPeriod] = useState<string>('Loading...');
     
     // Get YouTube video IDs from environment variables
     const yuvaPankhVideoId = process.env.NEXT_PUBLIC_YOUTUBE_YUVA_PANKH_ID;
@@ -137,6 +138,41 @@ export default function HomePage() {
         };
 
         fetchResults();
+    }, []);
+
+    // Fetch election period
+    useEffect(() => {
+        const fetchElectionPeriod = async () => {
+            try {
+                // Try to fetch any active election to get the period
+                const response = await fetch('/api/elections/yuva-pank');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.election) {
+                        const startDate = new Date(data.election.startDate).toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric', 
+                            year: 'numeric' 
+                        });
+                        const endDate = new Date(data.election.endDate).toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric', 
+                            year: 'numeric' 
+                        });
+                        setElectionPeriod(`${startDate} - ${endDate}`);
+                    } else {
+                        setElectionPeriod('Election Period');
+                    }
+                } else {
+                    setElectionPeriod('Election Period');
+                }
+            } catch (error) {
+                console.error('Error fetching election period:', error);
+                setElectionPeriod('Election Period');
+            }
+        };
+
+        fetchElectionPeriod();
     }, []);
 
     return (
@@ -253,7 +289,7 @@ export default function HomePage() {
 
                     {/* Organization Info */}
                     <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8 mb-8 sm:mb-12">
-                        <h3 className="text-xl sm:text-2xl text-gray-900 mb-4 sm:mb-6 text-center">
+                        <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6 text-center">
                             Election Commission Details
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
@@ -316,7 +352,7 @@ export default function HomePage() {
                                             Election Period
                                         </p>
                                         <p className="text-gray-600">
-                                            To be announced...
+                                            {electionPeriod}
                                         </p>
                                     </div>
                                 </div>
@@ -335,7 +371,7 @@ export default function HomePage() {
 
                     {/* How to Vote Videos */}
                     <div className="mb-8 sm:mb-16">
-                        <h2 className="text-2xl sm:text-3xl text-center text-gray-900 mb-6 sm:mb-12">
+                        <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-6 sm:mb-12">
                             How to Vote
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
@@ -773,7 +809,7 @@ export default function HomePage() {
 
                     {/* Voting Process */}
                     <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8 mb-8 sm:mb-12">
-                        <h3 className="text-xl sm:text-2xl text-gray-900 mb-6 sm:mb-8 text-center">
+                        <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6 sm:mb-8 text-center">
                             How to Vote
                         </h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
@@ -837,7 +873,7 @@ export default function HomePage() {
 
                     {/* Security Features */}
                     <div className="bg-gray-50 rounded-lg p-4 sm:p-8 mb-8 sm:mb-12">
-                        <h3 className="text-xl sm:text-2xl text-gray-900 mb-6 sm:mb-8 text-center">
+                        <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6 sm:mb-8 text-center">
                             Security & Transparency
                         </h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
