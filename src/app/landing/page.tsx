@@ -348,7 +348,7 @@ export default function LandingPage() {
                                                 Seats:
                                             </span>
                                             <span className="text-sm text-gray-900">
-                                                7 Seats
+                                                <span className="font-bold">7</span> Seats
                                             </span>
                                         </div>
                                         <div className="flex items-center justify-between">
@@ -356,7 +356,7 @@ export default function LandingPage() {
                                                 Distribution:
                                             </span>
                                             <span className="text-sm text-gray-900">
-                                                2 Mumbai + 1 each zone
+                                                <span className="font-bold">2</span> Mumbai + <span className="font-bold">1</span> each zone
                                             </span>
                                         </div>
                                         <div className="flex items-center justify-between">
@@ -364,7 +364,7 @@ export default function LandingPage() {
                                                 Term:
                                             </span>
                                             <span className="text-sm text-gray-900">
-                                                2 Years
+                                                <span className="font-bold">2</span> Years
                                             </span>
                                         </div>
                                         <div className="flex items-center justify-between">
@@ -380,7 +380,7 @@ export default function LandingPage() {
                                                 Candidate Age:
                                             </span>
                                             <span className="text-sm text-gray-900">
-                                                Above 45 years
+                                                Above <span className="font-bold">45</span> years
                                             </span>
                                         </div>
                                         <div className="pt-4">
@@ -396,355 +396,87 @@ export default function LandingPage() {
                         </div>
                     </div>
 
-                    {/* Election Results Charts */}
-                    {resultsError && (
-                        <Card className="mb-8 border-red-200 bg-red-50">
-                            <CardContent className="p-4">
-                                <div className="flex items-center space-x-2 text-red-600">
-                                    <AlertCircle className="h-5 w-5" />
-                                    <span>Failed to load election results</span>
+                    {/* Organization Info */}
+                    <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8 mb-8 sm:mb-12">
+                        <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6 text-center">
+                            Election Commission Details
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+                            <div className="space-y-4">
+                                <div className="flex items-start space-x-3">
+                                    <Building className="h-5 w-5 text-blue-600 mt-1" />
+                                    <div>
+                                        <p className="font-semibold text-gray-900">
+                                            Registered Office
+                                        </p>
+                                        <p className="text-gray-600">
+                                            Shri Kutchi Maheshwari Madhyastha
+                                            Mahajan Samiti
+                                        </p>
+                                        <p className="text-gray-600">
+                                            B-2 Nityanand Krupa CHS, Deodhar Wada, Opp. Janakalyan Bank, Panvel (MH) – <span className="font-bold">410206</span>
+                                        </p>
+                                    </div>
                                 </div>
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    {results && (
-                        <div className="mb-8 sm:mb-12 space-y-8">
-                            {/* Yuva Pankh Members Chart */}
-                            {results?.yuvaPankh?.regions && Array.isArray(results.yuvaPankh.regions) && results.yuvaPankh.regions.length > 0 && (
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center space-x-2">
-                                            <BarChart3 className="h-5 w-5 text-purple-600" />
-                                            <span>Yuva Pankh Members (6 Regions)</span>
-                                        </CardTitle>
-                                        <CardDescription>
-                                            Regional voter participation for Yuva Pankh Members election
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="space-y-6">
-                                            <div className="h-80 w-full">
-                                                <ResponsiveContainer width="100%" height="100%">
-                                                    <BarChart
-                                                        data={results.yuvaPankh.regions
-                                                            .filter(region => {
-                                                                const zoneCode = region.zoneCode || '';
-                                                                return zoneCode === 'KARNATAKA_GOA' || zoneCode === 'RAIGAD';
-                                                            })
-                                                            .map(region => ({
-                                                                name: region.zoneName,
-                                                                turnout: Number(region.turnoutPercentage) || 0,
-                                                                votes: region.totalVotes || 0,
-                                                                voters: region.totalVoters || 0,
-                                                                uniqueVoters: region.uniqueVoters !== undefined ? region.uniqueVoters : (region.totalVotes || 0),
-                                                                zoneCode: region.zoneCode || '',
-                                                                isCompleted: (Number(region.turnoutPercentage) || 0) >= 100
-                                                            }))
-                                                            .sort((a, b) => b.turnout - a.turnout)}
-                                                        margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                                                    >
-                                                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                                                        <XAxis 
-                                                            dataKey="name" 
-                                                            angle={-45}
-                                                            textAnchor="end"
-                                                            height={80}
-                                                            fontSize={12}
-                                                            stroke="#666"
-                                                        />
-                                                        <YAxis 
-                                                            label={{ value: 'Voter Turnout', angle: -90, position: 'insideLeft' }}
-                                                            fontSize={12}
-                                                            stroke="#666"
-                                                            domain={[0, 100]}
-                                                            ticks={[0, 25, 50, 75, 100]}
-                                                        />
-                                                        <Tooltip 
-                                                            formatter={(value: any) => [`${value}%`, 'Turnout']}
-                                                            contentStyle={{
-                                                                backgroundColor: '#fff',
-                                                                border: '1px solid #e5e7eb',
-                                                                borderRadius: '8px',
-                                                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                                                            }}
-                                                        />
-                                                        <Bar dataKey="turnout" radius={[4, 4, 0, 0]}>
-                                                            {results.yuvaPankh.regions
-                                                                .filter(region => {
-                                                                    const zoneCode = region.zoneCode || '';
-                                                                    return zoneCode === 'KARNATAKA_GOA' || zoneCode === 'RAIGAD';
-                                                                })
-                                                                .map((region, index) => {
-                                                                    const turnout = Number(region.turnoutPercentage) || 0;
-                                                                    return (
-                                                                        <Cell 
-                                                                            key={`cell-${index}`} 
-                                                                            fill={turnout >= 100 ? '#10b981' : turnout > 0 ? '#8b5cf6' : '#e5e7eb'} 
-                                                                        />
-                                                                    );
-                                                                })}
-                                                        </Bar>
-                                                    </BarChart>
-                                                </ResponsiveContainer>
-                                            </div>
-                                            
-                                            {/* Summary Statistics */}
-                                            {(() => {
-                                                const processedData = results.yuvaPankh.regions
-                                                    .filter(region => {
-                                                        const zoneCode = region.zoneCode || '';
-                                                        return zoneCode === 'KARNATAKA_GOA' || zoneCode === 'RAIGAD';
-                                                    })
-                                                    .map(region => ({
-                                                        turnout: Number(region.turnoutPercentage) || 0,
-                                                        voters: region.totalVoters || 0,
-                                                        uniqueVoters: region.uniqueVoters !== undefined ? region.uniqueVoters : (region.totalVotes || 0),
-                                                        isCompleted: (Number(region.turnoutPercentage) || 0) >= 100
-                                                    }));
-
-                                                const totalVoters = processedData.reduce((sum, r) => sum + r.voters, 0);
-                                                const votersVoted = processedData.reduce((sum, r) => sum + (r.uniqueVoters || 0), 0);
-                                                const highestTurnout = processedData.length > 0 ? Math.max(...processedData.map(r => r.turnout)) : 0;
-                                                const averageTurnout = processedData.length > 0 
-                                                    ? processedData.reduce((sum, r) => sum + r.turnout, 0) / processedData.length 
-                                                    : 0;
-
-                                                return (
-                                                    <>
-                                                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-center mt-6">
-                                                            <div>
-                                                                <div className="text-xl sm:text-2xl text-purple-600">
-                                                                    {processedData.length}
-                                                                </div>
-                                                                <div className="text-xs sm:text-sm text-gray-500">Total Regions</div>
-                                                            </div>
-                                                            <div>
-                                                                <div className="text-xl sm:text-2xl text-green-600">
-                                                                    {highestTurnout.toFixed(1)}%
-                                                                </div>
-                                                                <div className="text-xs sm:text-sm text-gray-500">Highest Turnout</div>
-                                                            </div>
-                                                            <div>
-                                                                <div className="text-xl sm:text-2xl text-blue-600">
-                                                                    {averageTurnout.toFixed(1)}%
-                                                                </div>
-                                                                <div className="text-xs sm:text-sm text-gray-500">Average Turnout</div>
-                                                            </div>
-                                                            <div>
-                                                                <div className="text-xl sm:text-2xl text-indigo-600">
-                                                                    {votersVoted.toLocaleString()} / {totalVoters.toLocaleString()}
-                                                                </div>
-                                                                <div className="text-xs sm:text-sm text-gray-500">Voters Voted / Total</div>
-                                                            </div>
-                                                            <div>
-                                                                <div className="text-xl sm:text-2xl text-purple-600">
-                                                                    {totalVoters.toLocaleString()}
-                                                                </div>
-                                                                <div className="text-xs sm:text-sm text-gray-500">Total Voters</div>
-                                                            </div>
-                                                            <div>
-                                                                <div className="text-xl sm:text-2xl text-orange-600">
-                                                                    {(totalVoters - votersVoted).toLocaleString()}
-                                                                </div>
-                                                                <div className="text-xs sm:text-sm text-gray-500">Remaining Voters</div>
-                                                            </div>
-                                                        </div>
-                                                        
-                                                        {/* Completion Status Legend */}
-                                                        <div className="mt-6 pt-6 border-t border-gray-200">
-                                                            <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
-                                                                <div className="flex items-center gap-2">
-                                                                    <div className="w-4 h-4 rounded bg-green-500"></div>
-                                                                    <span className="text-gray-600">Completed (100%)</span>
-                                                                    <span className="text-gray-500">
-                                                                        ({processedData.filter(r => r.isCompleted).length})
-                                                                    </span>
-                                                                </div>
-                                                                <div className="flex items-center gap-2">
-                                                                    <div className="w-4 h-4 rounded bg-purple-500"></div>
-                                                                    <span className="text-gray-600">In Progress</span>
-                                                                    <span className="text-gray-500">
-                                                                        ({processedData.filter(r => !r.isCompleted && r.turnout > 0 && r.turnout < 100).length})
-                                                                    </span>
-                                                                </div>
-                                                                <div className="flex items-center gap-2">
-                                                                    <div className="w-4 h-4 rounded bg-gray-300"></div>
-                                                                    <span className="text-gray-600">Pending</span>
-                                                                    <span className="text-gray-500">
-                                                                        ({processedData.filter(r => !r.isCompleted && r.turnout === 0).length})
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </>
-                                                );
-                                            })()}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            )}
-
-                            {/* Trustee Members Chart */}
-                            {results?.trustee?.regions && Array.isArray(results.trustee.regions) && results.trustee.regions.length > 0 && (
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center space-x-2">
-                                            <BarChart3 className="h-5 w-5 text-green-600" />
-                                            <span>Trustee Members (6 Regions)</span>
-                                        </CardTitle>
-                                        <CardDescription>
-                                            Regional voter participation for Trustee Members election
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="space-y-6">
-                                            <div className="h-80 w-full">
-                                                <ResponsiveContainer width="100%" height="100%">
-                                                    <BarChart
-                                                        data={results.trustee.regions.map(region => ({
-                                                            name: region.zoneName,
-                                                            turnout: Number(region.turnoutPercentage) || 0,
-                                                            votes: region.totalVotes || 0,
-                                                            voters: region.totalVoters || 0,
-                                                            uniqueVoters: region.uniqueVoters !== undefined ? region.uniqueVoters : (region.totalVotes || 0),
-                                                            zoneCode: region.zoneCode,
-                                                            isCompleted: (Number(region.turnoutPercentage) || 0) >= 100
-                                                        }))}
-                                                        margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                                                    >
-                                                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                                                        <XAxis 
-                                                            dataKey="name" 
-                                                            angle={-45}
-                                                            textAnchor="end"
-                                                            height={80}
-                                                            fontSize={12}
-                                                            stroke="#666"
-                                                        />
-                                                        <YAxis 
-                                                            label={{ value: 'Voter Turnout', angle: -90, position: 'insideLeft' }}
-                                                            fontSize={12}
-                                                            stroke="#666"
-                                                            domain={[0, 100]}
-                                                            ticks={[0, 25, 50, 75, 100]}
-                                                        />
-                                                        <Tooltip 
-                                                            formatter={(value: any) => [`${value}%`, 'Turnout']}
-                                                            contentStyle={{
-                                                                backgroundColor: '#fff',
-                                                                border: '1px solid #e5e7eb',
-                                                                borderRadius: '8px',
-                                                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                                                            }}
-                                                        />
-                                                        <Bar dataKey="turnout" radius={[4, 4, 0, 0]}>
-                                                            {results.trustee.regions.map((region, index) => {
-                                                                const turnout = Number(region.turnoutPercentage) || 0;
-                                                                return (
-                                                                    <Cell 
-                                                                        key={`cell-${index}`} 
-                                                                        fill={turnout >= 100 ? '#10b981' : turnout > 0 ? '#3b82f6' : '#e5e7eb'} 
-                                                                    />
-                                                                );
-                                                            })}
-                                                        </Bar>
-                                                    </BarChart>
-                                                </ResponsiveContainer>
-                                            </div>
-                                            
-                                            {/* Summary Statistics */}
-                                            {(() => {
-                                                const processedData = results.trustee.regions.map(region => ({
-                                                    turnout: Number(region.turnoutPercentage) || 0,
-                                                    voters: region.totalVoters || 0,
-                                                    uniqueVoters: region.uniqueVoters !== undefined ? region.uniqueVoters : (region.totalVotes || 0),
-                                                    isCompleted: (Number(region.turnoutPercentage) || 0) >= 100
-                                                }));
-
-                                                const totalVoters = results.trustee.totalVoters || processedData.reduce((sum, r) => sum + r.voters, 0);
-                                                const votersVoted = processedData.reduce((sum, r) => sum + (r.uniqueVoters || 0), 0);
-                                                const highestTurnout = processedData.length > 0 ? Math.max(...processedData.map(r => r.turnout)) : 0;
-                                                const averageTurnout = processedData.length > 0 
-                                                    ? processedData.reduce((sum, r) => sum + r.turnout, 0) / processedData.length 
-                                                    : 0;
-
-                                                return (
-                                                    <>
-                                                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-center mt-6">
-                                                            <div>
-                                                                <div className="text-xl sm:text-2xl text-green-600">
-                                                                    {results.trustee.totalRegions}
-                                                                </div>
-                                                                <div className="text-xs sm:text-sm text-gray-500">Total Regions</div>
-                                                            </div>
-                                                            <div>
-                                                                <div className="text-xl sm:text-2xl text-green-600">
-                                                                    {highestTurnout.toFixed(1)}%
-                                                                </div>
-                                                                <div className="text-xs sm:text-sm text-gray-500">Highest Turnout</div>
-                                                            </div>
-                                                            <div>
-                                                                <div className="text-xl sm:text-2xl text-blue-600">
-                                                                    {averageTurnout.toFixed(1)}%
-                                                                </div>
-                                                                <div className="text-xs sm:text-sm text-gray-500">Average Turnout</div>
-                                                            </div>
-                                                            <div>
-                                                                <div className="text-xl sm:text-2xl text-indigo-600">
-                                                                    {votersVoted.toLocaleString()} / {totalVoters.toLocaleString()}
-                                                                </div>
-                                                                <div className="text-xs sm:text-sm text-gray-500">Voters Voted / Total</div>
-                                                            </div>
-                                                            <div>
-                                                                <div className="text-xl sm:text-2xl text-purple-600">
-                                                                    {totalVoters.toLocaleString()}
-                                                                </div>
-                                                                <div className="text-xs sm:text-sm text-gray-500">Total Voters</div>
-                                                            </div>
-                                                            <div>
-                                                                <div className="text-xl sm:text-2xl text-orange-600">
-                                                                    {(totalVoters - votersVoted).toLocaleString()}
-                                                                </div>
-                                                                <div className="text-xs sm:text-sm text-gray-500">Remaining Voters</div>
-                                                            </div>
-                                                        </div>
-                                                        
-                                                        {/* Completion Status Legend */}
-                                                        <div className="mt-6 pt-6 border-t border-gray-200">
-                                                            <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
-                                                                <div className="flex items-center gap-2">
-                                                                    <div className="w-4 h-4 rounded bg-green-500"></div>
-                                                                    <span className="text-gray-600">Completed (100%)</span>
-                                                                    <span className="text-gray-500">
-                                                                        ({processedData.filter(r => r.isCompleted).length})
-                                                                    </span>
-                                                                </div>
-                                                                <div className="flex items-center gap-2">
-                                                                    <div className="w-4 h-4 rounded bg-blue-500"></div>
-                                                                    <span className="text-gray-600">In Progress</span>
-                                                                    <span className="text-gray-500">
-                                                                        ({processedData.filter(r => !r.isCompleted && r.turnout > 0 && r.turnout < 100).length})
-                                                                    </span>
-                                                                </div>
-                                                                <div className="flex items-center gap-2">
-                                                                    <div className="w-4 h-4 rounded bg-gray-300"></div>
-                                                                    <span className="text-gray-600">Pending</span>
-                                                                    <span className="text-gray-500">
-                                                                        ({processedData.filter(r => !r.isCompleted && r.turnout === 0).length})
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </>
-                                                );
-                                            })()}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            )}
+                                <div className="flex items-center space-x-3">
+                                    <Phone className="h-5 w-5 text-blue-600" />
+                                    <div>
+                                        <p className="font-semibold text-gray-900">
+                                            Contact
+                                        </p>
+                                        <p className="text-gray-600">
+                                            +<span className="font-bold">91 93215 78416</span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center space-x-3">
+                                    <Mail className="h-5 w-5 text-blue-600" />
+                                    <div>
+                                        <p className="font-semibold text-gray-900">
+                                            Email
+                                        </p>
+                                        <p className="text-gray-600">
+                                            kmselec2026@gmail.com
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="flex items-center space-x-3">
+                                    <Award className="h-5 w-5 text-blue-600" />
+                                    <div>
+                                        <p className="font-semibold text-gray-900">
+                                            Registration
+                                        </p>
+                                        <p className="text-gray-600">
+                                            Registered Public Charitable Trust No –
+                                            A – <span className="font-bold">1061</span> Gujarat
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center space-x-3">
+                                    <Calendar className="h-5 w-5 text-blue-600" />
+                                    <div>
+                                        <p className="font-semibold text-gray-900">
+                                            Election Period
+                                        </p>
+                                        <p className="text-gray-600">
+                                            {electionPeriod}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center space-x-3">
+                                    <MapPin className="h-5 w-5 text-blue-600" />
+                                    <div>
+                                        <p className="font-semibold text-gray-900">
+                                            Coverage
+                                        </p>
+                                        <p className="text-gray-600">Overseas</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    )}
+                    </div>
 
                     {/* How to Vote Videos */}
                     <div className="mb-8 sm:mb-16">
@@ -852,7 +584,7 @@ export default function LandingPage() {
                                             Mahajan Samiti
                                         </p>
                                         <p className="text-gray-600">
-                                            B-2 Nityanand Krupa CHS, Deodhar Wada, Opp. Janakalyan Bank, Panvel (MH) – 410206
+                                            B-<span className="font-bold">2</span> Nityanand Krupa CHS, Deodhar Wada, Opp. Janakalyan Bank, Panvel (MH) – <span className="font-bold">410206</span>
                                         </p>
                                     </div>
                                 </div>
@@ -863,7 +595,7 @@ export default function LandingPage() {
                                             Contact
                                         </p>
                                         <p className="text-gray-600">
-                                            +91 93215 78416
+                                            +<span className="font-bold">91 93215 78416</span>
                                         </p>
                                     </div>
                                 </div>
@@ -888,7 +620,7 @@ export default function LandingPage() {
                                         </p>
                                         <p className="text-gray-600">
                                             Registered Public Charitable Trust No –
-                                            A – 1061 Gujarat
+                                            A – <span className="font-bold">1061</span> Gujarat
                                         </p>
                                     </div>
                                 </div>
@@ -936,7 +668,7 @@ export default function LandingPage() {
                                     <CardHeader>
                                         <CardTitle className="flex items-center space-x-2">
                                             <BarChart3 className="h-5 w-5 text-purple-600" />
-                                            <span>Yuva Pankh Members (6 Regions)</span>
+                                            <span>Yuva Pankh Members (<span className="font-bold">6</span> Regions)</span>
                                         </CardTitle>
                                         <CardDescription>
                                             Regional voter participation for Yuva Pankh Members election
@@ -1034,37 +766,37 @@ export default function LandingPage() {
                                                     <>
                                                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-center mt-6">
                                                             <div>
-                                                                <div className="text-xl sm:text-2xl text-purple-600">
+                                                                <div className="text-xl sm:text-2xl text-purple-600 font-bold">
                                                                     {processedData.length}
                                                                 </div>
                                                                 <div className="text-xs sm:text-sm text-gray-500">Total Regions</div>
                                                             </div>
                                                             <div>
-                                                                <div className="text-xl sm:text-2xl text-green-600">
+                                                                <div className="text-xl sm:text-2xl text-green-600 font-bold">
                                                                     {highestTurnout.toFixed(1)}%
                                                                 </div>
                                                                 <div className="text-xs sm:text-sm text-gray-500">Highest Turnout</div>
                                                             </div>
                                                             <div>
-                                                                <div className="text-xl sm:text-2xl text-blue-600">
+                                                                <div className="text-xl sm:text-2xl text-blue-600 font-bold">
                                                                     {averageTurnout.toFixed(1)}%
                                                                 </div>
                                                                 <div className="text-xs sm:text-sm text-gray-500">Average Turnout</div>
                                                             </div>
                                                             <div>
-                                                                <div className="text-xl sm:text-2xl text-indigo-600">
+                                                                <div className="text-xl sm:text-2xl text-indigo-600 font-bold">
                                                                     {votersVoted.toLocaleString()} / {totalVoters.toLocaleString()}
                                                                 </div>
                                                                 <div className="text-xs sm:text-sm text-gray-500">Voters Voted / Total</div>
                                                             </div>
                                                             <div>
-                                                                <div className="text-xl sm:text-2xl text-purple-600">
+                                                                <div className="text-xl sm:text-2xl text-purple-600 font-bold">
                                                                     {totalVoters.toLocaleString()}
                                                                 </div>
                                                                 <div className="text-xs sm:text-sm text-gray-500">Total Voters</div>
                                                             </div>
                                                             <div>
-                                                                <div className="text-xl sm:text-2xl text-orange-600">
+                                                                <div className="text-xl sm:text-2xl text-orange-600 font-bold">
                                                                     {(totalVoters - votersVoted).toLocaleString()}
                                                                 </div>
                                                                 <div className="text-xs sm:text-sm text-gray-500">Remaining Voters</div>
@@ -1076,23 +808,23 @@ export default function LandingPage() {
                                                             <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
                                                                 <div className="flex items-center gap-2">
                                                                     <div className="w-4 h-4 rounded bg-green-500"></div>
-                                                                    <span className="text-gray-600">Completed (100%)</span>
+                                                                    <span className="text-gray-600">Completed (<span className="font-bold">100</span>%)</span>
                                                                     <span className="text-gray-500">
-                                                                        ({processedData.filter(r => r.isCompleted).length})
+                                                                        (<span className="font-bold">{processedData.filter(r => r.isCompleted).length}</span>)
                                                                     </span>
                                                                 </div>
                                                                 <div className="flex items-center gap-2">
                                                                     <div className="w-4 h-4 rounded bg-purple-500"></div>
                                                                     <span className="text-gray-600">In Progress</span>
                                                                     <span className="text-gray-500">
-                                                                        ({processedData.filter(r => !r.isCompleted && r.turnout > 0 && r.turnout < 100).length})
+                                                                        (<span className="font-bold">{processedData.filter(r => !r.isCompleted && r.turnout > 0 && r.turnout < 100).length}</span>)
                                                                     </span>
                                                                 </div>
                                                                 <div className="flex items-center gap-2">
                                                                     <div className="w-4 h-4 rounded bg-gray-300"></div>
                                                                     <span className="text-gray-600">Pending</span>
                                                                     <span className="text-gray-500">
-                                                                        ({processedData.filter(r => !r.isCompleted && r.turnout === 0).length})
+                                                                        (<span className="font-bold">{processedData.filter(r => !r.isCompleted && r.turnout === 0).length}</span>)
                                                                     </span>
                                                                 </div>
                                                             </div>
@@ -1111,7 +843,7 @@ export default function LandingPage() {
                                     <CardHeader>
                                         <CardTitle className="flex items-center space-x-2">
                                             <BarChart3 className="h-5 w-5 text-green-600" />
-                                            <span>Trustee Members (6 Regions)</span>
+                                            <span>Trustee Members (<span className="font-bold">6</span> Regions)</span>
                                         </CardTitle>
                                         <CardDescription>
                                             Regional voter participation for Trustee Members election
@@ -1193,37 +925,37 @@ export default function LandingPage() {
                                                     <>
                                                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-center mt-6">
                                                             <div>
-                                                                <div className="text-xl sm:text-2xl text-green-600">
+                                                                <div className="text-xl sm:text-2xl text-green-600 font-bold">
                                                                     {results.trustee.totalRegions}
                                                                 </div>
                                                                 <div className="text-xs sm:text-sm text-gray-500">Total Regions</div>
                                                             </div>
                                                             <div>
-                                                                <div className="text-xl sm:text-2xl text-green-600">
+                                                                <div className="text-xl sm:text-2xl text-green-600 font-bold">
                                                                     {highestTurnout.toFixed(1)}%
                                                                 </div>
                                                                 <div className="text-xs sm:text-sm text-gray-500">Highest Turnout</div>
                                                             </div>
                                                             <div>
-                                                                <div className="text-xl sm:text-2xl text-blue-600">
+                                                                <div className="text-xl sm:text-2xl text-blue-600 font-bold">
                                                                     {averageTurnout.toFixed(1)}%
                                                                 </div>
                                                                 <div className="text-xs sm:text-sm text-gray-500">Average Turnout</div>
                                                             </div>
                                                             <div>
-                                                                <div className="text-xl sm:text-2xl text-indigo-600">
+                                                                <div className="text-xl sm:text-2xl text-indigo-600 font-bold">
                                                                     {votersVoted.toLocaleString()} / {totalVoters.toLocaleString()}
                                                                 </div>
                                                                 <div className="text-xs sm:text-sm text-gray-500">Voters Voted / Total</div>
                                                             </div>
                                                             <div>
-                                                                <div className="text-xl sm:text-2xl text-purple-600">
+                                                                <div className="text-xl sm:text-2xl text-purple-600 font-bold">
                                                                     {totalVoters.toLocaleString()}
                                                                 </div>
                                                                 <div className="text-xs sm:text-sm text-gray-500">Total Voters</div>
                                                             </div>
                                                             <div>
-                                                                <div className="text-xl sm:text-2xl text-orange-600">
+                                                                <div className="text-xl sm:text-2xl text-orange-600 font-bold">
                                                                     {(totalVoters - votersVoted).toLocaleString()}
                                                                 </div>
                                                                 <div className="text-xs sm:text-sm text-gray-500">Remaining Voters</div>
@@ -1235,23 +967,23 @@ export default function LandingPage() {
                                                             <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
                                                                 <div className="flex items-center gap-2">
                                                                     <div className="w-4 h-4 rounded bg-green-500"></div>
-                                                                    <span className="text-gray-600">Completed (100%)</span>
+                                                                    <span className="text-gray-600">Completed (<span className="font-bold">100</span>%)</span>
                                                                     <span className="text-gray-500">
-                                                                        ({processedData.filter(r => r.isCompleted).length})
+                                                                        (<span className="font-bold">{processedData.filter(r => r.isCompleted).length}</span>)
                                                                     </span>
                                                                 </div>
                                                                 <div className="flex items-center gap-2">
                                                                     <div className="w-4 h-4 rounded bg-blue-500"></div>
                                                                     <span className="text-gray-600">In Progress</span>
                                                                     <span className="text-gray-500">
-                                                                        ({processedData.filter(r => !r.isCompleted && r.turnout > 0 && r.turnout < 100).length})
+                                                                        (<span className="font-bold">{processedData.filter(r => !r.isCompleted && r.turnout > 0 && r.turnout < 100).length}</span>)
                                                                     </span>
                                                                 </div>
                                                                 <div className="flex items-center gap-2">
                                                                     <div className="w-4 h-4 rounded bg-gray-300"></div>
                                                                     <span className="text-gray-600">Pending</span>
                                                                     <span className="text-gray-500">
-                                                                        ({processedData.filter(r => !r.isCompleted && r.turnout === 0).length})
+                                                                        (<span className="font-bold">{processedData.filter(r => !r.isCompleted && r.turnout === 0).length}</span>)
                                                                     </span>
                                                                 </div>
                                                             </div>
@@ -1276,7 +1008,7 @@ export default function LandingPage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                             <div className="text-center">
                                 <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                                    <span className="text-2xl text-blue-600">
+                                    <span className="text-2xl text-blue-600 font-bold">
                                         1
                                     </span>
                                 </div>
@@ -1290,7 +1022,7 @@ export default function LandingPage() {
                             </div>
                             <div className="text-center">
                                 <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                                    <span className="text-2xl text-blue-600">
+                                    <span className="text-2xl text-blue-600 font-bold">
                                         2
                                     </span>
                                 </div>
@@ -1303,7 +1035,7 @@ export default function LandingPage() {
                             </div>
                             <div className="text-center">
                                 <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                                    <span className="text-2xl text-blue-600">
+                                    <span className="text-2xl text-blue-600 font-bold">
                                         3
                                     </span>
                                 </div>
@@ -1317,7 +1049,7 @@ export default function LandingPage() {
                             </div>
                             <div className="text-center">
                                 <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                                    <span className="text-2xl text-blue-600">
+                                    <span className="text-2xl text-blue-600 font-bold">
                                         4
                                     </span>
                                 </div>
@@ -1343,12 +1075,12 @@ export default function LandingPage() {
                         {/* Trustees Election */}
                         <div className="border-t pt-8">
                             <h4 className="text-lg font-semibold text-gray-800 mb-4 text-center">
-                                Trustees Election (7 Seats)
+                                Trustees Election (<span className="font-bold">7</span> Seats)
                             </h4>
                             <div className="text-center">
                                 <div className="inline-flex items-center px-6 py-3 bg-orange-100 text-orange-800 rounded-lg">
                                     <span className="font-semibold">
-                                        7 Trustees - All Voters Eligible
+                                        <span className="font-bold">7</span> Trustees - All Voters Eligible
                                     </span>
                                 </div>
                                 <p className="text-sm text-gray-600 mt-3">
@@ -1478,15 +1210,15 @@ export default function LandingPage() {
                                 <h4 className="font-semibold mb-4">Contact</h4>
                                 <div className="space-y-2 text-sm text-gray-400">
                                     <p>
-                                        <a href="tel:+917666778349" className="hover:text-white">+91 7666778349</a>
+                                        <a href="tel:+917666778349" className="hover:text-white">+<span className="font-bold">91 7666778349</span></a>
                                         <span className="block text-xs mt-1">Dipen Ketan Somani</span>
                                     </p>
                                     <p>
-                                        <a href="tel:+919820216044" className="hover:text-white">+91 9820216044</a>
+                                        <a href="tel:+919820216044" className="hover:text-white">+<span className="font-bold">91 9820216044</span></a>
                                         <span className="block text-xs mt-1">Jay Deepak Bhutada</span>
                                     </p>
                                     <p>kmselec2026@gmail.com</p>
-                                    <p>B-2 Nityanand Krupa CHS, Deodhar Wada, Opp. Janakalyan Bank, Panvel (MH) - 410206</p>
+                                    <p>B-<span className="font-bold">2</span> Nityanand Krupa CHS, Deodhar Wada, Opp. Janakalyan Bank, Panvel (MH) - <span className="font-bold">410206</span></p>
                                 </div>
                             </div>
                         </div>

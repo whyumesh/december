@@ -153,8 +153,8 @@ export default function VoterLoginPage() {
       if (response.ok) {
         const method = data.method === 'email' ? 'email' : 'phone'
         const defaultMessage = method === 'email' 
-          ? 'OTP has been sent to your registered email address'
-          : 'OTP has been sent to your registered phone number'
+          ? 'OTP sent to your email. Please check your inbox.'
+          : 'OTP sent to your mobile. Please check your SMS app.'
         setSuccessMessage(data.message || defaultMessage)
         setStep('otp')
         // Set OTP sent time and start cooldown timer (2 minutes = 120 seconds)
@@ -524,7 +524,7 @@ export default function VoterLoginPage() {
                   required
                 />
                 <p className="text-xs text-gray-500">
-                  Enter the 6-digit OTP sent to your registered phone number or email address
+                  Enter the 6-digit OTP sent to your mobile or email. Check your SMS app or inbox.
                 </p>
               </div>
               
