@@ -176,7 +176,7 @@ export default function TrusteesManagementPage() {
                 </Button>
               </Link>
               <div>
-                <h1 className="text-lg sm:text-2xl font-bold text-gray-900">Trustees Management</h1>
+                <h1 className="text-lg sm:text-2xl text-gray-900">Trustees Management</h1>
                 <p className="text-xs sm:text-sm text-gray-600">Manage trustees for each zone and seat</p>
               </div>
             </div>

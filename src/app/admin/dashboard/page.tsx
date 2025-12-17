@@ -684,10 +684,10 @@ export default function AdminDashboard() {
                         <div className="flex items-center space-x-2 sm:space-x-4">
                             <Logo size="sm" />
                             <div>
-                                <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
+                                <h1 className="text-lg sm:text-2xl text-gray-900">
                                     SKMMMS Election 2026
                                 </h1>
-                                <p className="text-xs text-gray-600 mt-0.5 font-bold">Election Commission : Shree Panvel Kutchi Maheshwari Mahajan</p>
+                                <p className="text-xs text-gray-600 mt-0.5">Election Commission : Shree Panvel Kutchi Maheshwari Mahajan</p>
                             </div>
                         </div>
                         <div className="flex items-center">
@@ -731,7 +731,7 @@ export default function AdminDashboard() {
                             <Users className="h-4 w-4 text-blue-200" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">
+                            <div className="text-2xl">
                                 {stats.totalVoters.toLocaleString()}
                             </div>
                             <p className="text-xs text-blue-100">
@@ -754,7 +754,7 @@ export default function AdminDashboard() {
                             <UserCheck className="h-4 w-4 text-blue-200" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">
+                            <div className="text-2xl">
                                 {stats.yuvaPankh.total}
                             </div>
                             <p className="text-xs text-blue-100">
@@ -771,7 +771,7 @@ export default function AdminDashboard() {
                             <Vote className="h-4 w-4 text-blue-200" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">
+                            <div className="text-2xl">
                                 {stats.totalVotes.toLocaleString()}
                             </div>
                             <p className="text-xs text-blue-100">Votes cast</p>
@@ -786,7 +786,7 @@ export default function AdminDashboard() {
                             <UserX className="h-4 w-4 text-blue-200" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">
+                            <div className="text-2xl">
                                 {stats.yuvaPankh.pending}
                             </div>
                             <p className="text-xs text-blue-100">
@@ -907,7 +907,7 @@ export default function AdminDashboard() {
                 <div className="mb-8">
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center space-x-3">
-                            <h2 className="text-2xl font-bold text-yellow-600">Yuva Pankh Samiti</h2>
+                            <h2 className="text-2xl text-yellow-600">Yuva Pankh Samiti</h2>
                             <Badge variant="outline" className="border-yellow-300 text-yellow-700">
                                 Elections 2026-2029
                             </Badge>
@@ -940,25 +940,25 @@ export default function AdminDashboard() {
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                         <Card className="bg-yellow-50 border-yellow-200">
                             <CardContent className="p-4 text-center">
-                                <div className="text-2xl font-bold text-yellow-700">{stats.yuvaPankh.total}</div>
+                                <div className="text-2xl text-yellow-700">{stats.yuvaPankh.total}</div>
                                 <div className="text-sm text-yellow-600">Total</div>
                             </CardContent>
                         </Card>
                         <Card className="bg-yellow-100 border-yellow-300">
                             <CardContent className="p-4 text-center">
-                                <div className="text-2xl font-bold text-yellow-700">{stats.yuvaPankh.pending}</div>
+                                <div className="text-2xl text-yellow-700">{stats.yuvaPankh.pending}</div>
                                 <div className="text-sm text-yellow-600">Pending</div>
                             </CardContent>
                         </Card>
                         <Card className="bg-green-50 border-green-200">
                             <CardContent className="p-4 text-center">
-                                <div className="text-2xl font-bold text-green-700">{stats.yuvaPankh.approved}</div>
+                                <div className="text-2xl text-green-700">{stats.yuvaPankh.approved}</div>
                                 <div className="text-sm text-green-600">Approved</div>
                             </CardContent>
                         </Card>
                         <Card className="bg-red-50 border-red-200">
                             <CardContent className="p-4 text-center">
-                                <div className="text-2xl font-bold text-red-700">{stats.yuvaPankh.rejected}</div>
+                                <div className="text-2xl text-red-700">{stats.yuvaPankh.rejected}</div>
                                 <div className="text-sm text-red-600">Rejected</div>
                             </CardContent>
                         </Card>
@@ -1089,19 +1089,19 @@ export default function AdminDashboard() {
                                         {/* Summary Statistics */}
                                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
                                             <div>
-                                                <div className="text-xl sm:text-2xl font-bold text-purple-600">
+                                                <div className="text-xl sm:text-2xl text-purple-600">
                                                     {results.yuvaPankh.totalRegions}
                                                 </div>
                                                 <div className="text-xs sm:text-sm text-gray-500">Total Regions</div>
                                             </div>
                                             <div>
-                                                <div className="text-xl sm:text-2xl font-bold text-green-600">
+                                                <div className="text-xl sm:text-2xl text-green-600">
                                                     {results.yuvaPankh.regions.length > 0 ? Math.max(...results.yuvaPankh.regions.map(r => Number(r.turnoutPercentage) || 0)).toFixed(1) : '0'}%
                                                 </div>
                                                 <div className="text-xs sm:text-sm text-gray-500">Highest Turnout</div>
                                             </div>
                                             <div>
-                                                <div className="text-xl sm:text-2xl font-bold text-purple-600">
+                                                <div className="text-xl sm:text-2xl text-purple-600">
                                                     {results.yuvaPankh.totalVoters.toLocaleString()}
                                                 </div>
                                                 <div className="text-xs sm:text-sm text-gray-500">Total Voters</div>
@@ -1220,19 +1220,19 @@ export default function AdminDashboard() {
                                         {/* Summary Statistics */}
                                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
                                             <div>
-                                                <div className="text-xl sm:text-2xl font-bold text-green-600">
+                                                <div className="text-xl sm:text-2xl text-green-600">
                                                     {results.trustee.totalRegions}
                                                 </div>
                                                 <div className="text-xs sm:text-sm text-gray-500">Total Regions</div>
                                             </div>
                                             <div>
-                                                <div className="text-xl sm:text-2xl font-bold text-green-600">
+                                                <div className="text-xl sm:text-2xl text-green-600">
                                                     {Math.max(...results.trustee.regions.map(r => Number(r.turnoutPercentage) || 0)).toFixed(1)}%
                                                 </div>
                                                 <div className="text-xs sm:text-sm text-gray-500">Highest Turnout</div>
                                             </div>
                                             <div>
-                                                <div className="text-xl sm:text-2xl font-bold text-green-600">
+                                                <div className="text-xl sm:text-2xl text-green-600">
                                                     {results.trustee.totalVoters.toLocaleString()}
                                                 </div>
                                                 <div className="text-xs sm:text-sm text-gray-500">Total Voters</div>

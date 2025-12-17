@@ -140,7 +140,7 @@ export default function WithdrawnCandidatesPage() {
                                 Back to Dashboard
                             </Button>
                         </Link>
-                        <h1 className="text-3xl font-bold text-gray-900">
+                        <h1 className="text-3xl text-gray-900">
                             Withdrawn Candidates
                         </h1>
                     </div>

@@ -559,7 +559,7 @@ function CandidatesContent() {
                                     </Button>
                                 </Link>
                                 <div>
-                                    <h1 className="text-2xl font-bold text-gray-900">
+                                    <h1 className="text-2xl text-gray-900">
                                         Candidate Management
                                     </h1>
                                     <p className="text-gray-600">
@@ -1166,7 +1166,7 @@ function CandidatesContent() {
                                 Back to Regions
                             </Button>
                             <div>
-                                <h1 className="text-2xl font-bold text-gray-900">
+                                <h1 className="text-2xl text-gray-900">
                                     Candidate Management
                                 </h1>
                                 <p className="text-gray-600">

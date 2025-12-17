@@ -395,7 +395,7 @@ export default function VoterManagementPage() {
                         <div className="flex items-center space-x-2 sm:space-x-4">
                             <Logo size="sm" />
                             <div>
-                                <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
+                                <h1 className="text-lg sm:text-2xl text-gray-900">
                                     Voter Management
                                 </h1>
                                 <p className="text-xs sm:text-sm text-gray-600">
@@ -432,7 +432,7 @@ export default function VoterManagementPage() {
                             <Users className="h-4 w-4" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">
+                            <div className="text-2xl">
                                 {stats.totalVoters.toLocaleString()}
                             </div>
                             <p className="text-xs text-gray-600">
@@ -449,7 +449,7 @@ export default function VoterManagementPage() {
                             <CheckCircle className="h-4 w-4" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold text-green-600">
+                            <div className="text-2xl text-green-600">
                                 {stats.activeVoters.toLocaleString()}
                             </div>
                             <p className="text-xs text-gray-600">
@@ -466,7 +466,7 @@ export default function VoterManagementPage() {
                             <User className="h-4 w-4" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold text-blue-600">
+                            <div className="text-2xl text-blue-600">
                                 {stats.votedVoters.toLocaleString()}
                             </div>
                             <p className="text-xs text-gray-600">
@@ -483,7 +483,7 @@ export default function VoterManagementPage() {
                             <XCircle className="h-4 w-4" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold text-gray-600">
+                            <div className="text-2xl text-gray-600">
                                 {stats.inactiveVoters.toLocaleString()}
                             </div>
                             <p className="text-xs text-gray-600">

@@ -32,7 +32,7 @@ export default function KarobariMembersElectionsPage() {
         <Card className="border-red-200 bg-red-50">
           <CardContent className="pt-6">
             <AlertCircle className="h-16 w-16 text-red-600 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-red-900 mb-2">Election Not Available</h2>
+            <h2 className="text-2xl text-red-900 mb-2">Election Not Available</h2>
             <p className="text-red-700 mb-4">Karobari Members election is not available at this time.</p>
             <Link href="/">
               <Button className="bg-red-600 hover:bg-red-700 text-white">

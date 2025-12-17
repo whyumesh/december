@@ -188,7 +188,7 @@ export default function AdminResults() {
                         <div className="flex items-center space-x-2 sm:space-x-4">
                             <Logo size="sm" />
                             <div>
-                                <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
+                                <h1 className="text-lg sm:text-2xl text-gray-900">
                                     Voter Turnout by Region
                                 </h1>
                                 <p className="text-xs sm:text-sm text-gray-600">
@@ -247,7 +247,7 @@ export default function AdminResults() {
 
                             {/* Yuva Pankh Members Chart */}
                             <div>
-                                <h2 className="text-2xl font-bold text-gray-900 mb-6">Yuva Pankh Members - Voter Turnout by Region</h2>
+                                <h2 className="text-2xl text-gray-900 mb-6">Yuva Pankh Members - Voter Turnout by Region</h2>
                                 <Card>
                                     <CardHeader>
                                         <CardTitle className="flex items-center space-x-2">
@@ -326,25 +326,25 @@ export default function AdminResults() {
                                             {/* Summary Statistics */}
                                             <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-center">
                                                 <div>
-                                                    <div className="text-2xl font-bold text-purple-600">
+                                                    <div className="text-2xl text-purple-600">
                                                         {results.yuvaPankh.totalRegions}
                                                     </div>
                                                     <div className="text-sm text-gray-500">Total Regions</div>
                                                 </div>
                                                 <div>
-                                                    <div className="text-2xl font-bold text-green-600">
+                                                    <div className="text-2xl text-green-600">
                                                         {Math.max(...results.yuvaPankh.regions.map(r => r.turnoutPercentage)).toFixed(1)}%
                                                     </div>
                                                     <div className="text-sm text-gray-500">Highest Turnout</div>
                                                         </div>
                                                 <div>
-                                                    <div className="text-2xl font-bold text-orange-600">
+                                                    <div className="text-2xl text-orange-600">
                                                         {(results.yuvaPankh.regions.reduce((sum, r) => sum + r.turnoutPercentage, 0) / results.yuvaPankh.regions.length).toFixed(1)}%
                                                             </div>
                                                     <div className="text-sm text-gray-500">Average Turnout</div>
                                                         </div>
                                                 <div>
-                                                    <div className="text-2xl font-bold text-purple-600">
+                                                    <div className="text-2xl text-purple-600">
                                                         {results.yuvaPankh.totalVoters.toLocaleString()}
                                                     </div>
                                                     <div className="text-sm text-gray-500">Total Voters</div>
@@ -358,7 +358,7 @@ export default function AdminResults() {
 
                         {/* Trustee Members Chart */}
                         <div className="mb-8">
-                            <h2 className="text-2xl font-bold text-gray-900 mb-6">Trustee Members - Voter Turnout by Region</h2>
+                            <h2 className="text-2xl text-gray-900 mb-6">Trustee Members - Voter Turnout by Region</h2>
                                 <Card>
                                     <CardHeader>
                                         <CardTitle className="flex items-center space-x-2">
@@ -437,25 +437,25 @@ export default function AdminResults() {
                                         {/* Summary Statistics */}
                                         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-center">
                                             <div>
-                                                <div className="text-2xl font-bold text-green-600">
+                                                <div className="text-2xl text-green-600">
                                                     {results.trustee.totalRegions}
                                                         </div>
                                                 <div className="text-sm text-gray-500">Total Regions</div>
                                                     </div>
                                             <div>
-                                                <div className="text-2xl font-bold text-green-600">
+                                                <div className="text-2xl text-green-600">
                                                     {Math.max(...results.trustee.regions.map(r => r.turnoutPercentage)).toFixed(1)}%
                                                 </div>
                                                 <div className="text-sm text-gray-500">Highest Turnout</div>
                                             </div>
                                                             <div>
-                                                <div className="text-2xl font-bold text-orange-600">
+                                                <div className="text-2xl text-orange-600">
                                                     {(results.trustee.regions.reduce((sum, r) => sum + r.turnoutPercentage, 0) / results.trustee.regions.length).toFixed(1)}%
                                                                 </div>
                                                 <div className="text-sm text-gray-500">Average Turnout</div>
                                                             </div>
                                             <div>
-                                                <div className="text-2xl font-bold text-purple-600">
+                                                <div className="text-2xl text-purple-600">
                                                     {results.trustee.totalVoters.toLocaleString()}
                                                         </div>
                                                 <div className="text-sm text-gray-500">Total Voters</div>

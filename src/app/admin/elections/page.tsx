@@ -273,7 +273,7 @@ export default function ElectionsManagementPage() {
                         <div className="flex items-center space-x-2 sm:space-x-4">
                             <Logo size="sm" />
                             <div>
-                                <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
+                                <h1 className="text-lg sm:text-2xl text-gray-900">
                                     Election Management
                                 </h1>
                                 <p className="text-xs sm:text-sm text-gray-600">
@@ -313,7 +313,7 @@ export default function ElectionsManagementPage() {
                 {/* Header Actions */}
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h2 className="text-2xl font-bold text-gray-900">Elections</h2>
+                        <h2 className="text-2xl text-gray-900">Elections</h2>
                         <p className="text-gray-600 mt-1">Control when elections are active for voting</p>
                     </div>
                     <Button

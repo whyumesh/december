@@ -673,37 +673,37 @@ export default function LandingPage() {
                                                     <>
                                                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-center mt-6">
                                                             <div>
-                                                                <div className="text-xl sm:text-2xl font-bold text-purple-600">
+                                                                <div className="text-xl sm:text-2xl text-purple-600">
                                                                     {processedData.length}
                                                                 </div>
                                                                 <div className="text-xs sm:text-sm text-gray-500">Total Regions</div>
                                                             </div>
                                                             <div>
-                                                                <div className="text-xl sm:text-2xl font-bold text-green-600">
+                                                                <div className="text-xl sm:text-2xl text-green-600">
                                                                     {highestTurnout.toFixed(1)}%
                                                                 </div>
                                                                 <div className="text-xs sm:text-sm text-gray-500">Highest Turnout</div>
                                                             </div>
                                                             <div>
-                                                                <div className="text-xl sm:text-2xl font-bold text-blue-600">
+                                                                <div className="text-xl sm:text-2xl text-blue-600">
                                                                     {averageTurnout.toFixed(1)}%
                                                                 </div>
                                                                 <div className="text-xs sm:text-sm text-gray-500">Average Turnout</div>
                                                             </div>
                                                             <div>
-                                                                <div className="text-xl sm:text-2xl font-bold text-indigo-600">
+                                                                <div className="text-xl sm:text-2xl text-indigo-600">
                                                                     {votersVoted.toLocaleString()} / {totalVoters.toLocaleString()}
                                                                 </div>
                                                                 <div className="text-xs sm:text-sm text-gray-500">Voters Voted / Total</div>
                                                             </div>
                                                             <div>
-                                                                <div className="text-xl sm:text-2xl font-bold text-purple-600">
+                                                                <div className="text-xl sm:text-2xl text-purple-600">
                                                                     {totalVoters.toLocaleString()}
                                                                 </div>
                                                                 <div className="text-xs sm:text-sm text-gray-500">Total Voters</div>
                                                             </div>
                                                             <div>
-                                                                <div className="text-xl sm:text-2xl font-bold text-orange-600">
+                                                                <div className="text-xl sm:text-2xl text-orange-600">
                                                                     {(totalVoters - votersVoted).toLocaleString()}
                                                                 </div>
                                                                 <div className="text-xs sm:text-sm text-gray-500">Remaining Voters</div>
@@ -832,37 +832,37 @@ export default function LandingPage() {
                                                     <>
                                                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-center mt-6">
                                                             <div>
-                                                                <div className="text-xl sm:text-2xl font-bold text-green-600">
+                                                                <div className="text-xl sm:text-2xl text-green-600">
                                                                     {results.trustee.totalRegions}
                                                                 </div>
                                                                 <div className="text-xs sm:text-sm text-gray-500">Total Regions</div>
                                                             </div>
                                                             <div>
-                                                                <div className="text-xl sm:text-2xl font-bold text-green-600">
+                                                                <div className="text-xl sm:text-2xl text-green-600">
                                                                     {highestTurnout.toFixed(1)}%
                                                                 </div>
                                                                 <div className="text-xs sm:text-sm text-gray-500">Highest Turnout</div>
                                                             </div>
                                                             <div>
-                                                                <div className="text-xl sm:text-2xl font-bold text-blue-600">
+                                                                <div className="text-xl sm:text-2xl text-blue-600">
                                                                     {averageTurnout.toFixed(1)}%
                                                                 </div>
                                                                 <div className="text-xs sm:text-sm text-gray-500">Average Turnout</div>
                                                             </div>
                                                             <div>
-                                                                <div className="text-xl sm:text-2xl font-bold text-indigo-600">
+                                                                <div className="text-xl sm:text-2xl text-indigo-600">
                                                                     {votersVoted.toLocaleString()} / {totalVoters.toLocaleString()}
                                                                 </div>
                                                                 <div className="text-xs sm:text-sm text-gray-500">Voters Voted / Total</div>
                                                             </div>
                                                             <div>
-                                                                <div className="text-xl sm:text-2xl font-bold text-purple-600">
+                                                                <div className="text-xl sm:text-2xl text-purple-600">
                                                                     {totalVoters.toLocaleString()}
                                                                 </div>
                                                                 <div className="text-xs sm:text-sm text-gray-500">Total Voters</div>
                                                             </div>
                                                             <div>
-                                                                <div className="text-xl sm:text-2xl font-bold text-orange-600">
+                                                                <div className="text-xl sm:text-2xl text-orange-600">
                                                                     {(totalVoters - votersVoted).toLocaleString()}
                                                                 </div>
                                                                 <div className="text-xs sm:text-sm text-gray-500">Remaining Voters</div>
@@ -913,7 +913,7 @@ export default function LandingPage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                             <div className="text-center">
                                 <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                                    <span className="text-2xl font-bold text-blue-600">
+                                    <span className="text-2xl text-blue-600">
                                         1
                                     </span>
                                 </div>
@@ -927,7 +927,7 @@ export default function LandingPage() {
                             </div>
                             <div className="text-center">
                                 <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                                    <span className="text-2xl font-bold text-blue-600">
+                                    <span className="text-2xl text-blue-600">
                                         2
                                     </span>
                                 </div>
@@ -940,7 +940,7 @@ export default function LandingPage() {
                             </div>
                             <div className="text-center">
                                 <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                                    <span className="text-2xl font-bold text-blue-600">
+                                    <span className="text-2xl text-blue-600">
                                         3
                                     </span>
                                 </div>
@@ -954,7 +954,7 @@ export default function LandingPage() {
                             </div>
                             <div className="text-center">
                                 <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                                    <span className="text-2xl font-bold text-blue-600">
+                                    <span className="text-2xl text-blue-600">
                                         4
                                     </span>
                                 </div>
@@ -1034,7 +1034,7 @@ export default function LandingPage() {
 
                     {/* Call to Action */}
                     <div className="text-center bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg p-6 sm:p-12 text-white mb-8">
-                        <h2 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">
+                        <h2 className="text-2xl sm:text-3xl mb-3 sm:mb-4">
                             Ready to Make Your Voice Heard?
                         </h2>
                         <p className="text-base sm:text-xl mb-6 sm:mb-8 opacity-90 px-4">

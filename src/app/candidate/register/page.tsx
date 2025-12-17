@@ -97,7 +97,7 @@ export default function CandidateRegistrationPage() {
           <CardContent className="pt-6">
             <div className="text-center">
               <CheckCircle className="h-16 w-16 text-green-400 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-white mb-2">Registration Successful!</h2>
+              <h2 className="text-2xl text-white mb-2">Registration Successful!</h2>
               <p className="text-white/80 mb-4">
                 Your nomination has been submitted for review. You will be notified once it's approved.
               </p>

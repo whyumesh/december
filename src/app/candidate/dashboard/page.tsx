@@ -293,7 +293,7 @@ export default function CandidateDashboard() {
                                 </Button>
                             </Link>
                             <div>
-                                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+                                <h1 className="text-xl sm:text-2xl text-gray-900">
                                     Candidate Dashboard
                                 </h1>
                                 <p className="text-sm sm:text-base text-gray-600">

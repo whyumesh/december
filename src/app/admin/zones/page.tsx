@@ -118,8 +118,8 @@ export default function ZonesPage() {
             <div className="flex items-center space-x-4">
               <Logo size="md" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">SKMMMS Election 2026</h1>
-                <p className="text-xs text-gray-600 mt-0.5 font-bold">Election Commission : Shree Panvel Kutchi Maheshwari Mahajan</p>
+                <h1 className="text-2xl text-gray-900">SKMMMS Election 2026</h1>
+                <p className="text-xs text-gray-600 mt-0.5">Election Commission : Shree Panvel Kutchi Maheshwari Mahajan</p>
               </div>
             </div>
             <Link href="/admin/dashboard">
@@ -135,7 +135,7 @@ export default function ZonesPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Title */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">Zone Management</h2>
+          <h2 className="text-3xl text-gray-900">Zone Management</h2>
           <p className="text-gray-600">Yuva Pankh seat distribution and regional zones</p>
         </div>
 
@@ -156,7 +156,7 @@ export default function ZonesPage() {
                 <MapPin className="h-8 w-8 text-blue-600" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Total Zones</p>
-                  <p className="text-2xl font-bold text-gray-900">{zones.length}</p>
+                  <p className="text-2xl text-gray-900">{zones.length}</p>
                 </div>
               </div>
             </CardContent>
@@ -168,7 +168,7 @@ export default function ZonesPage() {
                 <Award className="h-8 w-8 text-green-600" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Total Seats</p>
-                  <p className="text-2xl font-bold text-gray-900">{totalSeats}</p>
+                  <p className="text-2xl text-gray-900">{totalSeats}</p>
                 </div>
               </div>
             </CardContent>
@@ -180,7 +180,7 @@ export default function ZonesPage() {
                 <Users className="h-8 w-8 text-purple-600" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Active Zones</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-2xl text-gray-900">
                     {zones.filter(zone => zone.isActive).length}
                   </p>
                 </div>

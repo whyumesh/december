@@ -610,10 +610,10 @@ export default function ElectionResults() {
             <div className="flex items-center space-x-2 sm:space-x-4">
               <Logo size="sm" />
               <div>
-                <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
+                <h1 className="text-lg sm:text-2xl text-gray-900">
                   SKMMMS Election 2026
                 </h1>
-                <p className="text-xs text-gray-600 mt-0.5 font-bold">Election Commission : Shree Panvel Kutchi Maheshwari Mahajan</p>
+                <p className="text-xs text-gray-600 mt-0.5">Election Commission : Shree Panvel Kutchi Maheshwari Mahajan</p>
               </div>
             </div>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
@@ -658,7 +658,7 @@ export default function ElectionResults() {
 
         {/* Page Header */}
         <div className="mb-6 sm:mb-8">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Election Results</h2>
+          <h2 className="text-2xl sm:text-3xl text-gray-900">Election Results</h2>
           <p className="text-gray-600">Live results by zone for all elections</p>
           {results && (
             <p className="text-sm text-gray-500 mt-2">
@@ -700,7 +700,7 @@ export default function ElectionResults() {
                           {zoneResult.candidates.map((candidate, index) => (
                             <div key={candidate.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                               <div className="flex items-center space-x-3">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
                                   index === 0 ? 'bg-yellow-100 text-yellow-800' : 
                                   index === 1 ? 'bg-gray-100 text-gray-800' : 
                                   index === 2 ? 'bg-orange-100 text-orange-800' : 
@@ -762,7 +762,7 @@ export default function ElectionResults() {
                           {zoneResult.candidates.map((candidate, index) => (
                             <div key={candidate.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                               <div className="flex items-center space-x-3">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
                                   index === 0 ? 'bg-yellow-100 text-yellow-800' : 
                                   index === 1 ? 'bg-gray-100 text-gray-800' : 
                                   index === 2 ? 'bg-orange-100 text-orange-800' : 

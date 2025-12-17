@@ -133,7 +133,7 @@ export default function TrusteesPage() {
                 </Button>
               </Link>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Trustees Election</h1>
+                <h1 className="text-2xl text-gray-900">Trustees Election</h1>
                 <p className="text-gray-600">Select your regional trustees based on zones and seats</p>
               </div>
             </div>
@@ -189,7 +189,7 @@ export default function TrusteesPage() {
                       <p className="text-sm text-gray-600">{zone.name}</p>
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-green-600">
+                      <div className="text-2xl text-green-600">
                         {stats?.filled || 0}/{stats?.total || 0}
                       </div>
                       <p className="text-xs text-gray-500">Seats Filled</p>

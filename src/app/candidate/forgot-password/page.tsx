@@ -124,7 +124,7 @@ export default function ForgotPasswordPage() {
                     <CardContent className="pt-6">
                         <div className="text-center">
                             <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-                            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                            <h2 className="text-2xl text-gray-900 mb-2">
                                 Password Reset Successful!
                             </h2>
                             <p className="text-gray-600 mb-6">
@@ -156,7 +156,7 @@ export default function ForgotPasswordPage() {
                                 </Button>
                             </Link>
                             <div>
-                                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+                                <h1 className="text-xl sm:text-2xl text-gray-900">
                                     Forgot Password
                                 </h1>
                                 <p className="text-gray-600 text-xs sm:text-sm">

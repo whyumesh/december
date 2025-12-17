@@ -76,7 +76,7 @@ export default function CandidateProfileModal({ isOpen, onClose, candidate }: Ca
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="text-lg sm:text-2xl font-bold text-gray-900 break-words">{candidate.name}</h2>
+              <h2 className="text-lg sm:text-2xl text-gray-900 break-words">{candidate.name}</h2>
               <p className="text-xs sm:text-sm text-gray-600">{candidate.position || 'Candidate'}</p>
             </div>
           </div>

@@ -476,7 +476,7 @@ export default function KarobariMembersVotingPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-bold text-blue-600">{voterZone.seats}</div>
+                    <div className="text-2xl text-blue-600">{voterZone.seats}</div>
                     <div className="text-sm text-gray-600">Seats Available</div>
                   </div>
                 </div>
@@ -684,7 +684,7 @@ export default function KarobariMembersVotingPage() {
                   <div className={`${colors.bg} p-6 text-white`}>
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
-                        <h3 className="text-2xl font-bold mb-1">
+                        <h3 className="text-2xl mb-1">
                           {selectedLanguage === 'english' ? zone.name : zone.nameGujarati}
                         </h3>
                         {selectedLanguage === 'english' && zone.nameGujarati && (
@@ -694,7 +694,7 @@ export default function KarobariMembersVotingPage() {
                       </div>
                       <div className="ml-4 text-right">
                         <div className="bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2">
-                          <div className="text-3xl font-bold">{zone.candidates.length}</div>
+                          <div className="text-3xl">{zone.candidates.length}</div>
                           <div className="text-xs text-white/80">Winner{zone.candidates.length > 1 ? 's' : ''}</div>
                         </div>
                       </div>
@@ -716,7 +716,7 @@ export default function KarobariMembersVotingPage() {
                           >
                             <div className="flex items-start gap-3">
                               {/* Winner Badge Number */}
-                              <div className={`flex-shrink-0 w-10 h-10 ${colors.bg} rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md`}>
+                              <div className={`flex-shrink-0 w-10 h-10 ${colors.bg} rounded-full flex items-center justify-center text-white text-lg shadow-md`}>
                                 {candidateIndex + 1}
                                 </div>
                               
@@ -789,7 +789,7 @@ export default function KarobariMembersVotingPage() {
                           </div>
                         </div>
                 <div className="text-right">
-                  <div className="text-4xl font-bold text-blue-600">
+                  <div className="text-4xl text-blue-600">
                     {zones.reduce((sum, zone) => sum + zone.candidates.length, 0)}
                   </div>
                   <div className="text-sm text-gray-600">

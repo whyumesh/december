@@ -568,7 +568,7 @@ export default function VoterDashboard() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">{content[selectedLanguage].accessDenied}</h1>
+          <h1 className="text-2xl text-gray-900 mb-4">{content[selectedLanguage].accessDenied}</h1>
           <p className="text-gray-600 mb-4">{content[selectedLanguage].pleaseLogin}</p>
           <Link href="/voter/login">
             <Button className="bg-green-600 hover:bg-green-700 text-white">
@@ -669,8 +669,8 @@ export default function VoterDashboard() {
             <div className="flex items-center space-x-2 sm:space-x-4">
               <Logo size="sm" />
               <div>
-                <h1 className="text-lg sm:text-2xl font-bold text-gray-900">{content[selectedLanguage].electionTitle}</h1>
-                <p className="text-xs text-gray-600 mt-0.5 font-bold">{content[selectedLanguage].electionCommission}</p>
+                <h1 className="text-lg sm:text-2xl text-gray-900">{content[selectedLanguage].electionTitle}</h1>
+                <p className="text-xs text-gray-600 mt-0.5">{content[selectedLanguage].electionCommission}</p>
               </div>
             </div>
             <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
@@ -699,7 +699,7 @@ export default function VoterDashboard() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Welcome Section */}
         <div className="mb-4">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">{content[selectedLanguage].voterDashboard}</h2>
+          <h2 className="text-2xl sm:text-3xl text-gray-900">{content[selectedLanguage].voterDashboard}</h2>
           <p className="text-gray-600">
             {selectedLanguage === 'gujarati' 
               ? `${voterData.name}, સ્વાગત છે`
@@ -798,7 +798,7 @@ export default function VoterDashboard() {
 
         {/* Elections */}
         <div className="mb-6 sm:mb-8">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">{content[selectedLanguage].individualElections}</h2>
+          <h2 className="text-xl sm:text-2xl text-gray-900 mb-4 sm:mb-6">{content[selectedLanguage].individualElections}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {elections.map((election) => {
               const IconComponent = election.icon
@@ -1018,13 +1018,13 @@ export default function VoterDashboard() {
           <CardContent className="p-4 sm:p-6">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
               <div className="text-center">
-                <div className="text-3xl font-bold text-green-600 mb-2">
+                <div className="text-3xl text-green-600 mb-2">
                   {totalVotes ?? 0}/{totalElections ?? 0}{totalElections > 0 && totalVotes === totalElections ? ' done' : ''}
                 </div>
                 <p className="text-sm text-gray-600">{content[selectedLanguage].electionsVoted}</p>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600 mb-2">
+                <div className="text-3xl text-blue-600 mb-2">
                   {totalElections > 0 && totalVotes !== undefined && totalElections !== undefined 
                     ? Math.round((totalVotes / totalElections) * 100) 
                     : 0}%
@@ -1032,7 +1032,7 @@ export default function VoterDashboard() {
                 <p className="text-sm text-gray-600">{content[selectedLanguage].participationRate}</p>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-purple-600 mb-2">
+                <div className="text-3xl text-purple-600 mb-2">
                   {Math.max(0, (totalElections ?? 0) - (totalVotes ?? 0))}
                 </div>
                 <p className="text-sm text-gray-600">{content[selectedLanguage].remaining}</p>
@@ -1184,19 +1184,19 @@ export default function VoterDashboard() {
                         {/* Summary Statistics */}
                         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-center">
                           <div>
-                            <div className="text-xl sm:text-2xl font-bold text-purple-600">
+                            <div className="text-xl sm:text-2xl text-purple-600">
                               {processedData.length}
                             </div>
                             <div className="text-xs sm:text-sm text-gray-500">{content[selectedLanguage].totalRegions}</div>
                           </div>
                           <div>
-                            <div className="text-xl sm:text-2xl font-bold text-green-600">
+                            <div className="text-xl sm:text-2xl text-green-600">
                               {processedData.length > 0 ? Math.max(...processedData.map(r => r.turnout)).toFixed(1) : '0'}%
                             </div>
                             <div className="text-xs sm:text-sm text-gray-500">{content[selectedLanguage].highestTurnout}</div>
                           </div>
                           <div>
-                            <div className="text-xl sm:text-2xl font-bold text-blue-600">
+                            <div className="text-xl sm:text-2xl text-blue-600">
                               {processedData.reduce((sum, r) => sum + (r.uniqueVoters || 0), 0).toLocaleString()} / {processedData.reduce((sum, r) => sum + r.voters, 0).toLocaleString()}
                             </div>
                             <div className="text-xs sm:text-sm text-gray-500">
@@ -1204,7 +1204,7 @@ export default function VoterDashboard() {
                             </div>
                           </div>
                           <div>
-                            <div className="text-xl sm:text-2xl font-bold text-purple-600">
+                            <div className="text-xl sm:text-2xl text-purple-600">
                               {processedData.reduce((sum, r) => sum + r.voters, 0).toLocaleString()}
                             </div>
                             <div className="text-xs sm:text-sm text-gray-500">{content[selectedLanguage].totalVoters}</div>
@@ -1353,19 +1353,19 @@ export default function VoterDashboard() {
                       {/* Summary Statistics */}
                       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-center">
                         <div>
-                          <div className="text-xl sm:text-2xl font-bold text-green-600">
+                          <div className="text-xl sm:text-2xl text-green-600">
                             {results.trustee.totalRegions}
                           </div>
                           <div className="text-xs sm:text-sm text-gray-500">{content[selectedLanguage].totalRegions}</div>
                         </div>
                         <div>
-                          <div className="text-xl sm:text-2xl font-bold text-green-600">
+                          <div className="text-xl sm:text-2xl text-green-600">
                             {Math.max(...results.trustee.regions.map(r => r.turnoutPercentage)).toFixed(1)}%
                           </div>
                           <div className="text-xs sm:text-sm text-gray-500">{content[selectedLanguage].highestTurnout}</div>
                         </div>
                         <div>
-                          <div className="text-xl sm:text-2xl font-bold text-blue-600">
+                          <div className="text-xl sm:text-2xl text-blue-600">
                             {results.trustee.regions.reduce((sum, r) => sum + (r.uniqueVoters !== undefined ? r.uniqueVoters : 0), 0).toLocaleString()} / {results.trustee.totalVoters.toLocaleString()}
                           </div>
                           <div className="text-xs sm:text-sm text-gray-500">
@@ -1373,7 +1373,7 @@ export default function VoterDashboard() {
                           </div>
                         </div>
                         <div>
-                          <div className="text-xl sm:text-2xl font-bold text-purple-600">
+                          <div className="text-xl sm:text-2xl text-purple-600">
                             {results?.totalVotersInSystem ? results.totalVotersInSystem.toLocaleString() : results.trustee.totalVoters.toLocaleString()}
                           </div>
                           <div className="text-xs sm:text-sm text-gray-500">{content[selectedLanguage].totalVoters}</div>

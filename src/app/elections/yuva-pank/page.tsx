@@ -130,7 +130,7 @@ export default function YuvaPankElectionsPage() {
               <div>
                 <div className="flex items-center space-x-2 mb-2">
                   <Crown className="h-8 w-8" />
-                  <h1 className="text-3xl font-bold">Yuva Pankh Elections</h1>
+                  <h1 className="text-3xl">Yuva Pankh Elections</h1>
                 </div>
                 <p className="text-yellow-100">Youth leadership positions for the future of our community</p>
               </div>
@@ -233,7 +233,7 @@ export default function YuvaPankElectionsPage() {
               <div className="flex items-center space-x-2">
                 <Users className="h-8 w-8 text-blue-600" />
                 <div>
-                  <p className="text-2xl font-bold">{candidates.length}</p>
+                  <p className="text-2xl">{candidates.length}</p>
                   <p className="text-sm text-gray-600">Total Candidates</p>
                 </div>
               </div>
@@ -244,7 +244,7 @@ export default function YuvaPankElectionsPage() {
               <div className="flex items-center space-x-2">
                 <CheckCircle className="h-8 w-8 text-green-600" />
                 <div>
-                  <p className="text-2xl font-bold">
+                  <p className="text-2xl">
                     {candidates.filter(c => c.status === 'APPROVED').length}
                   </p>
                   <p className="text-sm text-gray-600">Approved Candidates</p>
@@ -257,7 +257,7 @@ export default function YuvaPankElectionsPage() {
               <div className="flex items-center space-x-2">
                 <Shield className="h-8 w-8 text-purple-600" />
                 <div>
-                  <p className="text-2xl font-bold">4</p>
+                  <p className="text-2xl">4</p>
                   <p className="text-sm text-gray-600">Positions Available</p>
                 </div>
               </div>

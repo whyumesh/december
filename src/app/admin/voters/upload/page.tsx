@@ -365,7 +365,7 @@ export default function VoterUploadPage() {
           <CardContent className="pt-6">
             <div className="text-center">
               <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Upload Successful!</h2>
+              <h2 className="text-2xl text-gray-900 mb-2">Upload Successful!</h2>
               <p className="text-gray-600 mb-4">
                 Voters have been added to the system successfully.
               </p>
@@ -402,7 +402,7 @@ export default function VoterUploadPage() {
                 </Button>
               </Link>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Upload Voter List</h1>
+                <h1 className="text-2xl text-gray-900">Upload Voter List</h1>
                 <p className="text-gray-600">Add voters to the election system</p>
               </div>
             </div>

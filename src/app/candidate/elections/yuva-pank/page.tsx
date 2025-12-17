@@ -81,7 +81,7 @@ export default function YuvaPankPage() {
               <div>
                 <div className="flex items-center space-x-2 mb-2">
                   <Crown className="h-8 w-8" />
-                  <h1 className="text-3xl font-bold">Yuva Pankh Elections</h1>
+                  <h1 className="text-3xl">Yuva Pankh Elections</h1>
                 </div>
                 <p className="text-yellow-100">Youth leadership positions for the future of our community</p>
               </div>

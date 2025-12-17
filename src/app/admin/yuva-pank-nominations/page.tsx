@@ -438,7 +438,7 @@ export default function YuvaPankNominationsPage() {
                 </Button>
               </Link>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Yuva Pankh Nominations</h1>
+                <h1 className="text-2xl text-gray-900">Yuva Pankh Nominations</h1>
                 <p className="text-gray-600">Review and manage Yuva Pankh Elections (2026 – 2029) nominations</p>
               </div>
             </div>

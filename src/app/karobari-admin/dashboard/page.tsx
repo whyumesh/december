@@ -86,7 +86,7 @@ export default function KarobariAdminDashboard() {
             <div className="flex items-center space-x-4">
               <Logo size="md" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-2xl text-gray-900">
                   Karobari Admin Dashboard
                 </h1>
                 <p className="text-gray-600">
@@ -114,7 +114,7 @@ export default function KarobariAdminDashboard() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+          <h2 className="text-3xl text-gray-900 mb-2">
             Welcome, {admin?.name}!
           </h2>
           <p className="text-gray-600">
@@ -130,7 +130,7 @@ export default function KarobariAdminDashboard() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
+              <div className="text-2xl">{stats.total}</div>
               <p className="text-xs text-muted-foreground">All candidates</p>
             </CardContent>
           </Card>
@@ -141,7 +141,7 @@ export default function KarobariAdminDashboard() {
               <Clock className="h-4 w-4 text-yellow-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">
+              <div className="text-2xl text-yellow-600">
                 {stats.pending}
               </div>
               <p className="text-xs text-muted-foreground">Awaiting review</p>
@@ -154,7 +154,7 @@ export default function KarobariAdminDashboard() {
               <CheckCircle className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-2xl text-green-600">
                 {stats.approved}
               </div>
               <p className="text-xs text-muted-foreground">Accepted</p>
@@ -167,7 +167,7 @@ export default function KarobariAdminDashboard() {
               <XCircle className="h-4 w-4 text-red-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">
+              <div className="text-2xl text-red-600">
                 {stats.rejected}
               </div>
               <p className="text-xs text-muted-foreground">Declined</p>

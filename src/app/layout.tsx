@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import SessionProvider from "@/components/providers/SessionProvider";
+import MaintenancePopup from "@/components/MaintenancePopup";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -71,6 +72,7 @@ export default function RootLayout({
             <body className={inter.className}>
                 <ErrorBoundary>
                     <SessionProvider>
+                        <MaintenancePopup />
                         <div className="min-h-screen bg-gray-50">
                             {children}
                         </div>

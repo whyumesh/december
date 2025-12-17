@@ -398,7 +398,7 @@ export default function KarobariNominatePage() {
             <div className="flex items-center space-x-4">
               <Logo size="md" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-2xl text-gray-900">
                   Karobari Candidate Nomination
                 </h1>
               </div>

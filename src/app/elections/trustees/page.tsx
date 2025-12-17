@@ -127,7 +127,7 @@ export default function TrusteesElectionsPage() {
               <div>
                 <div className="flex items-center space-x-2 mb-2">
                   <UserCheck className="h-8 w-8" />
-                  <h1 className="text-3xl font-bold">Trustees Elections</h1>
+                  <h1 className="text-3xl">Trustees Elections</h1>
                 </div>
                 <p className="text-green-100">Select your regional trustees based on zones and seats</p>
               </div>
@@ -225,7 +225,7 @@ export default function TrusteesElectionsPage() {
               <div className="flex items-center space-x-2">
                 <Users className="h-8 w-8 text-green-600" />
                 <div>
-                  <p className="text-2xl font-bold">{trustees.length}</p>
+                  <p className="text-2xl">{trustees.length}</p>
                   <p className="text-sm text-gray-600">Total Trustees</p>
                 </div>
               </div>
@@ -236,7 +236,7 @@ export default function TrusteesElectionsPage() {
               <div className="flex items-center space-x-2">
                 <CheckCircle className="h-8 w-8 text-blue-600" />
                 <div>
-                  <p className="text-2xl font-bold">
+                  <p className="text-2xl">
                     {Object.keys(zoneStats).length}
                   </p>
                   <p className="text-sm text-gray-600">Active Zones</p>
@@ -249,7 +249,7 @@ export default function TrusteesElectionsPage() {
               <div className="flex items-center space-x-2">
                 <Shield className="h-8 w-8 text-purple-600" />
                 <div>
-                  <p className="text-2xl font-bold">2</p>
+                  <p className="text-2xl">2</p>
                   <p className="text-sm text-gray-600">Year Term</p>
                 </div>
               </div>
@@ -281,7 +281,7 @@ export default function TrusteesElectionsPage() {
                           <p className="text-sm text-gray-600">{zone?.name || 'N/A'}</p>
                         </div>
                         <div className="text-right">
-                          <div className="text-2xl font-bold text-green-600">
+                          <div className="text-2xl text-green-600">
                             {stats.filled}/{stats.total}
                           </div>
                           <p className="text-xs text-gray-500">Seats Filled</p>
