@@ -333,6 +333,45 @@ export default function VoterLoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      {/* Marquee Banner */}
+      <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white py-2 overflow-hidden relative z-50">
+        <div className="marquee-container">
+          <div className="marquee-content">
+            <span className="font-semibold">⚠️ Important: </span>
+            If any member of samaj is facing any difficulty to login or vote, kindly contact: 
+            <a href="tel:+917666778349" className="font-bold underline mx-1">+91 7666778349</a>
+            (Dipen Ketan Somani) or 
+            <a href="tel:+919820216044" className="font-bold underline mx-1">+91 9820216044</a>
+            (Jay Deepak Bhutada) or email at 
+            <a href="mailto:kmselec2026@gmail.com" className="font-bold underline mx-1">kmselec2026@gmail.com</a>
+            <span className="mx-8">•</span>
+            <span className="font-semibold">⚠️ મહત્વપૂર્ણ: </span>
+            જો સમાજના કોઈપણ સભ્યને લોગિન કરવામાં અથવા મતદાન કરવામાં કોઈ મુશ્કેલી આવી રહી હોય, તો કૃપા કરીને સંપર્ક કરો: 
+            <a href="tel:+917666778349" className="font-bold underline mx-1">+91 7666778349</a>
+            (દિપેન કેતન સોમાણી) અથવા 
+            <a href="tel:+919820216044" className="font-bold underline mx-1">+91 9820216044</a>
+            (જય દીપક ભુટાડા) અથવા ઇમેઇલ કરો: 
+            <a href="mailto:kmselec2026@gmail.com" className="font-bold underline mx-1">kmselec2026@gmail.com</a>
+            <span className="mx-8">•</span>
+            <span className="font-semibold">⚠️ Important: </span>
+            If any member of samaj is facing any difficulty to login or vote, kindly contact: 
+            <a href="tel:+917666778349" className="font-bold underline mx-1">+91 7666778349</a>
+            (Dipen Ketan Somani) or 
+            <a href="tel:+919820216044" className="font-bold underline mx-1">+91 9820216044</a>
+            (Jay Deepak Bhutada) or email at 
+            <a href="mailto:kmselec2026@gmail.com" className="font-bold underline mx-1">kmselec2026@gmail.com</a>
+            <span className="mx-8">•</span>
+            <span className="font-semibold">⚠️ મહત્વપૂર્ણ: </span>
+            જો સમાજના કોઈપણ સભ્યને લોગિન કરવામાં અથવા મતદાન કરવામાં કોઈ મુશ્કેલી આવી રહી હોય, તો કૃપા કરીને સંપર્ક કરો: 
+            <a href="tel:+917666778349" className="font-bold underline mx-1">+91 7666778349</a>
+            (દિપેન કેતન સોમાણી) અથવા 
+            <a href="tel:+919820216044" className="font-bold underline mx-1">+91 9820216044</a>
+            (જય દીપક ભુટાડા) અથવા ઇમેઇલ કરો: 
+            <a href="mailto:kmselec2026@gmail.com" className="font-bold underline mx-1">kmselec2026@gmail.com</a>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

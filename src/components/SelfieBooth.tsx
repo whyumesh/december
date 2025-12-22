@@ -10,6 +10,7 @@ import Link from 'next/link'
 
 interface SelfieBoothProps {
   onClose?: () => void
+  backUrl?: string
 }
 
 const TEMPLATES = [
@@ -19,7 +20,7 @@ const TEMPLATES = [
   { id: 4, path: '/SELFIE BOOTH/ELECTKMS4.jpeg', name: 'Frame 4' },
 ]
 
-export default function SelfieBooth({ onClose }: SelfieBoothProps) {
+export default function SelfieBooth({ onClose, backUrl = '/voter/dashboard' }: SelfieBoothProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<number | null>(null)
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [capturedImage, setCapturedImage] = useState<string | null>(null)
@@ -226,13 +227,24 @@ export default function SelfieBooth({ onClose }: SelfieBoothProps) {
                   <p className="text-[10px] sm:text-xs text-gray-600 mt-0.5 font-bold line-clamp-2">Election Commission : Shree Panvel Kutchi Maheshwari Mahajan</p>
                 </div>
               </div>
-              <Link href="/voter/dashboard" className="w-full sm:w-auto mt-2 sm:mt-0">
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto text-xs sm:text-sm px-3 sm:px-4">
+              {onClose ? (
+                <Button 
+                  onClick={handleClose}
+                  className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto text-xs sm:text-sm px-3 sm:px-4"
+                >
                   <Home className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
-                  <span className="hidden sm:inline">Back to Dashboard</span>
-                  <span className="sm:hidden">Dashboard</span>
+                  <span className="hidden sm:inline">Back</span>
+                  <span className="sm:hidden">Back</span>
                 </Button>
-              </Link>
+              ) : (
+                <Link href={backUrl} className="w-full sm:w-auto mt-2 sm:mt-0">
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto text-xs sm:text-sm px-3 sm:px-4">
+                    <Home className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                    <span className="hidden sm:inline">Back to Dashboard</span>
+                    <span className="sm:hidden">Dashboard</span>
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </header>
@@ -423,12 +435,22 @@ export default function SelfieBooth({ onClose }: SelfieBoothProps) {
                 <p className="text-xs text-gray-600 mt-0.5 font-bold">Election Commission : Shree Panvel Kutchi Maheshwari Mahajan</p>
               </div>
             </div>
-            <Link href="/voter/dashboard">
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+            {onClose ? (
+              <Button 
+                onClick={handleClose}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
                 <Home className="h-4 w-4 mr-2" />
-                Back to Dashboard
+                Back
               </Button>
-            </Link>
+            ) : (
+              <Link href={backUrl}>
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <Home className="h-4 w-4 mr-2" />
+                  Back to Dashboard
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </header>
@@ -506,15 +528,26 @@ export default function SelfieBooth({ onClose }: SelfieBoothProps) {
               <Download className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
               Download Selfie
             </Button>
-            <Link href="/voter/dashboard" className="w-full sm:w-auto">
+            {onClose ? (
               <Button
+                onClick={handleClose}
                 size="lg"
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8 py-4 sm:py-6 w-full sm:w-auto text-sm sm:text-base"
               >
                 <Home className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                Back to Dashboard
+                Back
               </Button>
-            </Link>
+            ) : (
+              <Link href={backUrl} className="w-full sm:w-auto">
+                <Button
+                  size="lg"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8 py-4 sm:py-6 w-full sm:w-auto text-sm sm:text-base"
+                >
+                  <Home className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                  Back to Dashboard
+                </Button>
+              </Link>
+            )}
           </div>
 
           {/* Hidden canvas for final composition */}

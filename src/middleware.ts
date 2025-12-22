@@ -19,8 +19,7 @@ const publicRoutes = [
   '/api/voter/send-otp',
   '/api/voter/verify-otp',
   '/api/voter/login',
-  '/elections',
-  '/landing'
+  '/elections'
 ]
 
 // Simple JWT decode without verification (for Edge Functions)
@@ -50,7 +49,7 @@ function hasValidTokenStructure(token: string): boolean {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   
-  // Allow public routes (including landing page)
+  // Allow public routes
   if (publicRoutes.some(route => pathname.startsWith(route))) {
     return NextResponse.next()
   }

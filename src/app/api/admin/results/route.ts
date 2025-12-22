@@ -15,9 +15,9 @@ export async function GET(request: NextRequest) {
     if (!process.env.DATABASE_URL) {
       console.warn('DATABASE_URL not available, returning empty results')
       return NextResponse.json({
-        karobari: { zones: [], totalVoters: 0, totalVotes: 0 },
-        trustees: { zones: [], totalVoters: 0, totalVotes: 0 },
-        yuvaPankh: { zones: [], totalVoters: 0, totalVotes: 0 },
+        karobari: { name: 'Karobari Members', regions: [], totalRegions: 0, totalVoters: 0, totalVotes: 0 },
+        trustee: { name: 'Trustee Members', regions: [], totalRegions: 0, totalVoters: 0, totalVotes: 0 },
+        yuvaPankh: { name: 'Yuva Pankh Members', regions: [], totalRegions: 0, totalVoters: 0, totalVotes: 0 },
         timestamp: new Date().toISOString()
       })
     }

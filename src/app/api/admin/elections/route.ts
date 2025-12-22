@@ -7,6 +7,14 @@ export const dynamic = 'force-dynamic'
 // GET - Get all elections
 export async function GET(request: NextRequest) {
   try {
+    // Gracefully handle missing database URL (e.g., during build)
+    if (!process.env.DATABASE_URL) {
+      console.warn('DATABASE_URL not available, returning empty elections array')
+      return NextResponse.json({ 
+        elections: [] 
+      })
+    }
+
     const elections = await prisma.election.findMany({
       orderBy: { createdAt: 'desc' }
     })
@@ -14,8 +22,21 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ elections })
   } catch (error) {
     console.error('Error fetching elections:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    
+    // Check if it's a database connection error
+    if (errorMessage.includes('DATABASE_URL') || errorMessage.includes('connection') || errorMessage.includes('P1001')) {
+      return NextResponse.json({ 
+        error: 'Database connection error',
+        details: 'Please check your DATABASE_URL configuration in .env.local',
+        elections: []
+      }, { status: 500 })
+    }
+    
     return NextResponse.json({ 
-      error: 'Failed to fetch elections' 
+      error: 'Failed to fetch elections',
+      details: errorMessage,
+      elections: []
     }, { status: 500 })
   }
 }

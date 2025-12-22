@@ -30,10 +30,13 @@ import {
     CheckCircle,
     Menu,
     X,
+    BarChart3,
+    AlertCircle,
+    Camera,
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import CountdownTimer from "@/components/CountdownTimer";
-import { BarChart3, AlertCircle } from "lucide-react";
+import SelfieBooth from "@/components/SelfieBooth";
 import {
     BarChart,
     Bar,
@@ -83,6 +86,7 @@ export default function HomePage() {
     const [isLoadingResults, setIsLoadingResults] = useState(false);
     const [resultsError, setResultsError] = useState<string | null>(null);
     const [electionPeriod, setElectionPeriod] = useState<string>('Loading...');
+    const [showSelfieBooth, setShowSelfieBooth] = useState(false);
     
     // Get YouTube video IDs from environment variables
     const yuvaPankhVideoId = process.env.NEXT_PUBLIC_YOUTUBE_YUVA_PANKH_ID;
@@ -115,17 +119,40 @@ export default function HomePage() {
                 const response = await fetch('/api/admin/results');
                 if (response.ok) {
                     const data = await response.json();
-                    setResults(data);
-                    localStorage.setItem(cacheKey, JSON.stringify({
-                        data,
-                        timestamp: now
-                    }));
+                    console.log('Results API response:', data);
+                    // Check if we have valid data
+                    if (data && (data.trustee || data.yuvaPankh || data.karobari)) {
+                        setResults(data);
+                        localStorage.setItem(cacheKey, JSON.stringify({
+                            data,
+                            timestamp: now
+                        }));
+                    } else {
+                        console.warn('API returned empty or invalid data:', data);
+                        setResultsError('No election data available');
+                        setResults({
+                            karobari: { name: 'Karobari Members', regions: [], totalRegions: 0, totalVoters: 0, totalVotes: 0 },
+                            trustee: { name: 'Trustee Members', regions: [], totalRegions: 0, totalVoters: 0, totalVotes: 0 },
+                            yuvaPankh: { name: 'Yuva Pankh Members', regions: [], totalRegions: 0, totalVoters: 0, totalVotes: 0 },
+                            timestamp: new Date().toISOString()
+                        });
+                    }
                 } else {
-                    setResultsError('Failed to load election results');
+                    // Try to get error details from response
+                    let errorMessage = 'Failed to load election results';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.error || errorData.details || errorMessage;
+                        console.error('API Error:', errorData);
+                    } catch (e) {
+                        console.error('Response status:', response.status, response.statusText);
+                    }
+                    setResultsError(errorMessage);
                 }
             } catch (error) {
                 console.error('Error fetching results:', error);
-                setResultsError('Failed to load election results');
+                const errorMessage = error instanceof Error ? error.message : 'Failed to load election results';
+                setResultsError(errorMessage);
                 setResults({
                     karobari: { name: 'Karobari Members', regions: [], totalRegions: 0, totalVoters: 0, totalVotes: 0 },
                     trustee: { name: 'Trustee Members', regions: [], totalRegions: 0, totalVoters: 0, totalVotes: 0 },
@@ -144,43 +171,133 @@ export default function HomePage() {
     useEffect(() => {
         const fetchElectionPeriod = async () => {
             try {
-                // Try to fetch any active election to get the period
-                const response = await fetch('/api/elections/yuva-pank');
+                // Fetch elections to get the period
+                const response = await fetch('/api/admin/elections');
                 if (response.ok) {
                     const data = await response.json();
-                    if (data.election) {
-                        const startDate = new Date(data.election.startDate).toLocaleDateString('en-US', { 
-                            month: 'short', 
-                            day: 'numeric', 
-                            year: 'numeric' 
-                        });
-                        const endDate = new Date(data.election.endDate).toLocaleDateString('en-US', { 
-                            month: 'short', 
-                            day: 'numeric', 
-                            year: 'numeric' 
-                        });
-                        setElectionPeriod(`${startDate} - ${endDate}`);
+                    if (data.elections && data.elections.length > 0) {
+                        // Use the first election's dates (or find a specific one)
+                        const election = data.elections.find((e: any) => e.type === 'TRUSTEES') || data.elections[0];
+                        if (election && election.startDate && election.endDate) {
+                            // Parse dates and format using UTC to avoid timezone issues
+                            // Handle both ISO string and Date object formats
+                            const parseDate = (dateValue: string | Date) => {
+                                if (dateValue instanceof Date) {
+                                    return dateValue;
+                                }
+                                // If it's a string, parse it as UTC to avoid timezone shifts
+                                // Handle ISO format: "2025-12-11T00:00:00.000Z" or "2025-12-11"
+                                const dateStr = String(dateValue);
+                                if (dateStr.includes('T')) {
+                                    // ISO format with time - parse as UTC
+                                    return new Date(dateStr);
+                                } else {
+                                    // Date-only format - append time to ensure UTC parsing
+                                    return new Date(dateStr + 'T00:00:00.000Z');
+                                }
+                            };
+                            
+                            const startDateObj = parseDate(election.startDate);
+                            const endDateObj = parseDate(election.endDate);
+                            
+                            // Format dates using UTC to avoid timezone shifts
+                            // Extract UTC date components
+                            const formatDate = (date: Date) => {
+                                // Validate date
+                                if (isNaN(date.getTime())) {
+                                    return 'Invalid Date';
+                                }
+                                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                                const utcYear = date.getUTCFullYear();
+                                const utcMonth = date.getUTCMonth();
+                                const utcDay = date.getUTCDate();
+                                return `${months[utcMonth]} ${utcDay}, ${utcYear}`;
+                            };
+                            
+                            const startDate = formatDate(startDateObj);
+                            const endDate = formatDate(endDateObj);
+                            
+                            // Only set if dates are valid
+                            if (startDate !== 'Invalid Date' && endDate !== 'Invalid Date') {
+                                setElectionPeriod(`${startDate} - ${endDate}`);
+                            } else {
+                                // Fallback to hardcoded dates if parsing fails
+                                setElectionPeriod('Dec 11, 2025 - Dec 25, 2025');
+                            }
+                        } else {
+                            // Fallback to hardcoded dates: Dec 11, 2025 - Dec 25, 2025
+                            setElectionPeriod('Dec 11, 2025 - Dec 25, 2025');
+                        }
                     } else {
-                        setElectionPeriod('Election Period');
+                        // Fallback to hardcoded dates: Dec 11, 2025 - Dec 25, 2025
+                        setElectionPeriod('Dec 11, 2025 - Dec 25, 2025');
                     }
                 } else {
-                    setElectionPeriod('Election Period');
+                    // Fallback to hardcoded dates: Dec 11, 2025 - Dec 25, 2025
+                    setElectionPeriod('Dec 11, 2025 - Dec 25, 2025');
                 }
             } catch (error) {
                 console.error('Error fetching election period:', error);
-                setElectionPeriod('Election Period');
+                // Fallback to hardcoded dates: Dec 11, 2025 - Dec 25, 2025
+                setElectionPeriod('Dec 11, 2025 - Dec 25, 2025');
             }
         };
 
         fetchElectionPeriod();
     }, []);
 
+    // Show selfie booth if opened
+    if (showSelfieBooth) {
+        return (
+            <SelfieBooth onClose={() => setShowSelfieBooth(false)} />
+        );
+    }
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+            {/* Marquee Banner */}
+            <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white py-2 overflow-hidden relative z-50">
+                <div className="marquee-container">
+                    <div className="marquee-content">
+                        <span className="font-semibold">⚠️ Important: </span>
+                        If any member of samaj is facing any difficulty to login or vote, kindly contact: 
+                        <a href="tel:+917666778349" className="font-bold underline mx-1">+91 7666778349</a>
+                        (Dipen Ketan Somani) or 
+                        <a href="tel:+919820216044" className="font-bold underline mx-1">+91 9820216044</a>
+                        (Jay Deepak Bhutada) or email at 
+                        <a href="mailto:kmselec2026@gmail.com" className="font-bold underline mx-1">kmselec2026@gmail.com</a>
+                        <span className="mx-8">•</span>
+                        <span className="font-semibold">⚠️ મહત્વપૂર્ણ: </span>
+                        જો સમાજના કોઈપણ સભ્યને લોગિન કરવામાં અથવા મતદાન કરવામાં કોઈ મુશ્કેલી આવી રહી હોય, તો કૃપા કરીને સંપર્ક કરો: 
+                        <a href="tel:+917666778349" className="font-bold underline mx-1">+91 7666778349</a>
+                        (દિપેન કેતન સોમાણી) અથવા 
+                        <a href="tel:+919820216044" className="font-bold underline mx-1">+91 9820216044</a>
+                        (જય દીપક ભુટાડા) અથવા ઇમેઇલ કરો: 
+                        <a href="mailto:kmselec2026@gmail.com" className="font-bold underline mx-1">kmselec2026@gmail.com</a>
+                        <span className="mx-8">•</span>
+                        <span className="font-semibold">⚠️ Important: </span>
+                        If any member of samaj is facing any difficulty to login or vote, kindly contact: 
+                        <a href="tel:+917666778349" className="font-bold underline mx-1">+91 7666778349</a>
+                        (Dipen Ketan Somani) or 
+                        <a href="tel:+919820216044" className="font-bold underline mx-1">+91 9820216044</a>
+                        (Jay Deepak Bhutada) or email at 
+                        <a href="mailto:kmselec2026@gmail.com" className="font-bold underline mx-1">kmselec2026@gmail.com</a>
+                        <span className="mx-8">•</span>
+                        <span className="font-semibold">⚠️ મહત્વપૂર્ણ: </span>
+                        જો સમાજના કોઈપણ સભ્યને લોગિન કરવામાં અથવા મતદાન કરવામાં કોઈ મુશ્કેલી આવી રહી હોય, તો કૃપા કરીને સંપર્ક કરો: 
+                        <a href="tel:+917666778349" className="font-bold underline mx-1">+91 7666778349</a>
+                        (દિપેન કેતન સોમાણી) અથવા 
+                        <a href="tel:+919820216044" className="font-bold underline mx-1">+91 9820216044</a>
+                        (જય દીપક ભુટાડા) અથવા ઇમેઇલ કરો: 
+                        <a href="mailto:kmselec2026@gmail.com" className="font-bold underline mx-1">kmselec2026@gmail.com</a>
+                    </div>
+                </div>
+            </div>
+
             {/* Main Content Area */}
             <div className="flex-1">
                 {/* Header */}
-                <header className="bg-white shadow-sm border-b sticky top-0 z-50">
+                <header className="bg-white shadow-sm border-b sticky top-0 z-40">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="flex justify-between items-center py-4">
                             <div className="flex items-center space-x-2 sm:space-x-4">
@@ -287,88 +404,6 @@ export default function HomePage() {
                         </div>
                     </div>
 
-                    {/* Organization Info */}
-                    <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8 mb-8 sm:mb-12">
-                        <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6 text-center">
-                            Election Commission Details
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
-                            <div className="space-y-4">
-                                <div className="flex items-start space-x-3">
-                                    <Building className="h-5 w-5 text-blue-600 mt-1" />
-                                    <div>
-                                        <p className="font-semibold text-gray-900">
-                                            Registered Office
-                                        </p>
-                                        <p className="text-gray-600">
-                                            Shri Kutchi Maheshwari Madhyastha
-                                            Mahajan Samiti
-                                        </p>
-                                        <p className="text-gray-600">
-                                            B-2 Nityanand Krupa CHS, Deodhar Wada, Opp. Janakalyan Bank, Panvel (MH) – 410206
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center space-x-3">
-                                    <Phone className="h-5 w-5 text-blue-600" />
-                                    <div>
-                                        <p className="font-semibold text-gray-900">
-                                            Contact
-                                        </p>
-                                        <p className="text-gray-600">
-                                            +91 93215 78416
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center space-x-3">
-                                    <Mail className="h-5 w-5 text-blue-600" />
-                                    <div>
-                                        <p className="font-semibold text-gray-900">
-                                            Email
-                                        </p>
-                                        <p className="text-gray-600">
-                                            kmselec2026@gmail.com
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="space-y-4">
-                                <div className="flex items-center space-x-3">
-                                    <Award className="h-5 w-5 text-blue-600" />
-                                    <div>
-                                        <p className="font-semibold text-gray-900">
-                                            Registration
-                                        </p>
-                                        <p className="text-gray-600">
-                                            Registered Public Charitable Trust No –
-                                            A – 1061 Gujarat
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center space-x-3">
-                                    <Calendar className="h-5 w-5 text-blue-600" />
-                                    <div>
-                                        <p className="font-semibold text-gray-900">
-                                            Election Period
-                                        </p>
-                                        <p className="text-gray-600">
-                                            {electionPeriod}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center space-x-3">
-                                    <MapPin className="h-5 w-5 text-blue-600" />
-                                    <div>
-                                        <p className="font-semibold text-gray-900">
-                                            Coverage
-                                        </p>
-                                        <p className="text-gray-600">Overseas</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     {/* How to Vote Videos */}
                     <div className="mb-8 sm:mb-16">
                         <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-6 sm:mb-12">
@@ -458,21 +493,40 @@ export default function HomePage() {
                     </div>
 
                     {/* Election Results Charts */}
-                    {resultsError && (
+                    {isLoadingResults && (
+                        <Card className="mb-8">
+                            <CardContent className="p-8 text-center">
+                                <div className="text-gray-500">Loading election results...</div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {resultsError && !isLoadingResults && (
                         <Card className="mb-8 border-red-200 bg-red-50">
                             <CardContent className="p-4">
                                 <div className="flex items-center space-x-2 text-red-600">
                                     <AlertCircle className="h-5 w-5" />
-                                    <span>Failed to load election results</span>
+                                    <div>
+                                        <div className="font-semibold">Failed to load election results</div>
+                                        <div className="text-sm text-red-500 mt-1">{resultsError}</div>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
                     )}
 
-                    {results && (
+                    {results && !isLoadingResults && (
                         <div className="mb-8 sm:mb-12 space-y-8">
+                            {/* Debug info - remove in production */}
+                            {process.env.NODE_ENV === 'development' && (
+                                <div className="text-xs text-gray-400 p-2 bg-gray-100 rounded mb-4">
+                                    Debug: Trustee regions: {results?.trustee?.regions?.length || 0}, 
+                                    Yuva Pankh regions: {results?.yuvaPankh?.regions?.length || 0}
+                                </div>
+                            )}
+                            
                             {/* Yuva Pankh Members Chart */}
-                            {results?.yuvaPankh?.regions && Array.isArray(results.yuvaPankh.regions) && results.yuvaPankh.regions.length > 0 && (
+                            {results?.yuvaPankh?.regions && Array.isArray(results.yuvaPankh.regions) && results.yuvaPankh.regions.length > 0 ? (
                                 <Card>
                                     <CardHeader>
                                         <CardTitle className="flex items-center space-x-2">
@@ -644,10 +698,16 @@ export default function HomePage() {
                                         </div>
                                     </CardContent>
                                 </Card>
+                            ) : results?.yuvaPankh && (
+                                <Card>
+                                    <CardContent className="p-8 text-center text-gray-500">
+                                        No Yuva Pankh election data available yet.
+                                    </CardContent>
+                                </Card>
                             )}
 
                             {/* Trustee Members Chart */}
-                            {results?.trustee?.regions && Array.isArray(results.trustee.regions) && results.trustee.regions.length > 0 && (
+                            {results?.trustee?.regions && Array.isArray(results.trustee.regions) && results.trustee.regions.length > 0 ? (
                                 <Card>
                                     <CardHeader>
                                         <CardTitle className="flex items-center space-x-2">
@@ -803,9 +863,147 @@ export default function HomePage() {
                                         </div>
                                     </CardContent>
                                 </Card>
+                            ) : results?.trustee && (
+                                <Card>
+                                    <CardContent className="p-8 text-center text-gray-500">
+                                        No Trustee election data available yet.
+                                    </CardContent>
+                                </Card>
+                            )}
+                            
+                            {/* Show message if no data at all */}
+                            {(!results?.trustee?.regions?.length && !results?.yuvaPankh?.regions?.length) && (
+                                <Card>
+                                    <CardContent className="p-8 text-center">
+                                        <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                                        <p className="text-gray-600">No election results available yet.</p>
+                                        <p className="text-sm text-gray-500 mt-2">Results will appear here once voting begins.</p>
+                                    </CardContent>
+                                </Card>
                             )}
                         </div>
                     )}
+
+                    {/* Selfie Booth Section */}
+                    <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8 mb-8 sm:mb-12">
+                        <div className="text-center">
+                            <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full mb-4 sm:mb-6">
+                                <Camera className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+                            </div>
+                            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">
+                                Election Selfie Booth
+                            </h3>
+                            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 max-w-2xl mx-auto">
+                                Capture your election moment with our special frames! Take a selfie to commemorate your participation in the democratic process.
+                            </p>
+                            
+                            {/* Disclaimer */}
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 max-w-2xl mx-auto">
+                                <p className="text-xs sm:text-sm text-blue-800 font-medium mb-2">
+                                    <span className="font-semibold">Important Note / મહત્વપૂર્ણ નોંધ:</span>
+                                </p>
+                                <p className="text-xs sm:text-sm text-blue-700 mb-1">
+                                    This is a <span className="font-semibold">voluntary feature</span> to show that you have voted through the medium of selfie. 
+                                    The Developer or Election Commission <span className="font-semibold">does not capture or store</span> any selfie data.
+                                </p>
+                                <p className="text-xs sm:text-sm text-blue-700">
+                                    આ એક <span className="font-semibold">સ્વૈચ્છિક સુવિધા</span> છે જે તમે સેલ્ફીના માધ્યમથી મતદાન કર્યું છે તે બતાવવા માટે છે. 
+                                    ડેવલપર અથવા ચૂંટણી નિયામક <span className="font-semibold">કોઈપણ સેલ્ફી ડેટા કેપ્ચર કે સ્ટોર કરતું નથી</span>.
+                                </p>
+                            </div>
+
+                            <Button
+                                onClick={() => setShowSelfieBooth(true)}
+                                size="lg"
+                                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold shadow-lg"
+                            >
+                                <Camera className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                                Take Your Election Selfie
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Election Commission Details */}
+                    <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8 mb-8 sm:mb-12">
+                        <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6 text-center">
+                            Election Commission Details
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+                            <div className="space-y-4">
+                                <div className="flex items-start space-x-3">
+                                    <Building className="h-5 w-5 text-blue-600 mt-1" />
+                                    <div>
+                                        <p className="font-semibold text-gray-900">
+                                            Registered Office
+                                        </p>
+                                        <p className="text-gray-600">
+                                            Shri Kutchi Maheshwari Madhyastha
+                                            Mahajan Samiti
+                                        </p>
+                                        <p className="text-gray-600">
+                                            B-2 Nityanand Krupa CHS, Deodhar Wada, Opp. Janakalyan Bank, Panvel (MH) – 410206
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center space-x-3">
+                                    <Phone className="h-5 w-5 text-blue-600" />
+                                    <div>
+                                        <p className="font-semibold text-gray-900">
+                                            Contact
+                                        </p>
+                                        <p className="text-gray-600">
+                                            +91 93215 78416
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center space-x-3">
+                                    <Mail className="h-5 w-5 text-blue-600" />
+                                    <div>
+                                        <p className="font-semibold text-gray-900">
+                                            Email
+                                        </p>
+                                        <p className="text-gray-600">
+                                            kmselec2026@gmail.com
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="flex items-center space-x-3">
+                                    <Award className="h-5 w-5 text-blue-600" />
+                                    <div>
+                                        <p className="font-semibold text-gray-900">
+                                            Registration
+                                        </p>
+                                        <p className="text-gray-600">
+                                            Registered Public Charitable Trust No –
+                                            A – 1061 Gujarat
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center space-x-3">
+                                    <Calendar className="h-5 w-5 text-blue-600" />
+                                    <div>
+                                        <p className="font-semibold text-gray-900">
+                                            Election Period
+                                        </p>
+                                        <p className="text-gray-600">
+                                            {electionPeriod}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center space-x-3">
+                                    <MapPin className="h-5 w-5 text-blue-600" />
+                                    <div>
+                                        <p className="font-semibold text-gray-900">
+                                            Coverage
+                                        </p>
+                                        <p className="text-gray-600">Overseas</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     {/* Voting Process */}
                     <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8 mb-8 sm:mb-12">
