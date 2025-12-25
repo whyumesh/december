@@ -85,7 +85,7 @@ export default function HomePage() {
     const [results, setResults] = useState<ResultsData | null>(null);
     const [isLoadingResults, setIsLoadingResults] = useState(false);
     const [resultsError, setResultsError] = useState<string | null>(null);
-    const [electionPeriod, setElectionPeriod] = useState<string>('Loading...');
+    const electionPeriod = '11th December 2025 to 25th December 2025';
     const [showSelfieBooth, setShowSelfieBooth] = useState(false);
     
     // Get YouTube video IDs from environment variables
@@ -165,85 +165,6 @@ export default function HomePage() {
         };
 
         fetchResults();
-    }, []);
-
-    // Fetch election period
-    useEffect(() => {
-        const fetchElectionPeriod = async () => {
-            try {
-                // Fetch elections to get the period
-                const response = await fetch('/api/admin/elections');
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.elections && data.elections.length > 0) {
-                        // Use the first election's dates (or find a specific one)
-                        const election = data.elections.find((e: any) => e.type === 'TRUSTEES') || data.elections[0];
-                        if (election && election.startDate && election.endDate) {
-                            // Parse dates and format using UTC to avoid timezone issues
-                            // Handle both ISO string and Date object formats
-                            const parseDate = (dateValue: string | Date) => {
-                                if (dateValue instanceof Date) {
-                                    return dateValue;
-                                }
-                                // If it's a string, parse it as UTC to avoid timezone shifts
-                                // Handle ISO format: "2025-12-11T00:00:00.000Z" or "2025-12-11"
-                                const dateStr = String(dateValue);
-                                if (dateStr.includes('T')) {
-                                    // ISO format with time - parse as UTC
-                                    return new Date(dateStr);
-                                } else {
-                                    // Date-only format - append time to ensure UTC parsing
-                                    return new Date(dateStr + 'T00:00:00.000Z');
-                                }
-                            };
-                            
-                            const startDateObj = parseDate(election.startDate);
-                            const endDateObj = parseDate(election.endDate);
-                            
-                            // Format dates using UTC to avoid timezone shifts
-                            // Extract UTC date components
-                            const formatDate = (date: Date) => {
-                                // Validate date
-                                if (isNaN(date.getTime())) {
-                                    return 'Invalid Date';
-                                }
-                                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                                const utcYear = date.getUTCFullYear();
-                                const utcMonth = date.getUTCMonth();
-                                const utcDay = date.getUTCDate();
-                                return `${months[utcMonth]} ${utcDay}, ${utcYear}`;
-                            };
-                            
-                            const startDate = formatDate(startDateObj);
-                            const endDate = formatDate(endDateObj);
-                            
-                            // Only set if dates are valid
-                            if (startDate !== 'Invalid Date' && endDate !== 'Invalid Date') {
-                                setElectionPeriod(`${startDate} - ${endDate}`);
-                            } else {
-                                // Fallback to hardcoded dates if parsing fails
-                                setElectionPeriod('Dec 11, 2025 - Dec 25, 2025');
-                            }
-                        } else {
-                            // Fallback to hardcoded dates: Dec 11, 2025 - Dec 25, 2025
-                            setElectionPeriod('Dec 11, 2025 - Dec 25, 2025');
-                        }
-                    } else {
-                        // Fallback to hardcoded dates: Dec 11, 2025 - Dec 25, 2025
-                        setElectionPeriod('Dec 11, 2025 - Dec 25, 2025');
-                    }
-                } else {
-                    // Fallback to hardcoded dates: Dec 11, 2025 - Dec 25, 2025
-                    setElectionPeriod('Dec 11, 2025 - Dec 25, 2025');
-                }
-            } catch (error) {
-                console.error('Error fetching election period:', error);
-                // Fallback to hardcoded dates: Dec 11, 2025 - Dec 25, 2025
-                setElectionPeriod('Dec 11, 2025 - Dec 25, 2025');
-            }
-        };
-
-        fetchElectionPeriod();
     }, []);
 
     // Show selfie booth if opened
@@ -998,7 +919,7 @@ export default function HomePage() {
                                         <p className="font-semibold text-gray-900">
                                             Coverage
                                         </p>
-                                        <p className="text-gray-600">Overseas</p>
+                                        <p className="text-gray-600">India and Overseas</p>
                                     </div>
                                 </div>
                             </div>
