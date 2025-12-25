@@ -946,6 +946,147 @@ export async function GET(request: NextRequest) {
     // NOTE: Detailed Voting Data sheet removed for privacy - does not show who voted to whom
     // All voting insights are available in other sheets without revealing individual vote choices
 
+    // ============================================
+    // SHEET: ZONE-WISE VOTER STATUS (Members Voted/Not Voted by Zone)
+    // This sheet groups voters by zone and shows their eligibility and voting status
+    // ============================================
+    const zoneWiseVoterStatusSheet = workbook.addWorksheet('Zone-Wise Voter Status')
+    zoneWiseVoterStatusSheet.columns = [
+      { header: 'Election Type', key: 'electionType', width: 20 },
+      { header: 'Zone Name', key: 'zoneName', width: 25 },
+      { header: 'Voter ID', key: 'voterId', width: 18 },
+      { header: 'Name', key: 'name', width: 28 },
+      { header: 'Phone', key: 'phone', width: 18 },
+      { header: 'Region', key: 'region', width: 20 },
+      { header: 'Eligible', key: 'eligible', width: 15 },
+      { header: 'Voted', key: 'voted', width: 15 }
+    ]
+
+    // Get all zones
+    const allZonesForStatus = await prisma.zone.findMany({
+      where: { isActive: true },
+      orderBy: [{ electionType: 'asc' }, { name: 'asc' }],
+      select: {
+        id: true,
+        name: true,
+        electionType: true
+      }
+    })
+
+    // Process each zone
+    for (const zone of allZonesForStatus) {
+      let voters: any[] = []
+
+      // Fetch voters for this zone based on election type
+      if (zone.electionType === 'YUVA_PANK') {
+        voters = await prisma.voter.findMany({
+          where: { yuvaPankZoneId: zone.id },
+          select: {
+            id: true,
+            voterId: true,
+            name: true,
+            phone: true,
+            region: true,
+            dob: true,
+            user: {
+              select: {
+                dateOfBirth: true
+              }
+            }
+          },
+          orderBy: { voterId: 'asc' }
+        })
+      } else if (zone.electionType === 'KAROBARI_MEMBERS') {
+        voters = await prisma.voter.findMany({
+          where: { karobariZoneId: zone.id },
+          select: {
+            id: true,
+            voterId: true,
+            name: true,
+            phone: true,
+            region: true,
+            dob: true,
+            user: {
+              select: {
+                dateOfBirth: true
+              }
+            }
+          },
+          orderBy: { voterId: 'asc' }
+        })
+      } else if (zone.electionType === 'TRUSTEES') {
+        voters = await prisma.voter.findMany({
+          where: { trusteeZoneId: zone.id },
+          select: {
+            id: true,
+            voterId: true,
+            name: true,
+            phone: true,
+            region: true,
+            dob: true,
+            user: {
+              select: {
+                dateOfBirth: true
+              }
+            }
+          },
+          orderBy: { voterId: 'asc' }
+        })
+      }
+
+      // Process each voter in this zone
+      for (const voter of voters) {
+        // Check eligibility
+        let eligible = 'No'
+        const dob = voter.user?.dateOfBirth || voter.dob
+
+        if (zone.electionType === 'YUVA_PANK') {
+          eligible = isEligibleForYuvaPankh(dob, zone.id) ? 'Yes' : 'No'
+        } else if (zone.electionType === 'KAROBARI_MEMBERS') {
+          eligible = 'Yes' // All voters with karobariZoneId are eligible
+        } else if (zone.electionType === 'TRUSTEES') {
+          eligible = isEligibleForTrustee(dob, zone.id) ? 'Yes' : 'No'
+        }
+
+        // Check if voted
+        const voted = votersVotedMap.get(zone.electionType)?.has(voter.id) ? 'Yes' : 'No'
+
+        zoneWiseVoterStatusSheet.addRow({
+          electionType: zone.electionType,
+          zoneName: zone.name,
+          voterId: voter.voterId,
+          name: voter.name,
+          phone: voter.phone || 'N/A',
+          region: voter.region || 'N/A',
+          eligible,
+          voted
+        })
+      }
+
+      // Add empty row between zones for better readability
+      if (voters.length > 0) {
+        zoneWiseVoterStatusSheet.addRow({
+          electionType: '',
+          zoneName: '',
+          voterId: '',
+          name: '',
+          phone: '',
+          region: '',
+          eligible: '',
+          voted: ''
+        })
+      }
+    }
+
+    // Style the header row
+    zoneWiseVoterStatusSheet.getRow(1).font = { bold: true, size: 12 }
+    zoneWiseVoterStatusSheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE67E22' }
+    }
+    zoneWiseVoterStatusSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
+
     // Clear timeout before generating buffer
     if (timeoutWarning) {
       clearTimeout(timeoutWarning)

@@ -542,8 +542,8 @@ export default function HomePage() {
                                                 const totalVoters = processedData.reduce((sum, r) => sum + r.voters, 0);
                                                 const votersVoted = processedData.reduce((sum, r) => sum + (r.uniqueVoters || 0), 0);
                                                 const highestTurnout = processedData.length > 0 ? Math.max(...processedData.map(r => r.turnout)) : 0;
-                                                const averageTurnout = processedData.length > 0 
-                                                    ? processedData.reduce((sum, r) => sum + r.turnout, 0) / processedData.length 
+                                                const averageTurnout = totalVoters > 0 
+                                                    ? (votersVoted / totalVoters) * 100 
                                                     : 0;
 
                                                 return (
@@ -707,8 +707,8 @@ export default function HomePage() {
                                                 const totalVoters = results.trustee.totalVoters || processedData.reduce((sum, r) => sum + r.voters, 0);
                                                 const votersVoted = processedData.reduce((sum, r) => sum + (r.uniqueVoters || 0), 0);
                                                 const highestTurnout = processedData.length > 0 ? Math.max(...processedData.map(r => r.turnout)) : 0;
-                                                const averageTurnout = processedData.length > 0 
-                                                    ? processedData.reduce((sum, r) => sum + r.turnout, 0) / processedData.length 
+                                                const averageTurnout = totalVoters > 0 
+                                                    ? (votersVoted / totalVoters) * 100 
                                                     : 0;
 
                                                 return (

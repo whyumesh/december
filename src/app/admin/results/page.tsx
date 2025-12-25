@@ -339,7 +339,11 @@ export default function AdminResults() {
                                                         </div>
                                                 <div>
                                                     <div className="text-2xl text-orange-600">
-                                                        {(results.yuvaPankh.regions.reduce((sum, r) => sum + r.turnoutPercentage, 0) / results.yuvaPankh.regions.length).toFixed(1)}%
+                                                        {(() => {
+                                                            const totalVoters = results.yuvaPankh.regions.reduce((sum, r) => sum + (r.totalVoters || 0), 0);
+                                                            const uniqueVoters = results.yuvaPankh.regions.reduce((sum, r) => sum + (r.uniqueVoters || 0), 0);
+                                                            return totalVoters > 0 ? ((uniqueVoters / totalVoters) * 100).toFixed(1) : '0.0';
+                                                        })()}%
                                                             </div>
                                                     <div className="text-sm text-gray-500">Average Turnout</div>
                                                         </div>
@@ -450,7 +454,11 @@ export default function AdminResults() {
                                             </div>
                                                             <div>
                                                 <div className="text-2xl text-orange-600">
-                                                    {(results.trustee.regions.reduce((sum, r) => sum + r.turnoutPercentage, 0) / results.trustee.regions.length).toFixed(1)}%
+                                                    {(() => {
+                                                        const totalVoters = results.trustee.regions.reduce((sum, r) => sum + (r.totalVoters || 0), 0);
+                                                        const uniqueVoters = results.trustee.regions.reduce((sum, r) => sum + (r.uniqueVoters || 0), 0);
+                                                        return totalVoters > 0 ? ((uniqueVoters / totalVoters) * 100).toFixed(1) : '0.0';
+                                                    })()}%
                                                                 </div>
                                                 <div className="text-sm text-gray-500">Average Turnout</div>
                                                             </div>
