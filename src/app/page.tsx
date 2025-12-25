@@ -4,7 +4,7 @@
 // These are server-only route segment config options
 // The layout.tsx handles dynamic rendering for the entire app
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -79,13 +79,13 @@ interface ResultsData {
 }
 
 export default function HomePage() {
-    // Target date: December 25, 2025, 11:59 PM IST (IST is UTC+5:30, so 6:29 PM UTC)
-    const targetDate = new Date('2025-12-25T18:29:00Z');
+    // Target date: December 31, 2025, 11:59 PM IST (IST is UTC+5:30, so 6:29 PM UTC)
+    const targetDate = useMemo(() => new Date('2025-12-31T18:29:00Z'), []);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [results, setResults] = useState<ResultsData | null>(null);
     const [isLoadingResults, setIsLoadingResults] = useState(false);
     const [resultsError, setResultsError] = useState<string | null>(null);
-    const electionPeriod = '11th December 2025 to 25th December 2025';
+    const electionPeriod = '11th December 2025 to 31st December 2025';
     const [showSelfieBooth, setShowSelfieBooth] = useState(false);
     
     // Get YouTube video IDs from environment variables
