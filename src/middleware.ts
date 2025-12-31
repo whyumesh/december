@@ -1,113 +1,56 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-// Define protected routes
-const protectedRoutes = {
-  admin: ['/admin'],
-  candidate: ['/candidate'],
-  voter: ['/voter']
-}
-
-// Define public routes that don't require authentication
-const publicRoutes = [
-  '/',
-  '/auth/signin',
-  '/candidate/login',
-  '/candidate/signup',
-  '/candidate/register',
-  '/voter/login',
-  '/api/voter/send-otp',
-  '/api/voter/verify-otp',
-  '/api/voter/login',
-  '/elections'
+// Define allowed public routes - only landing page and admin login pages
+const allowedRoutes = [
+  '/',                    // Landing page
+  '/admin/login',         // Admin login page
+  '/auth/signin',         // Admin signin (NextAuth)
 ]
 
-// Simple JWT decode without verification (for Edge Functions)
-// Full verification happens in API routes
-function decodeToken(token: string): { userId?: string; role?: string } | null {
-  try {
-    const base64Url = token.split('.')[1]
-    if (!base64Url) return null
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    )
-    return JSON.parse(jsonPayload)
-  } catch {
-    return null
-  }
-}
-
-// Check if token exists and has basic structure (lightweight check for middleware)
-function hasValidTokenStructure(token: string): boolean {
-  return token.split('.').length === 3
-}
+// API routes that should remain accessible for login functionality
+const allowedApiRoutes = [
+  '/api/auth',            // NextAuth API routes
+  '/api/admin',           // Admin API routes (for login)
+  '/api/health',          // Health check
+]
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   
-  // Allow public routes
-  if (publicRoutes.some(route => pathname.startsWith(route))) {
+  // Allow static files and Next.js internals
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/favicon.ico') ||
+    pathname.startsWith('/logo') ||
+    pathname.match(/\.(ico|png|jpg|jpeg|svg|gif|webp|mp4)$/)
+  ) {
     return NextResponse.next()
   }
 
-  // Check for admin routes
-  if (pathname.startsWith('/admin')) {
-    const token = request.cookies.get('next-auth.session-token')?.value
-    if (!token || !hasValidTokenStructure(token)) {
-      return NextResponse.redirect(new URL('/auth/signin', request.url))
-    }
-
-    // Lightweight decode - full verification in API routes
-    const decoded = decodeToken(token)
-    if (!decoded || decoded.role !== 'ADMIN') {
-      return NextResponse.redirect(new URL('/auth/signin', request.url))
-    }
+  // Allow API routes for authentication
+  if (allowedApiRoutes.some(route => pathname.startsWith(route))) {
+    return NextResponse.next()
   }
 
-  // Check for candidate routes
-  if (pathname.startsWith('/candidate')) {
-    const token = request.cookies.get('candidate-token')?.value
-    if (!token || !hasValidTokenStructure(token)) {
-      return NextResponse.redirect(new URL('/candidate/login', request.url))
-    }
-
-    // Lightweight decode - full verification in API routes
-    const decoded = decodeToken(token)
-    if (!decoded || decoded.role !== 'CANDIDATE') {
-      return NextResponse.redirect(new URL('/candidate/login', request.url))
-    }
+  // Allow only the specified public routes
+  if (allowedRoutes.some(route => pathname === route || pathname.startsWith(route + '/'))) {
+    return NextResponse.next()
   }
 
-  // Check for voter routes
-  if (pathname.startsWith('/voter')) {
-    const token = request.cookies.get('voter-token')?.value
-    if (!token || !hasValidTokenStructure(token)) {
-      return NextResponse.redirect(new URL('/voter/login', request.url))
-    }
-
-    // Lightweight decode - full verification in API routes
-    const decoded = decodeToken(token)
-    if (!decoded || !decoded.userId) {
-      return NextResponse.redirect(new URL('/voter/login', request.url))
-    }
-  }
-
-  return NextResponse.next()
+  // Block all other routes - redirect to landing page
+  return NextResponse.redirect(new URL('/', request.url))
 }
 
 export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * Note: API routes are handled in the middleware function itself
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 }
