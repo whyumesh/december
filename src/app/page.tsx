@@ -233,12 +233,6 @@ export default function HomePage() {
 
                             {/* Desktop Navigation */}
                             <div className="hidden lg:flex items-center space-x-4">
-                                <Link href="/voter/login">
-                                    <Button className="bg-orange-600 hover:bg-orange-700 text-white">
-                                        <Vote className="h-4 w-4 mr-2" />
-                                        Cast Your Vote
-                                    </Button>
-                                </Link>
                             </div>
 
                             {/* Mobile Menu Button */}
@@ -268,27 +262,11 @@ export default function HomePage() {
                                             Quick Access
                                         </h3>
                                         <div className="space-y-2">
-                                            <Link
-                                                href="/voter/login"
-                                                className="block"
-                                            >
-                                                <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white justify-start">
-                                                    <Vote className="h-4 w-4 mr-2" />
-                                                    Cast Your Vote
-                                                </Button>
-                                            </Link>
-                                            <Link
-                                                href="/voter/login"
-                                                className="block"
-                                            >
-                                                <Button
-                                                    variant="outline"
-                                                    className="w-full justify-start"
-                                                >
-                                                    <Vote className="h-4 w-4 mr-2" />
-                                                    Voter Login
-                                                </Button>
-                                            </Link>
+                                            <div className="w-full bg-red-50 border-2 border-red-300 rounded-lg px-4 py-3 text-center">
+                                                <p className="text-sm font-semibold text-red-700">
+                                                    The online voting process is closed now.
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -313,15 +291,11 @@ export default function HomePage() {
                             accessible online voting.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
-                            <Link href="/voter/login" className="w-full sm:w-auto">
-                                <Button
-                                    size="lg"
-                                    className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg"
-                                >
-                                    <Vote className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                                    Cast Your Vote
-                                </Button>
-                            </Link>
+                            <div className="w-full sm:w-auto bg-red-50 border-2 border-red-300 rounded-lg px-6 sm:px-8 py-3 sm:py-4 text-center">
+                                <p className="text-base sm:text-lg font-semibold text-red-700">
+                                    The online voting process is closed now.
+                                </p>
+                            </div>
                         </div>
                     </div>
 
@@ -1036,15 +1010,11 @@ export default function HomePage() {
                             future through democratic participation.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
-                            <Link href="/voter/login" className="w-full sm:w-auto">
-                                <Button
-                                    size="lg"
-                                    className="w-full sm:w-auto bg-white text-blue-600 hover:bg-gray-100 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold"
-                                >
-                                    <Vote className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                                    Cast Your Vote
-                                </Button>
-                            </Link>
+                            <div className="w-full sm:w-auto bg-white border-2 border-red-300 rounded-lg px-6 sm:px-8 py-3 sm:py-4 text-center">
+                                <p className="text-base sm:text-lg font-semibold text-red-700">
+                                    The online voting process is closed now.
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </main>

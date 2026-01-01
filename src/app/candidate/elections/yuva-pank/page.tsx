@@ -137,12 +137,11 @@ export default function YuvaPankPage() {
               Register as Candidate
             </Button>
           </Link>
-          <Link href="/voter/login">
-            <Button variant="outline">
-              <Vote className="h-4 w-4 mr-2" />
-              Cast Your Vote
-            </Button>
-          </Link>
+          <div className="bg-red-50 border-2 border-red-300 rounded-lg px-6 py-3 text-center">
+            <p className="text-sm font-semibold text-red-700">
+              The online voting process is closed now.
+            </p>
+          </div>
         </div>
 
         {/* Candidates List */}

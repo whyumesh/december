@@ -868,15 +868,13 @@ export default function VoterDashboard() {
                               </Button>
                             )
                           } else {
-                            // Show "Cast Your Vote" button for Raigad and Karnataka zones
+                            // Show closure message instead of "Cast Your Vote" button
                             return (
-                              <Link href={election.href}>
-                                <Button className={`w-full bg-${election.color}-600 hover:bg-${election.color}-700 text-white`}>
-                                  <Vote className="h-4 w-4 mr-2" />
-                                  {content[selectedLanguage].castYourVote}
-                                  <ArrowRight className="h-4 w-4 ml-2" />
-                                </Button>
-                              </Link>
+                              <div className="w-full bg-red-50 border-2 border-red-300 rounded-lg px-4 py-3 text-center">
+                                <p className="text-sm font-semibold text-red-700">
+                                  The online voting process is closed now.
+                                </p>
+                              </div>
                             )
                           }
                         }
