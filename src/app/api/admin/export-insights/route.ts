@@ -571,7 +571,8 @@ export async function GET(request: NextRequest) {
         timestamp: true,
         election: {
           select: {
-            type: true
+            type: true,
+            title: true
           }
         }
       }

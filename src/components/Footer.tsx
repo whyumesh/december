@@ -2,6 +2,10 @@
 
 import Link from "next/link";
 
+interface FooterProps {
+    language?: string;
+}
+
 export default function Footer({ language }: FooterProps) {
     const content = {
         title: 'SKMMMS Election 2026',

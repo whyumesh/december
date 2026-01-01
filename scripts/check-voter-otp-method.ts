@@ -1,5 +1,6 @@
 import { prisma } from '../src/lib/db'
 import * as fs from 'fs'
+import { Prisma } from '@prisma/client'
 
 // Load environment variables from .env.local
 function loadEnvFile(filePath: string) {
@@ -34,13 +35,13 @@ async function checkVoterOTPMethod() {
       console.log(`Searching for: ${name}`)
       
       // Try multiple search patterns
-      const searchPatterns = [
+      const searchPatterns: Prisma.VoterWhereInput[] = [
         { name: { contains: name, mode: 'insensitive' } },
         { name: { equals: name, mode: 'insensitive' } },
         { name: { startsWith: name.split(' ')[0], mode: 'insensitive' } }
       ]
       
-      let voters = []
+      let voters: any[] = []
       for (const pattern of searchPatterns) {
         voters = await prisma.voter.findMany({
           where: pattern,

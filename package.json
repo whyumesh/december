@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
+    "build:skip-prisma": "next build",
     "build:prod": "cross-env NODE_ENV=production prisma generate && cross-env NODE_ENV=production next build",
     "start": "next start",
     "start:prod": "cross-env NODE_ENV=production next start",

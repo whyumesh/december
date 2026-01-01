@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server'
 // Define allowed public routes - only landing page and admin login pages
 const allowedRoutes = [
   '/',                    // Landing page
-  '/admin/login',         // Admin login page
+  '/admin',               // Admin routes (authentication checked by useAdminAuth hook)
   '/auth/signin',         // Admin signin (NextAuth)
 ]
 

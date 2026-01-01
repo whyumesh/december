@@ -341,8 +341,8 @@ export default function AdminResults() {
                                                     <div className="text-2xl text-orange-600">
                                                         {(() => {
                                                             const totalVoters = results.yuvaPankh.regions.reduce((sum, r) => sum + (r.totalVoters || 0), 0);
-                                                            const uniqueVoters = results.yuvaPankh.regions.reduce((sum, r) => sum + (r.uniqueVoters || 0), 0);
-                                                            return totalVoters > 0 ? ((uniqueVoters / totalVoters) * 100).toFixed(1) : '0.0';
+                                                            const totalVotes = results.yuvaPankh.regions.reduce((sum, r) => sum + (r.totalVotes || 0), 0);
+                                                            return totalVoters > 0 ? ((totalVotes / totalVoters) * 100).toFixed(1) : '0.0';
                                                         })()}%
                                                             </div>
                                                     <div className="text-sm text-gray-500">Average Turnout</div>
@@ -456,8 +456,8 @@ export default function AdminResults() {
                                                 <div className="text-2xl text-orange-600">
                                                     {(() => {
                                                         const totalVoters = results.trustee.regions.reduce((sum, r) => sum + (r.totalVoters || 0), 0);
-                                                        const uniqueVoters = results.trustee.regions.reduce((sum, r) => sum + (r.uniqueVoters || 0), 0);
-                                                        return totalVoters > 0 ? ((uniqueVoters / totalVoters) * 100).toFixed(1) : '0.0';
+                                                        const totalVotes = results.trustee.regions.reduce((sum, r) => sum + (r.totalVotes || 0), 0);
+                                                        return totalVoters > 0 ? ((totalVotes / totalVoters) * 100).toFixed(1) : '0.0';
                                                     })()}%
                                                                 </div>
                                                 <div className="text-sm text-gray-500">Average Turnout</div>

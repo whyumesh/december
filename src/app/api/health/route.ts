@@ -2,7 +2,17 @@ import { NextResponse } from 'next/server'
 
 export async function GET() {
   try {
-    const checks = {
+    const checks: {
+      timestamp: string;
+      environment: string | undefined;
+      vercel: boolean;
+      checks: {
+        nextAuthUrl: { present: boolean; value: string };
+        nextAuthSecret: { present: boolean; value: string };
+        databaseUrl: { present: boolean; value: string };
+      };
+      status: 'ok' | 'degraded';
+    } = {
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV,
       vercel: !!process.env.VERCEL,
@@ -20,7 +30,7 @@ export async function GET() {
           value: process.env.DATABASE_URL ? 'Set' : 'Missing',
         },
       },
-      status: 'ok' as const,
+      status: 'ok',
     }
 
     // Determine overall status
@@ -30,7 +40,7 @@ export async function GET() {
     ].filter(Boolean).length
 
     if (criticalMissing > 0) {
-      checks.status = 'degraded' as const
+      checks.status = 'degraded'
     }
 
     return NextResponse.json(checks, {
