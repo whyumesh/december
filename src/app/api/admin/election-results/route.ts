@@ -20,8 +20,17 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(cached)
       }
 
-      // Get all votes with candidate and zone information
+      // Get all votes with candidate and zone information (exclude test voters)
       const votes = await prisma.vote.findMany({
+      where: {
+        voter: {
+          voterId: {
+            not: {
+              startsWith: 'TEST_'
+            }
+          }
+        }
+      },
       include: {
         yuvaPankhCandidate: {
           include: {

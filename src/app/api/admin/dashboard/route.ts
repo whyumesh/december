@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { excludeTestVoters } from '@/lib/voter-utils'
 import { cache, CacheKeys, CacheTTL } from '@/lib/cache'
 
 // Force dynamic rendering - never cache this route
@@ -50,13 +51,23 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(cached)
     }
 
-    // Get dashboard statistics in smaller batches to avoid connection limits
+    // Get dashboard statistics in smaller batches to avoid connection limits (exclude test voters)
     const [totalVoters, totalVotes] = await Promise.all([
-      prisma.voter.count(),
-      prisma.vote.count()
+      prisma.voter.count({ where: excludeTestVoters() }),
+      prisma.vote.count({
+        where: {
+          voter: {
+            voterId: {
+              not: {
+                startsWith: 'TEST_'
+              }
+            }
+          }
+        }
+      })
     ])
 
-    // Get comprehensive voter statistics
+    // Get comprehensive voter statistics (exclude test voters)
     const [
       activeVoters,
       inactiveVoters,
@@ -70,21 +81,22 @@ export async function GET(request: NextRequest) {
       votersWithTrusteeZone,
       votersWithoutZone
     ] = await Promise.all([
-      prisma.voter.count({ where: { isActive: true } }),
-      prisma.voter.count({ where: { isActive: false } }),
-      prisma.voter.count({ where: { hasVoted: true } }),
-      prisma.voter.count({ where: { hasVoted: false } }),
-      prisma.voter.count({ where: { gender: 'M' } }),
-      prisma.voter.count({ where: { gender: 'F' } }),
-      prisma.voter.count({ where: { OR: [{ dob: { not: null } }, { user: { dateOfBirth: { not: null } } }] } }),
-      prisma.voter.count({ where: { AND: [{ dob: null }, { user: { dateOfBirth: null } }] } }),
-      prisma.voter.count({ where: { yuvaPankZoneId: { not: null } } }),
-      prisma.voter.count({ where: { trusteeZoneId: { not: null } } }),
-      prisma.voter.count({ where: { AND: [{ yuvaPankZoneId: null }, { trusteeZoneId: null }] } })
+      prisma.voter.count({ where: excludeTestVoters({ isActive: true }) }),
+      prisma.voter.count({ where: excludeTestVoters({ isActive: false }) }),
+      prisma.voter.count({ where: excludeTestVoters({ hasVoted: true }) }),
+      prisma.voter.count({ where: excludeTestVoters({ hasVoted: false }) }),
+      prisma.voter.count({ where: excludeTestVoters({ gender: 'M' }) }),
+      prisma.voter.count({ where: excludeTestVoters({ gender: 'F' }) }),
+      prisma.voter.count({ where: excludeTestVoters({ OR: [{ dob: { not: null } }, { user: { dateOfBirth: { not: null } } }] }) }),
+      prisma.voter.count({ where: excludeTestVoters({ AND: [{ dob: null }, { user: { dateOfBirth: null } }] }) }),
+      prisma.voter.count({ where: excludeTestVoters({ yuvaPankZoneId: { not: null } }) }),
+      prisma.voter.count({ where: excludeTestVoters({ trusteeZoneId: { not: null } }) }),
+      prisma.voter.count({ where: excludeTestVoters({ AND: [{ yuvaPankZoneId: null }, { trusteeZoneId: null }] }) })
     ])
 
-    // Get all voters for detailed analysis
+    // Get all voters for detailed analysis (exclude test voters)
     const allVoters = await prisma.voter.findMany({
+      where: excludeTestVoters(),
       select: {
         id: true,
         age: true,

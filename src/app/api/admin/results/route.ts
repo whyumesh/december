@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { excludeTestVoters } from '@/lib/voter-utils'
 
 // Force dynamic rendering - this route uses database queries
 export const dynamic = 'force-dynamic'
@@ -46,34 +47,34 @@ export async function GET(request: NextRequest) {
         }
       }),
       
-      // Get voter counts for Karobari zones separately
+      // Get voter counts for Karobari zones separately (exclude test voters)
       prisma.voter.groupBy({
         by: ['karobariZoneId'],
         _count: { id: true },
-        where: {
+        where: excludeTestVoters({
           karobariZoneId: { not: null }
-        }
+        })
       }),
       
-      // Get voter counts for Trustee zones separately
+      // Get voter counts for Trustee zones separately (exclude test voters)
       prisma.voter.groupBy({
         by: ['trusteeZoneId'],
         _count: { id: true },
-        where: {
+        where: excludeTestVoters({
           trusteeZoneId: { not: null }
-        }
+        })
       }),
       
-      // Get voter counts for Yuva Pankh zones separately
+      // Get voter counts for Yuva Pankh zones separately (exclude test voters)
       prisma.voter.groupBy({
         by: ['yuvaPankZoneId'],
         _count: { id: true },
-        where: {
+        where: excludeTestVoters({
           yuvaPankZoneId: { not: null }
-        }
+        })
       }),
       
-      // Get all votes (including NOTA) for turnout calculations
+      // Get all votes (including NOTA) for turnout calculations (exclude test voters)
       prisma.vote.findMany({
         select: {
           voterId: true,
@@ -84,6 +85,7 @@ export async function GET(request: NextRequest) {
           yuvaPankhNominee: { select: { id: true, zoneId: true, position: true, name: true } },
           voter: {
             select: {
+              voterId: true,
               trusteeZoneId: true,
               yuvaPankZoneId: true,
               karobariZoneId: true
@@ -93,12 +95,21 @@ export async function GET(request: NextRequest) {
         where: {
           election: {
             type: { in: ['KAROBARI_MEMBERS', 'TRUSTEES', 'YUVA_PANK'] }
+          },
+          voter: {
+            voterId: {
+              not: {
+                startsWith: 'TEST_'
+              }
+            }
           }
         }
       }),
       
-      // Get total voters in the system
-      prisma.voter.count()
+      // Get total voters in the system (exclude test voters)
+      prisma.voter.count({
+        where: excludeTestVoters()
+      })
     ]);
 
     // Get candidate zone mappings for vote counting

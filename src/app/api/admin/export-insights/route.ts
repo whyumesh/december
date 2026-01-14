@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { excludeTestVoters } from '@/lib/voter-utils'
 
 // Force dynamic rendering - never cache this route
 export const dynamic = 'force-dynamic'
@@ -73,9 +74,19 @@ export async function GET(request: NextRequest) {
       karobariVotes,
       trusteeVotes
     ] = await Promise.all([
-      prisma.voter.count(),
-      prisma.voter.count({ where: { isActive: true } }),
-      prisma.vote.count(),
+      prisma.voter.count({ where: excludeTestVoters() }),
+      prisma.voter.count({ where: excludeTestVoters({ isActive: true }) }),
+      prisma.vote.count({
+        where: {
+          voter: {
+            voterId: {
+              not: {
+                startsWith: 'TEST_'
+              }
+            }
+          }
+        }
+      }),
       prisma.yuvaPankhCandidate.count(),
       prisma.yuvaPankhNominee.count(),
       prisma.karobariCandidate.count(),

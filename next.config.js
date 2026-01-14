@@ -221,6 +221,7 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Optimize build speed - already set above
   // Force all pages to be dynamic (prevent static generation)
   generateBuildId: async () => {
     return 'build-' + Date.now()

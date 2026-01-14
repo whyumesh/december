@@ -144,6 +144,7 @@ export default function YuvaPankVotingPage() {
       zone: 'Zone',
       vote: 'Vote',
       selected: 'Selected',
+      viewProfile: 'View Profile',
       submitVote: 'Submit Vote',
       submittingVote: 'Submitting Vote...',
       totalCandidatesSelected: 'Total candidates selected',
@@ -211,6 +212,7 @@ export default function YuvaPankVotingPage() {
       zone: 'વિભાગ',
       vote: 'મત આપો',
       selected: 'પસંદ કર્યા',
+      viewProfile: 'પ્રોફાઇલ જુઓ',
       submitVote: 'મતદાન કરો',
       submittingVote: 'મત સબમિટ કરી રહ્યા છીએ...',
       totalCandidatesSelected: 'કુલ પસંદ કરેલા ઉમેદવારો',
@@ -270,20 +272,32 @@ export default function YuvaPankVotingPage() {
     fetchCandidates()
   }, [])
 
-  // Load saved selections from localStorage on mount
+  // Load saved selections from localStorage on mount (only after voterZone is loaded)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && voterZone && voterZone.id) {
       const saved = localStorage.getItem('yuva-pank-selections')
       if (saved) {
         try {
           const parsed = JSON.parse(saved)
-          setSelectedCandidates(parsed)
+          // Only load selections for the current voter's zone
+          const voterZoneId = voterZone.id
+          if (parsed[voterZoneId] && Array.isArray(parsed[voterZoneId])) {
+            setSelectedCandidates({
+              [voterZoneId]: parsed[voterZoneId]
+            })
+            console.log('✅ Loaded saved selections for zone:', voterZoneId)
+          } else {
+            // Clear invalid saved selections
+            localStorage.removeItem('yuva-pank-selections')
+            console.log('⚠️ Cleared invalid saved selections (wrong zone)')
+          }
         } catch (e) {
           console.error('Error loading saved selections:', e)
+          localStorage.removeItem('yuva-pank-selections')
         }
       }
     }
-  }, [])
+  }, [voterZone])
 
   // Save selections to localStorage whenever they change
   useEffect(() => {
@@ -294,70 +308,158 @@ export default function YuvaPankVotingPage() {
 
   const fetchCandidates = async () => {
     try {
+      setIsLoading(true)
+      setError('')
+      
       // First, get voter's zone information
+      console.log('🔍 Fetching voter information...')
       const voterResponse = await fetch('/api/voter/me', {
         credentials: 'include' // This ensures cookies are sent
       })
+      
       if (!voterResponse.ok) {
-        setError('Failed to load voter information')
+        let errorMsg = 'Failed to load voter information'
+        try {
+          const errorData = await voterResponse.json()
+          errorMsg = errorData.error || errorMsg
+        } catch {
+          errorMsg = `Failed to load voter information (${voterResponse.status})`
+        }
+        console.error('❌ Failed to fetch voter info:', errorMsg)
+        setError(errorMsg)
+        setIsLoading(false)
         return
       }
 
       const voterData = await voterResponse.json()
+      console.log('✅ Voter data loaded:', {
+        voterId: voterData.voter?.voterId,
+        hasYuvaPankZone: !!voterData.voter?.yuvaPankZone
+      })
+      
       setVoter(voterData.voter);
       
       // Use yuva pankh zone specifically
       const voterZone = voterData.voter.yuvaPankZone
 
-      setVoterZone(voterZone)
-
-      // Check if zone is completed (has winners declared)
-      const completedYuvaPankhZones = ['ABDASA_LAKHPAT_NAKHATRANA', 'KUTCH', 'BHUJ_ANJAR', 'ANYA_GUJARAT', 'MUMBAI']
-      const isZoneCompleted = voterZone && completedYuvaPankhZones.includes(voterZone.code)
-      // Yuva Pankh winners should NOT be visible to Raigad and Karnataka zone voters
-      const isRaigadOrKarnataka = voterZone && (voterZone.code === 'RAIGAD' || voterZone.code === 'KARNATAKA_GOA')
-
-      // If zone is completed or no zone assigned, show winners instead of voting
-      // BUT NOT for Raigad/Karnataka voters (they should see voting interface)
-      if ((!voterZone || isZoneCompleted) && !isRaigadOrKarnataka) {
-        // Show winners - create zones from winners data
-        const winnerZones: Zone[] = Object.entries(yuvaPankhWinners).map(([zoneCode, zoneData]) => ({
-          id: zoneCode,
-          name: zoneData.zoneName,
-          nameGujarati: zoneData.zoneNameGujarati,
-          code: zoneCode,
-          seats: zoneData.seats,
-          candidates: zoneData.winners.map((winner, index) => ({
-            id: `winner-${zoneCode}-${index}`,
-            name: winner.name,
-            nameGujarati: winner.nameGujarati || null,
-            email: '',
-            phone: '',
-            region: zoneData.zoneName,
-            position: 'Winner',
-            photoUrl: undefined,
-            photoFileKey: undefined,
-            age: null,
-            gender: null,
-            birthDate: null
-          }))
-        }))
-        setZones(winnerZones)
+      if (!voterZone) {
+        console.error('❌ Voter has no Yuva Pankh zone assigned')
+        setError('You are not assigned to a Yuva Pankh zone. Please contact the election commission.')
         setIsLoading(false)
         return
       }
 
+      console.log('✅ Voter zone:', {
+        code: voterZone.code,
+        name: voterZone.name,
+        id: voterZone.id
+      })
+      
+      setVoterZone(voterZone)
+
+      // Check zone status
+      const completedZones = ['ABDASA_LAKHPAT_NAKHATRANA', 'BHUJ_ANJAR', 'MUMBAI']
+      const votingZones = ['KUTCH', 'ANYA_GUJARAT']
+      const isZoneCompleted = voterZone && completedZones.includes(voterZone.code)
+      const isVotingZone = voterZone && votingZones.includes(voterZone.code)
+      const isRaigadOrKarnataka = voterZone && (voterZone.code === 'RAIGAD' || voterZone.code === 'KARNATAKA_GOA')
+
+      // If zone is completed (not Kutch/Anya Gujarat), show only winners
+      if (isZoneCompleted && !isRaigadOrKarnataka) {
+        // Show winners - create zones from winners data
+        const winnerZones: Zone[] = Object.entries(yuvaPankhWinners)
+          .filter(([zoneCode]) => completedZones.includes(zoneCode))
+          .map(([zoneCode, zoneData]) => ({
+            id: zoneCode,
+            name: zoneData.zoneName,
+            nameGujarati: zoneData.zoneNameGujarati,
+            code: zoneCode,
+            seats: zoneData.seats,
+            candidates: zoneData.winners.map((winner, index) => ({
+              id: `winner-${zoneCode}-${index}`,
+              name: winner.name,
+              nameGujarati: winner.nameGujarati || null,
+              email: '',
+              phone: '',
+              region: zoneData.zoneName,
+              position: 'Winner',
+              photoUrl: undefined,
+              photoFileKey: undefined,
+              age: null,
+              gender: null,
+              birthDate: null
+            }))
+          }))
+        setZones(winnerZones)
+        setIsLoading(false)
+        return
+      }
+      
+      // For Kutch and Anya Gujarat: continue to fetch candidates (winners will be shown in UI)
+
       // Now fetch candidates for the voter's yuva pankh zone only (only for pending zones)
+      if (!voterZone || !voterZone.id) {
+        setError('Invalid zone information. Please contact support.')
+        setIsLoading(false)
+        return
+      }
+      
+      console.log(`🔍 Fetching candidates for zone: ${voterZone.code} (ID: ${voterZone.id})`)
+      
       const response = await fetch(`/api/elections/yuva-pank/candidates?zoneId=${voterZone.id}`, {
         credentials: 'include' // This ensures cookies are sent
       })
-      if (response.ok) {
-        const data = await response.json()
-
-        if (data.candidates.length === 0) {
-          setError('No candidates found in your zone')
-          return
+      
+      if (!response.ok) {
+        let errorMessage = 'Failed to load candidates'
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorData.message || errorMessage
+          console.error('❌ API Error:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorData
+          })
+        } catch (parseError) {
+          const errorText = await response.text()
+          console.error('❌ API Error (non-JSON):', {
+            status: response.status,
+            statusText: response.statusText,
+            body: errorText.substring(0, 200)
+          })
+          errorMessage = `Server error (${response.status}): ${response.statusText}`
         }
+        setError(errorMessage)
+        setIsLoading(false)
+        return
+      }
+      
+      let data
+      try {
+        data = await response.json()
+      } catch (jsonError) {
+        console.error('❌ Failed to parse JSON response:', jsonError)
+        setError('Invalid response from server. Please try again.')
+        setIsLoading(false)
+        return
+      }
+      
+      console.log(`✅ Received ${data.candidates?.length || 0} candidates from API`)
+      console.log('📊 Response data:', {
+        hasCandidates: !!data.candidates,
+        candidateCount: data.candidates?.length || 0,
+        count: data.count,
+        zoneId: data.zoneId
+      })
+
+      if (!data.candidates || !Array.isArray(data.candidates) || data.candidates.length === 0) {
+        const errorMsg = data.details 
+          ? `${data.error || 'No candidates available'}: ${data.details}`
+          : `No candidates found in your zone (${voterZone.name}). Please contact the election commission.`
+        setError(errorMsg)
+        setIsLoading(false)
+        return
+      }
 
         // Fisher-Yates shuffle algorithm to randomize candidates
         const shuffleArray = (array: any[]) => {
@@ -440,13 +542,12 @@ export default function YuvaPankVotingPage() {
         await Promise.all(photoPromises)
         console.log(`📸 Generated ${Object.keys(urls).length} photo URLs out of ${photoPromises.length} Yuva Pankh candidates with photos`);
         setPhotoUrls(urls)
-      } else {
-        const errorData = await response.json()
-        setError(errorData.error || 'Failed to load candidates')
-      }
     } catch (error) {
-      console.error('Error fetching candidates:', error)
-      setError('Failed to load candidates')
+      console.error('❌ Error fetching candidates:', error)
+      const errorMessage = error instanceof Error 
+        ? `Network error: ${error.message}` 
+        : 'Failed to load candidates. Please check your internet connection and try again.'
+      setError(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -489,7 +590,35 @@ export default function YuvaPankVotingPage() {
   const handleConfirmSubmit = async () => {
     setIsSubmitting(true)
     setError('')
-    console.log('Submitting votes:', selectedCandidates)
+    
+    // Ensure we're using the correct zone ID from voterZone
+    const votesToSubmit: Record<string, string[]> = {}
+    
+    if (!voterZone || !voterZone.id) {
+      setError('Invalid zone information. Please refresh the page and try again.')
+      setIsSubmitting(false)
+      return
+    }
+    
+    // Use voter's zone ID as the key
+    const voterZoneId = voterZone.id
+    const selections = selectedCandidates[voterZoneId] || []
+    
+    if (selections.length === 0) {
+      setError('Please select at least one candidate before submitting.')
+      setIsSubmitting(false)
+      return
+    }
+    
+    votesToSubmit[voterZoneId] = selections
+    
+    console.log('Submitting votes:', {
+      voterZoneId,
+      selections,
+      votesToSubmit,
+      selectedCandidates
+    })
+    
     try {
       const response = await fetch('/api/voter/vote/yuva-pank', {
         method: 'POST',
@@ -498,7 +627,7 @@ export default function YuvaPankVotingPage() {
         },
         credentials: 'include', // This ensures cookies are sent
         body: JSON.stringify({
-          votes: selectedCandidates
+          votes: votesToSubmit
         })
       })
 
@@ -511,20 +640,43 @@ export default function YuvaPankVotingPage() {
         // Don't auto-redirect - wait for user to close selfie booth
       } else {
         let errorMessage = 'Failed to submit vote'
+        let shouldRedirectToLogin = false
+        
         try {
           const errorData = await response.json()
           errorMessage = errorData.error || errorData.message || errorMessage
+          
+          // Check if it's an authentication error
+          if (response.status === 401 || errorData.code === 'TOKEN_EXPIRED' || errorData.code === 'INVALID_TOKEN' || errorData.code === 'AUTH_ERROR') {
+            shouldRedirectToLogin = true
+            errorMessage = errorMessage || 'Your session has expired. Please log in again.'
+          }
+          
           console.error('Vote submission failed:', {
             status: response.status,
             error: errorData,
-            votes: selectedCandidates
+            votes: selectedCandidates,
+            shouldRedirectToLogin
           })
         } catch (parseError) {
           const errorText = await response.text()
           console.error('Failed to parse error response:', errorText)
           errorMessage = `Server error (${response.status}): ${errorText.substring(0, 200)}`
+          
+          if (response.status === 401) {
+            shouldRedirectToLogin = true
+            errorMessage = 'Your session has expired. Please log in again.'
+          }
         }
+        
         setError(errorMessage)
+        
+        // Redirect to login if authentication failed
+        if (shouldRedirectToLogin) {
+          setTimeout(() => {
+            router.push('/voter/login?error=' + encodeURIComponent(errorMessage))
+          }, 2000)
+        }
       }
     } catch (error: any) {
       console.error('Error submitting vote:', error)
@@ -993,13 +1145,41 @@ export default function YuvaPankVotingPage() {
 
         <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {(() => {
-            const completedYuvaPankhZones = ['ABDASA_LAKHPAT_NAKHATRANA', 'KUTCH', 'BHUJ_ANJAR', 'ANYA_GUJARAT', 'MUMBAI']
-            const isZoneCompleted = voterZone && completedYuvaPankhZones.includes(voterZone.code)
-            // Yuva Pankh winners should NOT be visible to Raigad and Karnataka zone voters
+            // Completed zones (with winners)
+            const completedZones = ['ABDASA_LAKHPAT_NAKHATRANA', 'BHUJ_ANJAR', 'MUMBAI']
+            // Zones open for voting
+            const votingZones = ['KUTCH', 'ANYA_GUJARAT']
             const isRaigadOrKarnataka = voterZone && (voterZone.code === 'RAIGAD' || voterZone.code === 'KARNATAKA_GOA')
-            const showWinners = (!voterZone || isZoneCompleted) && !isRaigadOrKarnataka
-
-            if (showWinners) {
+            const isVotingZone = voterZone && votingZones.includes(voterZone.code)
+            const isCompletedZone = voterZone && completedZones.includes(voterZone.code)
+            
+            // For Kutch and Anya Gujarat voters: show winners of other zones, then voting interface
+            // For completed zone voters: show only winners
+            // For Raigad/Karnataka: show nothing (closed)
+            
+            if (isRaigadOrKarnataka) {
+              // Show closure message for Raigad and Karnataka
+              return (
+                <Card className="mb-6 border-red-200 bg-red-50">
+                  <CardContent className="pt-6">
+                    <div className="text-center">
+                      <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
+                      <h3 className="text-xl font-bold text-red-800 mb-2">Voting Closed</h3>
+                      <p className="text-red-700">The online voting process is closed now.</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            }
+            
+            // Show winners section for completed zones (always show if there are winners)
+            const hasWinners = Object.keys(yuvaPankhWinners).some(key => {
+              const zoneData = yuvaPankhWinners[key as keyof typeof yuvaPankhWinners]
+              return zoneData?.winners?.length > 0
+            })
+            
+            if (isCompletedZone && hasWinners) {
+              // Show only winners for completed zones
               // Show winners display
               return (
                 <>
@@ -1098,9 +1278,124 @@ export default function YuvaPankVotingPage() {
               )
             }
 
-            // Show voting interface for pending zones
+            // Show voting interface for Kutch and Anya Gujarat zones
+            // Also show winners of other zones at the top
             return (
               <>
+                {/* Show winners of other completed zones at the top for Kutch and Anya Gujarat voters */}
+                {isVotingZone && hasWinners && (
+                  <>
+                    {/* Page Title - Winners Section */}
+                    <div className="mb-8 text-center">
+                      <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-500 to-green-700 rounded-full mb-4 shadow-lg">
+                        <Users className="h-10 w-10 text-white" />
+                      </div>
+                      <h2 className="text-3xl font-bold text-gray-900 mb-2">Yuva Pankh Samiti Elections 2026-2029</h2>
+                      <p className="text-xl text-gray-600 mb-4">{selectedLanguage === 'english' ? 'Elected Winners - Other Zones' : 'નિર્વાચિત વિજેતાઓ - અન્ય વિભાગો'}</p>
+                      <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 rounded-full">
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <p className="text-sm text-green-800 font-medium">
+                          {selectedLanguage === 'english' ? 'Winners from Completed Zones' : 'પૂર્ણ થયેલા વિભાગોના વિજેતાઓ'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Zone-wise Winners Display (only completed zones, excluding voter's zone) */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-12">
+                      {Object.entries(yuvaPankhWinners)
+                        .filter(([zoneCode]) => {
+                          // Only show completed zones, not the voter's zone
+                          return completedZones.includes(zoneCode) && zoneCode !== voterZone?.code
+                        })
+                        .map(([zoneCode, zoneData], zoneIndex) => {
+                          const zoneColors = [
+                            { bg: 'bg-gradient-to-br from-green-500 to-green-600', border: 'border-green-300', card: 'bg-green-50', text: 'text-green-700' },
+                            { bg: 'bg-gradient-to-br from-blue-500 to-blue-600', border: 'border-blue-300', card: 'bg-blue-50', text: 'text-blue-700' },
+                            { bg: 'bg-gradient-to-br from-purple-500 to-purple-600', border: 'border-purple-300', card: 'bg-purple-50', text: 'text-purple-700' },
+                            { bg: 'bg-gradient-to-br from-orange-500 to-orange-600', border: 'border-orange-300', card: 'bg-orange-50', text: 'text-orange-700' },
+                          ]
+                          const colors = zoneColors[zoneIndex % zoneColors.length]
+                          
+                          return (
+                            <Card key={zoneCode} className={`overflow-hidden border-2 ${colors.border} hover:shadow-xl transition-all duration-300`}>
+                              {/* Zone Header */}
+                              <div className={`${colors.bg} p-6 text-white`}>
+                                <div className="flex items-start justify-between mb-3">
+                                  <div className="flex-1">
+                                    <h3 className="text-2xl mb-1">
+                                      {selectedLanguage === 'english' ? zoneData.zoneName : zoneData.zoneNameGujarati}
+                                    </h3>
+                                  </div>
+                                  <div className="ml-4 text-right">
+                                    <div className="bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2">
+                                      <div className="text-3xl">{zoneData.winners.length}</div>
+                                      <div className="text-xs text-white/80">Winner{zoneData.winners.length > 1 ? 's' : ''}</div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 text-sm text-white/80">
+                                  <Users className="h-4 w-4" />
+                                  <span>{zoneData.seats} seat{zoneData.seats > 1 ? 's' : ''} allocated</span>
+                                </div>
+                              </div>
+
+                              {/* Winners List */}
+                              <CardContent className={`p-6 ${colors.card}`}>
+                                {zoneData.winners.length > 0 ? (
+                                  <div className="space-y-3">
+                                    {zoneData.winners.map((winner, winnerIndex) => (
+                                      <div 
+                                        key={winnerIndex}
+                                        className="bg-white rounded-lg p-4 border border-gray-200 hover:border-gray-300 transition-all shadow-sm hover:shadow-md"
+                                      >
+                                        <div className="flex items-start gap-3">
+                                          {/* Winner Badge Number */}
+                                          <div className={`flex-shrink-0 w-10 h-10 ${colors.bg} rounded-full flex items-center justify-center text-white text-lg shadow-md`}>
+                                            {winnerIndex + 1}
+                                          </div>
+                                          
+                                          {/* Winner Info */}
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex items-start justify-between gap-2 mb-2">
+                                              <h4 className="font-bold text-gray-900 text-lg leading-tight">
+                                                {selectedLanguage === 'english' ? winner.name : (winner.nameGujarati || winner.name)}
+                                              </h4>
+                                              <Badge className={`${colors.text} bg-white border-2 ${colors.border} flex-shrink-0`}>
+                                                <CheckCircle className="h-3 w-3 mr-1" />
+                                                {content[selectedLanguage].winners || 'Winner'}
+                                              </Badge>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="text-sm text-gray-500 text-center py-4">No winners found for this zone</p>
+                                )}
+                              </CardContent>
+                            </Card>
+                          )
+                        })}
+                    </div>
+                    
+                    {/* Divider */}
+                    <div className="mb-8 border-t-2 border-gray-300 pt-8">
+                      <div className="text-center">
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                          {selectedLanguage === 'english' ? 'Cast Your Vote' : 'તમારો મત આપો'}
+                        </h3>
+                        <p className="text-gray-600">
+                          {selectedLanguage === 'english' 
+                            ? `Vote for candidates in your zone: ${voterZone?.name || ''}`
+                            : `તમારા વિભાગમાં ઉમેદવારોને મત આપો: ${voterZone?.nameGujarati || ''}`
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                )}
+                
                 {/* Page Title */}
                 <div className="mb-6 sm:mb-8">
                   <h2 className="text-xl sm:text-3xl font-bold text-gray-900">{content[selectedLanguage].title}</h2>
@@ -1239,8 +1534,8 @@ export default function YuvaPankVotingPage() {
                             </div>
                           </div>
 
-                          {/* Vote Button */}
-                          <div className="flex-shrink-0 mt-2 sm:mt-0">
+                          {/* Action Buttons */}
+                          <div className="flex-shrink-0 mt-2 sm:mt-0 flex gap-2">
                             {isSelected ? (
                               <Button
                                 onClick={() => handleCandidateSelect(zone.id, candidate.id, false)}
@@ -1252,14 +1547,27 @@ export default function YuvaPankVotingPage() {
                                 {content[selectedLanguage].selected}
                               </Button>
                             ) : (
-                              <Button
-                                onClick={() => handleCandidateSelect(zone.id, candidate.id, true)}
-                                className="bg-green-600 hover:bg-green-700"
-                                disabled={!canSelect && !isSelected}
-                              >
-                                <Vote className="h-5 w-5 mr-2" />
-                                {content[selectedLanguage].vote}
-                              </Button>
+                              <>
+                                <Button
+                                  onClick={() => {
+                                    setSelectedCandidateProfile(candidate)
+                                    setShowProfileModal(true)
+                                  }}
+                                  variant="outline"
+                                  className="border-blue-500 text-blue-700 hover:bg-blue-50"
+                                >
+                                  <Eye className="h-5 w-5 mr-2" />
+                                  {content[selectedLanguage].viewProfile || 'View Profile'}
+                                </Button>
+                                <Button
+                                  onClick={() => handleCandidateSelect(zone.id, candidate.id, true)}
+                                  className="bg-green-600 hover:bg-green-700"
+                                  disabled={!canSelect && !isSelected}
+                                >
+                                  <Vote className="h-5 w-5 mr-2" />
+                                  {content[selectedLanguage].vote}
+                                </Button>
+                              </>
                             )}
                           </div>
                         </div>

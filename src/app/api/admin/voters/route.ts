@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { handleError } from "@/lib/error-handler";
+import { excludeTestVoters } from "@/lib/voter-utils";
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -24,8 +25,9 @@ function calculateAge(dob: string): number {
 
 export async function GET(request: NextRequest) {
     try {
-        // Get all voters from Voter table
+        // Get all voters from Voter table (exclude test voters)
         const voters = await prisma.voter.findMany({
+            where: excludeTestVoters(),
             orderBy: { createdAt: "desc" },
             include: {
                 user: {
@@ -66,18 +68,18 @@ export async function GET(request: NextRequest) {
             }
         });
 
-        // Get voter statistics
-        const totalVoters = await prisma.voter.count();
+        // Get voter statistics (exclude test voters)
+        const totalVoters = await prisma.voter.count({ where: excludeTestVoters() });
         const activeVoters = await prisma.voter.count({
-            where: { isActive: true },
+            where: excludeTestVoters({ isActive: true }),
         });
         const inactiveVoters = await prisma.voter.count({
-            where: { isActive: false },
+            where: excludeTestVoters({ isActive: false }),
         });
 
-        // Get voted voters count
+        // Get voted voters count (exclude test voters)
         const votedVoters = await prisma.voter.count({
-            where: { hasVoted: true },
+            where: excludeTestVoters({ hasVoted: true }),
         });
 
         const stats = {

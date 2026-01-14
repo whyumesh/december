@@ -45,6 +45,14 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const voterZoneId = searchParams.get('zoneId')
     
+    // Validate zoneId format if provided (should be a valid CUID)
+    if (voterZoneId && (voterZoneId.length < 20 || voterZoneId.length > 30)) {
+      return NextResponse.json({ 
+        error: 'Invalid zone ID format',
+        details: 'The zone ID provided is not in the correct format'
+      }, { status: 400 })
+    }
+    
     // Build where clause - if zoneId is provided, filter by zone, otherwise get all approved candidates
     const whereClause: any = {
       status: 'APPROVED',
@@ -52,7 +60,21 @@ export async function GET(request: NextRequest) {
     }
     
     if (voterZoneId) {
+      // Verify zone exists
+      const zone = await prisma.zone.findUnique({
+        where: { id: voterZoneId }
+      })
+      
+      if (!zone) {
+        console.error(`❌ Zone not found: ${voterZoneId}`)
+        return NextResponse.json({ 
+          error: 'Invalid zone ID',
+          details: 'The specified zone does not exist'
+        }, { status: 400 })
+      }
+      
       whereClause.zoneId = voterZoneId
+      console.log(`✅ Zone verified: ${zone.code} (${zone.name})`)
     }
 
     const candidates = await prisma.yuvaPankhCandidate.findMany({
@@ -79,6 +101,37 @@ export async function GET(request: NextRequest) {
         { createdAt: 'desc' }
       ]
     })
+    
+    console.log(`✅ Found ${candidates.length} approved candidates${voterZoneId ? ` for zone ${voterZoneId}` : ''}`)
+    
+    if (voterZoneId && candidates.length === 0) {
+      // Check if zone has any candidates at all (even pending)
+      const totalCandidates = await prisma.yuvaPankhCandidate.count({
+        where: { zoneId: voterZoneId }
+      })
+      
+      if (totalCandidates === 0) {
+        console.warn(`⚠️ No candidates found in zone ${voterZoneId} (not even pending)`)
+        return NextResponse.json({ 
+          error: 'No candidates available',
+          details: 'No candidates have been registered for this zone yet. Please contact the election commission.',
+          candidates: []
+        }, { status: 404 })
+      } else {
+        const pendingCount = await prisma.yuvaPankhCandidate.count({
+          where: { 
+            zoneId: voterZoneId,
+            status: 'PENDING'
+          }
+        })
+        console.warn(`⚠️ Zone has ${totalCandidates} candidates but ${pendingCount} are pending approval`)
+        return NextResponse.json({ 
+          error: 'No approved candidates available',
+          details: `There are ${pendingCount} candidate(s) pending approval for this zone. Voting will be available once candidates are approved.`,
+          candidates: []
+        }, { status: 404 })
+      }
+    }
 
     // Get all photo fileKeys from UploadedFile table for these candidates
     let uploadedPhotos: any[] = []
@@ -277,12 +330,47 @@ export async function GET(request: NextRequest) {
     // Filter out any NOTA candidates that might have been fetched
     const candidatesWithoutNota = formattedCandidates.filter(c => c.position !== 'NOTA')
 
+    console.log(`📊 Returning ${candidatesWithoutNota.length} candidates (filtered from ${formattedCandidates.length} total)`)
+    
+    if (voterZoneId && candidatesWithoutNota.length === 0) {
+      console.warn(`⚠️ No candidates to return for zone ${voterZoneId}`)
+    }
+
     return NextResponse.json({
-      candidates: candidatesWithoutNota
+      candidates: candidatesWithoutNota,
+      count: candidatesWithoutNota.length,
+      zoneId: voterZoneId || null
     })
 
   } catch (error) {
-    console.error('Error fetching Yuva Pankh candidates:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('❌ Error fetching Yuva Pankh candidates:', error)
+    
+    // Log full error details for debugging
+    if (error instanceof Error) {
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      })
+    }
+    
+    // Provide detailed error information in development, generic in production
+    const isDevelopment = process.env.NODE_ENV === 'development'
+    const errorMessage = isDevelopment
+      ? `Failed to fetch candidates: ${error instanceof Error ? error.message : String(error)}`
+      : 'Failed to load candidates. Please try again or contact support.'
+    
+    return NextResponse.json({ 
+      error: errorMessage,
+      details: isDevelopment ? {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      } : undefined
+    }, { 
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
   }
 }

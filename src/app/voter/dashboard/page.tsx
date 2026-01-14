@@ -852,13 +852,13 @@ export default function VoterDashboard() {
                     
                     <div className="pt-4">
                       {election.id === 'yuva-pank' ? (() => {
-                        // Check if voter's zone is RAIGAD or KARNATAKA_GOA
+                        // Check voter's zone code
                         const zoneCode = 'code' in (election.zone || {}) ? (election.zone as { code?: string })?.code : undefined
+                        const isKutchOrAnyaGujarat = zoneCode === 'KUTCH' || zoneCode === 'ANYA_GUJARAT'
                         const isRaigadOrKarnataka = zoneCode === 'RAIGAD' || zoneCode === 'KARNATAKA_GOA'
                         
-                        // For Raigad and Karnataka zones, show "Cast Your Vote" instead of "View Elected Members"
-                        // After voting, the card should freeze
-                        if (isRaigadOrKarnataka) {
+                        // For Kutch and Anya Gujarat zones, show "Cast Your Vote" button
+                        if (isKutchOrAnyaGujarat) {
                           if (election.hasVoted) {
                             // After voting, show frozen state
                             return (
@@ -868,7 +868,29 @@ export default function VoterDashboard() {
                               </Button>
                             )
                           } else {
-                            // Show closure message instead of "Cast Your Vote" button
+                            // Show "Cast Your Vote" button for Kutch and Anya Gujarat
+                            return (
+                              <Link href={election.href}>
+                                <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
+                                  <Vote className="h-4 w-4 mr-2" />
+                                  {content[selectedLanguage].castYourVote}
+                                  <ArrowRight className="h-4 w-4 ml-2" />
+                                </Button>
+                              </Link>
+                            )
+                          }
+                        }
+                        
+                        // For Raigad and Karnataka zones, show closure message
+                        if (isRaigadOrKarnataka) {
+                          if (election.hasVoted) {
+                            return (
+                              <Button className="w-full" disabled>
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                {content[selectedLanguage].votingCompleted}
+                              </Button>
+                            )
+                          } else {
                             return (
                               <div className="w-full bg-red-50 border-2 border-red-300 rounded-lg px-4 py-3 text-center">
                                 <p className="text-sm font-semibold text-red-700">
@@ -877,34 +899,6 @@ export default function VoterDashboard() {
                               </div>
                             )
                           }
-                        }
-                        
-                        // Check if there are any winners in completed zones
-                        // For voters with a zone: check if their zone has winners
-                        // For voters without a zone: check if any winners exist (they can view all winners)
-                        let hasYuvaPankhWinners = false
-                        if (zoneCode) {
-                          // Voter has a zone - check if their zone has winners
-                          hasYuvaPankhWinners = zoneCode in yuvaPankhWinners && yuvaPankhWinners[zoneCode as keyof typeof yuvaPankhWinners]?.winners?.length > 0
-                        } else {
-                          // Voter doesn't have a zone - check if any winners exist
-                          hasYuvaPankhWinners = Object.keys(yuvaPankhWinners).some(key => {
-                            const zoneData = yuvaPankhWinners[key as keyof typeof yuvaPankhWinners]
-                            return zoneData?.winners?.length > 0
-                          })
-                        }
-                        
-                        // Show "View Elected Members" if winners exist (for all except Raigad/Karnataka voters)
-                        // Winners should be visible to all, except for Raigad and Karnataka zone voters
-                        if (hasYuvaPankhWinners && !isRaigadOrKarnataka) {
-                          return (
-                            <Link href={election.href}>
-                              <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
-                                <Eye className="h-4 w-4 mr-2" />
-                                {content[selectedLanguage].viewElectedMembers}
-                              </Button>
-                            </Link>
-                          )
                         }
                         
                         // If no winners and voter is not eligible, show disabled button

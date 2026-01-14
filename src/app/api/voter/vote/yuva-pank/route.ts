@@ -21,18 +21,45 @@ export async function POST(request: NextRequest) {
     // 1. AUTHENTICATION: Get voter from JWT token
     const token = request.cookies.get('voter-token')?.value
     if (!token) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+      console.error('❌ No voter-token cookie found')
+      return NextResponse.json({ error: 'Authentication required. Please log in again.' }, { status: 401 })
     }
 
     let decoded
     try {
       decoded = verifyToken(token)
-    } catch (jwtError) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+      console.log('✅ Token verified successfully:', { userId: decoded.userId, voterId: decoded.voterId })
+    } catch (jwtError: any) {
+      console.error('❌ Token verification failed:', {
+        error: jwtError.message,
+        code: jwtError.code,
+        tokenLength: token.length,
+        tokenPreview: token.substring(0, 20) + '...'
+      })
+      
+      // Provide more specific error messages
+      if (jwtError.code === 'TOKEN_EXPIRED') {
+        return NextResponse.json({ 
+          error: 'Your session has expired. Please log in again.',
+          code: 'TOKEN_EXPIRED'
+        }, { status: 401 })
+      } else if (jwtError.code === 'INVALID_TOKEN') {
+        return NextResponse.json({ 
+          error: 'Invalid session token. Please log in again.',
+          code: 'INVALID_TOKEN'
+        }, { status: 401 })
+      } else {
+        return NextResponse.json({ 
+          error: 'Authentication failed. Please log in again.',
+          code: 'AUTH_ERROR',
+          details: process.env.NODE_ENV === 'development' ? jwtError.message : undefined
+        }, { status: 401 })
+      }
     }
 
     if (!decoded.userId) {
-      return NextResponse.json({ error: 'Invalid token payload' }, { status: 401 })
+      console.error('❌ Token missing userId:', decoded)
+      return NextResponse.json({ error: 'Invalid token payload. Please log in again.' }, { status: 401 })
     }
 
     // 2. FETCH VOTER & ELECTION DATA
@@ -98,11 +125,60 @@ export async function POST(request: NextRequest) {
     // 4. VALIDATE VOTE PAYLOAD (allowing NOTA selections)
     const processedSelections: Array<{ zoneId: string; candidateId?: string; isNota: boolean }> = []
     
+    // Log for debugging
+    console.log('📊 Vote validation:', {
+      voterId: voter.id,
+      voterYuvaPankZoneId: voter.yuvaPankZoneId,
+      votesKeys: Object.keys(votes),
+      votes: votes
+    })
+    
+    // Check if voter has a zone assigned
+    if (!voter.yuvaPankZoneId) {
+      console.error('❌ Voter has no Yuva Pankh zone assigned:', voter.id)
+      return NextResponse.json({ 
+        error: 'You are not assigned to a Yuva Pankh zone. Please contact the election commission.' 
+      }, { status: 403 })
+    }
+    
     for (const [zoneId, selections] of Object.entries(votes)) {
-      if (!Array.isArray(selections)) continue
+      if (!Array.isArray(selections)) {
+        console.warn('⚠️ Invalid selections format:', { zoneId, selections })
+        continue
+      }
 
-      if (zoneId !== voter.yuvaPankZoneId) {
-        return NextResponse.json({ error: 'You can only vote within your assigned Yuva Pankh zone.' }, { status: 400 })
+      // Convert both to strings for comparison to handle any type mismatches
+      const voterZoneId = String(voter.yuvaPankZoneId)
+      const submittedZoneId = String(zoneId)
+      
+      console.log('🔍 Zone comparison:', {
+        submittedZoneId,
+        voterZoneId,
+        match: submittedZoneId === voterZoneId
+      })
+      
+      if (submittedZoneId !== voterZoneId) {
+        console.error('❌ Zone mismatch:', {
+          submittedZoneId,
+          voterZoneId,
+          voterId: voter.id,
+          voterVoterId: voter.voterId
+        })
+        
+        // Get zone name for better error message
+        const voterZone = await prisma.zone.findUnique({
+          where: { id: voter.yuvaPankZoneId! },
+          select: { name: true, code: true }
+        })
+        
+        const errorMessage = voterZone
+          ? `You can only vote within your assigned Yuva Pankh zone (${voterZone.name}). Please refresh the page and try again.`
+          : 'You can only vote within your assigned Yuva Pankh zone. Please refresh the page and try again.'
+        
+        return NextResponse.json({ 
+          error: errorMessage,
+          code: 'ZONE_MISMATCH'
+        }, { status: 400 })
       }
 
       selections.forEach(selectionId => {
@@ -232,16 +308,23 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // Use transaction to ensure all votes are saved atomically
+    // Use transaction to ensure all votes are saved atomically and update voter status
     await prisma.$transaction(async (tx) => {
       await tx.vote.createMany({
         data: voteCreationData,
         skipDuplicates: true // Skip if duplicate votes exist
       })
+      
+      // Update voter's hasVoted status
+      await tx.voter.update({
+        where: { id: voter.id },
+        data: { hasVoted: true }
+      })
     })
 
     const notaCount = processedSelections.filter(selection => selection.isNota).length
     console.log(`✅ Successfully saved ${voteCreationData.length} Yuva Pankh votes (${notaCount} NOTA) for voter ${voter.id}`)
+    console.log(`✅ Updated voter ${voter.id} hasVoted status to true`)
 
     return NextResponse.json({ 
       message: 'Vote submitted successfully',

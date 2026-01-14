@@ -6,6 +6,10 @@ const allowedRoutes = [
   '/',                    // Landing page
   '/admin',               // Admin routes (authentication checked by useAdminAuth hook)
   '/auth/signin',         // Admin signin (NextAuth)
+  '/voter/login',         // Voter login page
+  '/voter',               // Voter routes (authentication checked in individual pages)
+  '/privacy-policy',      // Privacy policy page
+  '/terms-and-conditions', // Terms and conditions page
 ]
 
 // API routes that should remain accessible for login functionality
@@ -13,6 +17,9 @@ const allowedApiRoutes = [
   '/api/auth',            // NextAuth API routes
   '/api/admin',           // Admin API routes (for login)
   '/api/health',          // Health check
+  '/api/voter',           // Voter API routes (for login and voting)
+  '/api/elections',       // Elections API routes (for fetching candidates)
+  '/api/csrf-token',      // CSRF token endpoint
 ]
 
 export function middleware(request: NextRequest) {
