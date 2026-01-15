@@ -165,6 +165,7 @@ interface RecentCandidate {
     submittedAt: string;
     electionType: string;
     candidateType: string;
+    voteCount?: number; // Vote count for this candidate
     zone: {
         name: string;
         nameGujarati: string;

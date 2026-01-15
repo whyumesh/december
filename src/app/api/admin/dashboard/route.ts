@@ -305,6 +305,80 @@ export async function GET(request: NextRequest) {
       prisma.yuvaPankhCandidate.count({ where: { status: 'REJECTED' } })
     ])
 
+    // Get vote counts per candidate (exclude test voters)
+    const yuvaPankhVoteCounts = await prisma.vote.groupBy({
+      by: ['yuvaPankhCandidateId'],
+      where: {
+        yuvaPankhCandidateId: { not: null },
+        voter: {
+          voterId: {
+            not: {
+              startsWith: 'TEST_'
+            }
+          }
+        }
+      },
+      _count: {
+        id: true
+      }
+    })
+
+    const karobariVoteCounts = await prisma.vote.groupBy({
+      by: ['karobariCandidateId'],
+      where: {
+        karobariCandidateId: { not: null },
+        voter: {
+          voterId: {
+            not: {
+              startsWith: 'TEST_'
+            }
+          }
+        }
+      },
+      _count: {
+        id: true
+      }
+    })
+
+    const trusteeVoteCounts = await prisma.vote.groupBy({
+      by: ['trusteeCandidateId'],
+      where: {
+        trusteeCandidateId: { not: null },
+        voter: {
+          voterId: {
+            not: {
+              startsWith: 'TEST_'
+            }
+          }
+        }
+      },
+      _count: {
+        id: true
+      }
+    })
+
+    // Create vote count maps
+    const yuvaPankhVoteMap = new Map<string, number>()
+    yuvaPankhVoteCounts.forEach(vc => {
+      if (vc.yuvaPankhCandidateId) {
+        yuvaPankhVoteMap.set(vc.yuvaPankhCandidateId, vc._count.id)
+      }
+    })
+
+    const karobariVoteMap = new Map<string, number>()
+    karobariVoteCounts.forEach(vc => {
+      if (vc.karobariCandidateId) {
+        karobariVoteMap.set(vc.karobariCandidateId, vc._count.id)
+      }
+    })
+
+    const trusteeVoteMap = new Map<string, number>()
+    trusteeVoteCounts.forEach(vc => {
+      if (vc.trusteeCandidateId) {
+        trusteeVoteMap.set(vc.trusteeCandidateId, vc._count.id)
+      }
+    })
+
     const [pendingYuvaPankhNominees, approvedYuvaPankhNominees, rejectedYuvaPankhNominees] = await Promise.all([
       prisma.yuvaPankhNominee.count({ where: { status: 'PENDING' } }),
       prisma.yuvaPankhNominee.count({ where: { status: 'APPROVED' } }),
@@ -493,6 +567,16 @@ export async function GET(request: NextRequest) {
     }
 
     const formattedCandidates = recentCandidates.map(candidate => {
+      // Get vote count based on candidate type
+      let voteCount = 0
+      if (candidate.type === 'YUVA_PANKH_CANDIDATE' || candidate.type === 'YUVA_PANKH_NOMINEE') {
+        voteCount = yuvaPankhVoteMap.get(candidate.id) || 0
+      } else if (candidate.type === 'KAROBARI_CANDIDATE') {
+        voteCount = karobariVoteMap.get(candidate.id) || 0
+      } else if (candidate.type === 'TRUSTEE_CANDIDATE') {
+        voteCount = trusteeVoteMap.get(candidate.id) || 0
+      }
+
       return {
         id: candidate.id,
         name: ('user' in candidate && candidate.user?.name) || candidate.name || 'Unknown',
@@ -509,6 +593,7 @@ export async function GET(request: NextRequest) {
         submittedAt: candidate.createdAt.toISOString(),
         electionType: candidate.electionType || 'Unknown',
         candidateType: candidate.type || 'Unknown',
+        voteCount, // Add vote count
         zone: candidate.zone ? {
           name: candidate.zone.name,
           nameGujarati: candidate.zone.nameGujarati,
