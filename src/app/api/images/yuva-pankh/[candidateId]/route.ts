@@ -99,11 +99,11 @@ export async function GET(
     // Use Storj for production/deployment
     if (isStorjConfigured()) {
       try {
-        // Normalize file key for Storj
+        // Normalize file key for Storj - use same logic as view-document API
         let normalizedKey = photoFileKey.trim()
         const bucketName = process.env.STORJ_BUCKET_NAME || 'kmselection'
         
-        // Remove bucket prefixes first
+        // Remove bucket prefixes first (same as view-document API)
         normalizedKey = normalizedKey.replace(/^kmselection\/kmselection\//, '')
         normalizedKey = normalizedKey.replace(/^kmselection\/nominations\//, 'nominations/')
         normalizedKey = normalizedKey.replace(/^nominations\/nominations\//, 'nominations/')
@@ -133,6 +133,7 @@ export async function GET(
         console.log(`[Image Endpoint] Generating Storj URL for photo: ${photoFileKey} -> ${normalizedKey}`)
         
         // Generate Storj download URL (7 days expiry)
+        // generateDownloadUrl will check if file exists and throw if not found
         const downloadUrl = await generateDownloadUrl(normalizedKey, 604800)
         
         console.log(`[Image Endpoint] ✅ Generated Storj URL successfully`)
@@ -153,20 +154,14 @@ export async function GET(
           isFileNotFound: errorMessage.includes('not found') || errorMessage.includes('NoSuchKey') || errorMessage.includes('does not exist')
         })
         
-        // If file not found in Storj, try fallback
+        // Always try fallback for file not found errors
         if (errorMessage.includes('not found') || errorMessage.includes('NoSuchKey') || errorMessage.includes('does not exist')) {
           console.log(`[Image Endpoint] File not found in Storj, trying fallback API`)
-          // Fall through to fallback
+          // Fall through to fallback - don't return error, let fallback handle it
         } else {
-          // For other errors, return error response
-          return NextResponse.json(
-            { 
-              error: 'Failed to generate image URL',
-              details: errorMessage,
-              photoFileKey 
-            },
-            { status: 500 }
-          )
+          // For other errors (auth, config, etc), still try fallback but log the error
+          console.warn(`[Image Endpoint] Storj error (non-file-not-found), trying fallback:`, errorMessage)
+          // Fall through to fallback
         }
       }
     }
