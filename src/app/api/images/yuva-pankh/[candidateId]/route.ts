@@ -103,12 +103,7 @@ export async function GET(
         let normalizedKey = photoFileKey.trim()
         const bucketName = process.env.STORJ_BUCKET_NAME || 'kmselection'
         
-        // Convert yuva-pankh/photos/... to nominations/yuva-pankh/photos/... format
-        if (normalizedKey.startsWith('yuva-pankh/')) {
-          normalizedKey = `nominations/${normalizedKey}`
-        }
-        
-        // Remove bucket prefixes
+        // Remove bucket prefixes first
         normalizedKey = normalizedKey.replace(/^kmselection\/kmselection\//, '')
         normalizedKey = normalizedKey.replace(/^kmselection\/nominations\//, 'nominations/')
         normalizedKey = normalizedKey.replace(/^nominations\/nominations\//, 'nominations/')
@@ -117,7 +112,13 @@ export async function GET(
           normalizedKey = normalizedKey.substring(bucketName.length + 1)
         }
         
-        // Ensure it starts with nominations/
+        // Convert yuva-pankh/photos/... to nominations/yuva-pankh/photos/... format
+        // Only if it doesn't already start with nominations/
+        if (!normalizedKey.startsWith('nominations/') && normalizedKey.startsWith('yuva-pankh/')) {
+          normalizedKey = `nominations/${normalizedKey}`
+        }
+        
+        // Ensure it starts with nominations/ (if it already does, keep it)
         if (!normalizedKey.startsWith('nominations/')) {
           // Try to find nominations/ in the path
           const nominationsMatch = normalizedKey.match(/nominations\/.+/)
@@ -129,10 +130,12 @@ export async function GET(
           }
         }
         
-        console.log(`Generating Storj URL for photo: ${photoFileKey} -> ${normalizedKey}`)
+        console.log(`[Image Endpoint] Generating Storj URL for photo: ${photoFileKey} -> ${normalizedKey}`)
         
         // Generate Storj download URL (7 days expiry)
         const downloadUrl = await generateDownloadUrl(normalizedKey, 604800)
+        
+        console.log(`[Image Endpoint] ✅ Generated Storj URL successfully`)
         
         // Redirect to Storj URL
         return NextResponse.redirect(downloadUrl, {
@@ -142,15 +145,47 @@ export async function GET(
           },
         })
       } catch (storjError) {
-        console.error('Error generating Storj URL:', storjError)
-        // Fall through to fallback
+        const errorMessage = storjError instanceof Error ? storjError.message : String(storjError)
+        console.error('[Image Endpoint] Error generating Storj URL:', errorMessage)
+        console.error('[Image Endpoint] Error details:', {
+          photoFileKey,
+          error: errorMessage,
+          isFileNotFound: errorMessage.includes('not found') || errorMessage.includes('NoSuchKey') || errorMessage.includes('does not exist')
+        })
+        
+        // If file not found in Storj, try fallback
+        if (errorMessage.includes('not found') || errorMessage.includes('NoSuchKey') || errorMessage.includes('does not exist')) {
+          console.log(`[Image Endpoint] File not found in Storj, trying fallback API`)
+          // Fall through to fallback
+        } else {
+          // For other errors, return error response
+          return NextResponse.json(
+            { 
+              error: 'Failed to generate image URL',
+              details: errorMessage,
+              photoFileKey 
+            },
+            { status: 500 }
+          )
+        }
       }
     }
 
-    // Fallback to view-document API
-    return NextResponse.redirect(
-      new URL(`/api/admin/view-document?path=${encodeURIComponent(photoFileKey)}`, request.url)
-    )
+    // Fallback to view-document API (this handles Storj as well)
+    console.log(`[Image Endpoint] Using fallback view-document API for: ${photoFileKey}`)
+    try {
+      const fallbackUrl = new URL(`/api/admin/view-document?path=${encodeURIComponent(photoFileKey)}`, request.url)
+      return NextResponse.redirect(fallbackUrl)
+    } catch (error) {
+      console.error('[Image Endpoint] Error creating fallback URL:', error)
+      return NextResponse.json(
+        { 
+          error: 'Failed to serve image',
+          photoFileKey 
+        },
+        { status: 500 }
+      )
+    }
 
   } catch (error) {
     console.error('Error serving image:', error)
