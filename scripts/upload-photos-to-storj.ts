@@ -5,7 +5,7 @@
 import { PrismaClient } from '@prisma/client'
 import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
-import { uploadFileToStorj } from '@/lib/storj'
+// Note: uploadFileToStorj will be imported after env vars are loaded
 
 // Load environment variables
 function loadEnvFile() {
@@ -26,9 +26,40 @@ function loadEnvFile() {
       }
     }
   }
+  
+  // Also try .env file
+  const envPath2 = join(process.cwd(), '.env')
+  if (existsSync(envPath2)) {
+    const envContent = readFileSync(envPath2, 'utf-8')
+    const lines = envContent.split('\n')
+    
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
+        const [key, ...valueParts] = trimmed.split('=')
+        const value = valueParts.join('=').trim()
+        const cleanValue = value.replace(/^["']|["']$/g, '')
+        if (key && cleanValue && !process.env[key.trim()]) {
+          process.env[key.trim()] = cleanValue
+        }
+      }
+    }
+  }
 }
 
 loadEnvFile()
+
+// Verify Storj credentials are loaded
+console.log('Storj Configuration Check:')
+console.log('  STORJ_ACCESS_KEY_ID:', process.env.STORJ_ACCESS_KEY_ID ? '✅ Set' : '❌ Not set')
+console.log('  STORJ_SECRET_ACCESS_KEY:', process.env.STORJ_SECRET_ACCESS_KEY ? '✅ Set' : '❌ Not set')
+console.log('  STORJ_BUCKET_NAME:', process.env.STORJ_BUCKET_NAME || 'kmselection (default)')
+console.log('  STORJ_ENDPOINT:', process.env.STORJ_ENDPOINT || 'https://gateway.storjshare.io (default)')
+console.log('')
+
+// Import Storj functions after env vars are loaded
+// This ensures the Storj client is initialized with the correct credentials
+const { uploadFileToStorj: uploadToStorj, isStorjConfigured } = require('@/lib/storj')
 
 const prisma = new PrismaClient()
 
@@ -118,7 +149,7 @@ async function uploadPhotosToStorj() {
       console.log(`   Storj: ${storjKey}`)
       
       try {
-        await uploadFileToStorj(storjKey, fileBuffer, contentType)
+        await uploadToStorj(storjKey, fileBuffer, contentType)
         console.log(`   ✅ Uploaded successfully\n`)
       } catch (error) {
         console.error(`   ❌ Upload failed:`, error instanceof Error ? error.message : error)
