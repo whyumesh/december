@@ -89,7 +89,7 @@ export async function GET(
         kutchZoneId: kutchZone.id
       })
       return NextResponse.redirect(
-        new URL('/voter/login?error=' + encodeURIComponent('Voting is currently open only for Kutch zone voters. If you are a Kutch zone voter and facing issues, please contact the election commission.'), request.url)
+        new URL('/voter/login?error=' + encodeURIComponent('Access restricted to Kutch zone voters only.'), request.url)
       )
     }
 

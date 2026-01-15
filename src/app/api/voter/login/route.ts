@@ -132,7 +132,7 @@ async function handler(request: NextRequest) {
         voterZone: voter.yuvaPankZoneId ? 'Other zone' : 'No zone assigned'
       })
       throw new AuthenticationError(
-        'Voting is currently open only for Kutch zone voters. If you are a Kutch zone voter and facing issues, please contact the election commission.'
+        'Access restricted to Kutch zone voters only.'
       )
     }
 
