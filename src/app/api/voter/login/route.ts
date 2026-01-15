@@ -114,6 +114,28 @@ async function handler(request: NextRequest) {
       throw new NotFoundError('Voter not found. Please contact administrator.')
     }
 
+    // Check if voter is from Kutch zone (restrict login to Kutch zone only)
+    const kutchZone = await prisma.zone.findFirst({
+      where: { code: 'KUTCH', electionType: 'YUVA_PANK' }
+    })
+
+    if (!kutchZone) {
+      console.error('Kutch zone not found in database')
+      throw new AuthenticationError('System configuration error. Please contact administrator.')
+    }
+
+    if (voter.yuvaPankZoneId !== kutchZone.id) {
+      console.log('Login blocked - voter not from Kutch zone:', {
+        voterId: voter.voterId,
+        voterZoneId: voter.yuvaPankZoneId,
+        kutchZoneId: kutchZone.id,
+        voterZone: voter.yuvaPankZoneId ? 'Other zone' : 'No zone assigned'
+      })
+      throw new AuthenticationError(
+        'Voting is currently open only for Kutch zone voters. If you are a Kutch zone voter and facing issues, please contact the election commission.'
+      )
+    }
+
     // Check if voter has completed all eligible votes
     const completionStatus = await hasCompletedAllEligibleVotes(voter.id)
     if (completionStatus.completed) {

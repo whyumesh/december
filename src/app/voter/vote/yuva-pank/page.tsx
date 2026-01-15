@@ -88,7 +88,7 @@ export default function YuvaPankVotingPage() {
       zoneNameGujarati: 'અબડાસા, લખપત અને નખત્રાણા',
       seats: 2,
       winners: [
-        { name: 'Jigar Arvind Bhedakiya', nameGujarati: 'જીગર અરવિંદ ભેડકિયા' }
+        // Jigar Arvind Bhedakiya removed - uncontested winner from previous nomination, not shown in elections
       ]
     },
     'BHUJ_ANJAR': {

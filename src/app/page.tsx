@@ -5,7 +5,6 @@
 // The layout.tsx handles dynamic rendering for the entire app
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -262,12 +261,10 @@ export default function HomePage() {
                                             Quick Access
                                         </h3>
                                         <div className="space-y-2">
-                                            <Link href="/voter/login" className="block">
-                                                <Button className="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-semibold">
-                                                    <Vote className="h-4 w-4 mr-2" />
-                                                    Voting is now open for Anya Gujarat and Kutch zones
-                                                </Button>
-                                            </Link>
+                                            <Button className="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-semibold" disabled>
+                                                <Vote className="h-4 w-4 mr-2" />
+                                                Voting is now open for Anya Gujarat and Kutch zones
+                                            </Button>
                                         </div>
                                     </div>
                                 </div>
@@ -292,12 +289,10 @@ export default function HomePage() {
                             accessible online voting.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
-                            <Link href="/voter/login">
-                                <Button className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold">
-                                    <Vote className="h-4 w-4 mr-2" />
-                                    Voting is now open for Anya Gujarat and Kutch zones
-                                </Button>
-                            </Link>
+                            <Button className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold" disabled>
+                                <Vote className="h-4 w-4 mr-2" />
+                                Voting is now open for Anya Gujarat and Kutch zones
+                            </Button>
                         </div>
                     </div>
 
@@ -1012,12 +1007,10 @@ export default function HomePage() {
                             future through democratic participation.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
-                            <Link href="/voter/login">
-                                <Button className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold">
-                                    <Vote className="h-4 w-4 mr-2" />
-                                    Voting is now open for Anya Gujarat and Kutch zones
-                                </Button>
-                            </Link>
+                            <Button className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold" disabled>
+                                <Vote className="h-4 w-4 mr-2" />
+                                Voting is now open for Anya Gujarat and Kutch zones
+                            </Button>
                         </div>
                     </div>
                 </main>
@@ -1040,12 +1033,9 @@ export default function HomePage() {
                                 <ul className="space-y-2 text-sm text-gray-400">
                                     {/* Karobari Members - Hidden from UI */}
                                     <li>
-                                        <Link
-                                            href="/elections/trustees"
-                                            className="hover:text-white"
-                                        >
+                                        <span className="text-gray-400">
                                             Trustees
-                                        </Link>
+                                        </span>
                                     </li>
                                 </ul>
                             </div>
@@ -1053,28 +1043,19 @@ export default function HomePage() {
                                 <h4 className="font-semibold mb-4">Quick Links</h4>
                                 <ul className="space-y-2 text-sm text-gray-400">
                                     <li>
-                                        <Link
-                                            href="/voter/login"
-                                            className="hover:text-white"
-                                        >
+                                        <span className="text-gray-400">
                                             Voter Login
-                                        </Link>
+                                        </span>
                                     </li>
                                     <li>
-                                        <Link
-                                            href="/terms-and-conditions"
-                                            className="hover:text-white"
-                                        >
+                                        <span className="text-gray-400">
                                             Terms and Conditions
-                                        </Link>
+                                        </span>
                                     </li>
                                     <li>
-                                        <Link
-                                            href="/privacy-policy"
-                                            className="hover:text-white"
-                                        >
+                                        <span className="text-gray-400">
                                             Privacy Policy
-                                        </Link>
+                                        </span>
                                     </li>
                                 </ul>
                             </div>
@@ -1105,23 +1086,13 @@ export default function HomePage() {
                                 Designed and Developed with ❤️ in 🇮🇳 by
                             </p>
                             <p className="mt-1 flex items-center justify-center gap-2 flex-wrap">
-                                <Link 
-                                    href="https://www.teamfullstack.in" 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="text-blue-400 hover:text-blue-300 hover:underline transition-colors font-semibold"
-                                >
+                                <span className="text-gray-400 font-semibold">
                                     Parth Chetna Piyush Gagdani, (Thane)
-                                </Link>
+                                </span>
                                 <span className="text-gray-600">|</span>
-                                <Link 
-                                    href="https://www.teamfullstack.in" 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="font-bold text-blue-400 hover:text-blue-300 hover:underline transition-colors"
-                                >
+                                <span className="text-gray-400 font-bold">
                                     પાર્થ ચેતના પિયુષ ગગડાની, (થાણા)
-                                </Link>
+                                </span>
                             </p>
                         </div>
                     </div>

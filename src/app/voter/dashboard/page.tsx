@@ -261,7 +261,7 @@ export default function VoterDashboard() {
       zoneNameGujarati: 'અબડાસા, લખપત અને નખત્રાણા',
       seats: 2,
       winners: [
-        { name: 'Jigar Arvind Bhedakiya', nameGujarati: 'જીગર અરવિંદ ભેડકિયા' }
+        // Jigar Arvind Bhedakiya removed - uncontested winner from previous nomination, not shown in elections
       ]
     },
     'BHUJ_ANJAR': {
@@ -614,6 +614,7 @@ export default function VoterDashboard() {
   }
 
   // Create elections array - show all elections (always show Yuva Pankh, even if not eligible)
+  // NOTE: Trustees voting is hidden completely - not shown in any condition
   const elections = [
     // Always show Yuva Pankh election (show disabled if voter doesn't have zone)
     {
@@ -631,19 +632,7 @@ export default function VoterDashboard() {
       eligibilityReason: getYuvaPankhEligibilityReason(), // Reason for ineligibility
       tenure: '2026-2029'
     },
-    {
-      id: 'trustees',
-      title: selectedLanguage === 'english' ? 'Trust Mandal' : 'ટ્રસ્ટ મંડળ',
-      icon: Award,
-      color: 'purple',
-      hasVoted: voterData.hasVoted.trustees,
-      href: '/voter/vote/trustees',
-      totalSeats: 7,
-      regionalSeats: voterData.trusteeZone?.seats || 0,
-      zone: voterData.trusteeZone,
-      isAgeRestricted: (voterData.age || 0) < 18, // Only voters 18+ can vote
-      tenure: '2026-2032'
-    },
+    // Trustees voting is completely hidden - removed from elections array
     // Show Karobari Samiti if voter has karobariZone (all Karobari elections are completed)
     ...(voterData.karobariZone ? [{
       id: 'karobari-members',

@@ -1,27 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-// Define allowed public routes - only landing page and admin login pages
-const allowedRoutes = [
-  '/',                    // Landing page
-  '/admin',               // Admin routes (authentication checked by useAdminAuth hook)
-  '/auth/signin',         // Admin signin (NextAuth)
-  '/voter/login',         // Voter login page
-  '/voter',               // Voter routes (authentication checked in individual pages)
-  '/privacy-policy',      // Privacy policy page
-  '/terms-and-conditions', // Terms and conditions page
-]
-
-// API routes that should remain accessible for login functionality
-const allowedApiRoutes = [
-  '/api/auth',            // NextAuth API routes
-  '/api/admin',           // Admin API routes (for login)
-  '/api/health',          // Health check
-  '/api/voter',           // Voter API routes (for login and voting)
-  '/api/elections',       // Elections API routes (for fetching candidates)
-  '/api/csrf-token',      // CSRF token endpoint
-]
-
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   
@@ -35,13 +14,13 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Allow API routes for authentication
-  if (allowedApiRoutes.some(route => pathname.startsWith(route))) {
+  // Allow only the landing page (exact match)
+  if (pathname === '/') {
     return NextResponse.next()
   }
 
-  // Allow only the specified public routes
-  if (allowedRoutes.some(route => pathname === route || pathname.startsWith(route + '/'))) {
+  // Allow API route for landing page results display
+  if (pathname === '/api/admin/results') {
     return NextResponse.next()
   }
 

@@ -102,9 +102,15 @@ export async function GET(request: NextRequest) {
       ]
     })
     
-    console.log(`✅ Found ${candidates.length} approved candidates${voterZoneId ? ` for zone ${voterZoneId}` : ''}`)
+    // Exclude Jigar Arvind Bhedakiya - uncontested winner from previous nomination
+    const filteredCandidates = candidates.filter(candidate => {
+      const candidateName = candidate.user?.name || ''
+      return !candidateName.toLowerCase().includes('jigar arvind bhedakiya')
+    })
     
-    if (voterZoneId && candidates.length === 0) {
+    console.log(`✅ Found ${filteredCandidates.length} approved candidates${voterZoneId ? ` for zone ${voterZoneId}` : ''} (excluded uncontested winner)`)
+    
+    if (voterZoneId && filteredCandidates.length === 0) {
       // Check if zone has any candidates at all (even pending)
       const totalCandidates = await prisma.yuvaPankhCandidate.count({
         where: { zoneId: voterZoneId }
@@ -138,7 +144,7 @@ export async function GET(request: NextRequest) {
     let photoMap = new Map<string, string>()
     
     try {
-      const candidateUserIds = candidates
+      const candidateUserIds = filteredCandidates
         .filter(c => c.userId)
         .map(c => c.userId) as string[]
       
@@ -170,7 +176,7 @@ export async function GET(request: NextRequest) {
       console.error('Error fetching photo metadata (non-critical, continuing):', photoError)
     }
 
-    const formattedCandidates = candidates.map(candidate => {
+    const formattedCandidates = filteredCandidates.map(candidate => {
       // Parse experience and education fields
       let experienceData = null
       let educationData = null
