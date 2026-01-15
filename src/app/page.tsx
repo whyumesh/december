@@ -262,11 +262,12 @@ export default function HomePage() {
                                             Quick Access
                                         </h3>
                                         <div className="space-y-2">
-                                            <div className="w-full bg-green-50 border-2 border-green-300 rounded-lg px-4 py-3 text-center">
-                                                <p className="text-sm font-semibold text-green-700">
-                                                    Voting is now open for Anya Gujarat and Kutch zones.
-                                                </p>
-                                            </div>
+                                            <Link href="/voter/login" className="block">
+                                                <Button className="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-semibold">
+                                                    <Vote className="h-4 w-4 mr-2" />
+                                                    Voting is now open for Anya Gujarat and Kutch zones
+                                                </Button>
+                                            </Link>
                                         </div>
                                     </div>
                                 </div>
@@ -291,11 +292,12 @@ export default function HomePage() {
                             accessible online voting.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
-                            <div className="w-full sm:w-auto bg-green-50 border-2 border-green-300 rounded-lg px-6 sm:px-8 py-3 sm:py-4 text-center">
-                                <p className="text-base sm:text-lg font-semibold text-green-700">
-                                    Voting is now open for Anya Gujarat and Kutch zones.
-                                </p>
-                            </div>
+                            <Link href="/voter/login">
+                                <Button className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold">
+                                    <Vote className="h-4 w-4 mr-2" />
+                                    Voting is now open for Anya Gujarat and Kutch zones
+                                </Button>
+                            </Link>
                         </div>
                     </div>
 
@@ -440,7 +442,7 @@ export default function HomePage() {
                                                         data={results.yuvaPankh.regions
                                                             .filter(region => {
                                                                 const zoneCode = region.zoneCode || '';
-                                                                return zoneCode === 'KARNATAKA_GOA' || zoneCode === 'RAIGAD';
+                                                                return zoneCode === 'KARNATAKA_GOA' || zoneCode === 'RAIGAD' || zoneCode === 'ANYA_GUJARAT' || zoneCode === 'KUTCH';
                                                             })
                                                             .map(region => ({
                                                                 name: region.zoneName,
@@ -483,7 +485,7 @@ export default function HomePage() {
                                                             {results.yuvaPankh.regions
                                                                 .filter(region => {
                                                                     const zoneCode = region.zoneCode || '';
-                                                                    return zoneCode === 'KARNATAKA_GOA' || zoneCode === 'RAIGAD';
+                                                                    return zoneCode === 'KARNATAKA_GOA' || zoneCode === 'RAIGAD' || zoneCode === 'ANYA_GUJARAT' || zoneCode === 'KUTCH';
                                                                 })
                                                                 .map((region, index) => {
                                                                     const turnout = Number(region.turnoutPercentage) || 0;
@@ -504,7 +506,7 @@ export default function HomePage() {
                                                 const processedData = results.yuvaPankh.regions
                                                     .filter(region => {
                                                         const zoneCode = region.zoneCode || '';
-                                                        return zoneCode === 'KARNATAKA_GOA' || zoneCode === 'RAIGAD';
+                                                        return zoneCode === 'KARNATAKA_GOA' || zoneCode === 'RAIGAD' || zoneCode === 'ANYA_GUJARAT' || zoneCode === 'KUTCH';
                                                     })
                                                     .map(region => ({
                                                         turnout: Number(region.turnoutPercentage) || 0,
@@ -1010,11 +1012,12 @@ export default function HomePage() {
                             future through democratic participation.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
-                            <div className="w-full sm:w-auto bg-white border-2 border-green-300 rounded-lg px-6 sm:px-8 py-3 sm:py-4 text-center">
-                                <p className="text-base sm:text-lg font-semibold text-green-700">
-                                    Voting is now open for Anya Gujarat and Kutch zones.
-                                </p>
-                            </div>
+                            <Link href="/voter/login">
+                                <Button className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold">
+                                    <Vote className="h-4 w-4 mr-2" />
+                                    Voting is now open for Anya Gujarat and Kutch zones
+                                </Button>
+                            </Link>
                         </div>
                     </div>
                 </main>
