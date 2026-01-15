@@ -79,13 +79,13 @@ interface ResultsData {
 }
 
 export default function HomePage() {
-    // Target date: December 31, 2025, 11:59 PM IST (IST is UTC+5:30, so 6:29 PM UTC)
-    const targetDate = useMemo(() => new Date('2025-12-31T18:29:00Z'), []);
+    // Target date: January 31, 2026, 11:59 PM IST (IST is UTC+5:30, so 6:29 PM UTC)
+    const targetDate = useMemo(() => new Date('2026-01-31T18:29:00Z'), []);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [results, setResults] = useState<ResultsData | null>(null);
     const [isLoadingResults, setIsLoadingResults] = useState(false);
     const [resultsError, setResultsError] = useState<string | null>(null);
-    const electionPeriod = '11th December 2025 to 31st December 2025';
+    const electionPeriod = 'Voting open until 31st January 2026';
     const [showSelfieBooth, setShowSelfieBooth] = useState(false);
     
     // Get YouTube video IDs from environment variables
@@ -262,9 +262,9 @@ export default function HomePage() {
                                             Quick Access
                                         </h3>
                                         <div className="space-y-2">
-                                            <div className="w-full bg-red-50 border-2 border-red-300 rounded-lg px-4 py-3 text-center">
-                                                <p className="text-sm font-semibold text-red-700">
-                                                    The online voting process is closed now.
+                                            <div className="w-full bg-green-50 border-2 border-green-300 rounded-lg px-4 py-3 text-center">
+                                                <p className="text-sm font-semibold text-green-700">
+                                                    Voting is now open for Anya Gujarat and Kutch zones.
                                                 </p>
                                             </div>
                                         </div>
@@ -291,9 +291,9 @@ export default function HomePage() {
                             accessible online voting.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
-                            <div className="w-full sm:w-auto bg-red-50 border-2 border-red-300 rounded-lg px-6 sm:px-8 py-3 sm:py-4 text-center">
-                                <p className="text-base sm:text-lg font-semibold text-red-700">
-                                    The online voting process is closed now.
+                            <div className="w-full sm:w-auto bg-green-50 border-2 border-green-300 rounded-lg px-6 sm:px-8 py-3 sm:py-4 text-center">
+                                <p className="text-base sm:text-lg font-semibold text-green-700">
+                                    Voting is now open for Anya Gujarat and Kutch zones.
                                 </p>
                             </div>
                         </div>
@@ -1010,9 +1010,9 @@ export default function HomePage() {
                             future through democratic participation.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
-                            <div className="w-full sm:w-auto bg-white border-2 border-red-300 rounded-lg px-6 sm:px-8 py-3 sm:py-4 text-center">
-                                <p className="text-base sm:text-lg font-semibold text-red-700">
-                                    The online voting process is closed now.
+                            <div className="w-full sm:w-auto bg-white border-2 border-green-300 rounded-lg px-6 sm:px-8 py-3 sm:py-4 text-center">
+                                <p className="text-base sm:text-lg font-semibold text-green-700">
+                                    Voting is now open for Anya Gujarat and Kutch zones.
                                 </p>
                             </div>
                         </div>

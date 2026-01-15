@@ -892,9 +892,9 @@ export default function VoterDashboard() {
                             )
                           } else {
                             return (
-                              <div className="w-full bg-red-50 border-2 border-red-300 rounded-lg px-4 py-3 text-center">
-                                <p className="text-sm font-semibold text-red-700">
-                                  The online voting process is closed now.
+                              <div className="w-full bg-green-50 border-2 border-green-300 rounded-lg px-4 py-3 text-center">
+                                <p className="text-sm font-semibold text-green-700">
+                                  Voting is now open for Anya Gujarat and Kutch zones.
                                 </p>
                               </div>
                             )

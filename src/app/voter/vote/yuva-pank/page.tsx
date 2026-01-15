@@ -1165,7 +1165,7 @@ export default function YuvaPankVotingPage() {
                     <div className="text-center">
                       <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
                       <h3 className="text-xl font-bold text-red-800 mb-2">Voting Closed</h3>
-                      <p className="text-red-700">The online voting process is closed now.</p>
+                      <p className="text-red-700">Voting for Raigad and Karnataka zones is closed.</p>
                     </div>
                   </CardContent>
                 </Card>

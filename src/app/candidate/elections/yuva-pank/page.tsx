@@ -137,9 +137,9 @@ export default function YuvaPankPage() {
               Register as Candidate
             </Button>
           </Link>
-          <div className="bg-red-50 border-2 border-red-300 rounded-lg px-6 py-3 text-center">
-            <p className="text-sm font-semibold text-red-700">
-              The online voting process is closed now.
+          <div className="bg-green-50 border-2 border-green-300 rounded-lg px-6 py-3 text-center">
+            <p className="text-sm font-semibold text-green-700">
+              Voting is now open for Anya Gujarat and Kutch zones.
             </p>
           </div>
         </div>
