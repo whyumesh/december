@@ -40,37 +40,26 @@ const photoMappings: Record<string, string> = {
   'raj.png': 'Raj Dhiraj Mandan'
 }
 
-// Try to use Cloudinary if available, otherwise use local storage
+// Upload to Storj (for deployment) and local storage (for local dev)
 async function uploadPhoto(fileKey: string, fileBuffer: Buffer, contentType: string): Promise<string> {
-  // Try Cloudinary first if configured
-  if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+  // Normalize file key for Storj (convert to nominations/ format)
+  let storjKey = fileKey
+  if (storjKey.startsWith('yuva-pankh/')) {
+    storjKey = `nominations/${storjKey}`
+  }
+  
+  // Try Storj first (for deployment)
+  if (process.env.STORJ_ACCESS_KEY_ID && process.env.STORJ_SECRET_ACCESS_KEY) {
     try {
-      const cloudinary = require('cloudinary').v2
-      cloudinary.config({
-        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-        api_key: process.env.CLOUDINARY_API_KEY,
-        api_secret: process.env.CLOUDINARY_API_SECRET,
-      })
-      
-      const base64String = fileBuffer.toString('base64')
-      const dataUri = `data:${contentType};base64,${base64String}`
-      
-      const result = await cloudinary.uploader.upload(dataUri, {
-        public_id: fileKey.replace(/\.[^/.]+$/, ''),
-        resource_type: 'image',
-        folder: 'kms-election/yuva-pankh/photos',
-        use_filename: true,
-        unique_filename: true,
-      })
-      
-      console.log(`  ✅ Uploaded to Cloudinary: ${result.public_id}`)
-      return result.public_id
+      const { uploadFileToStorj } = require('@/lib/storj')
+      await uploadFileToStorj(storjKey, fileBuffer, contentType)
+      console.log(`  ✅ Uploaded to Storj: ${storjKey}`)
     } catch (error) {
-      console.log(`  ⚠️  Cloudinary upload failed, using local storage:`, error instanceof Error ? error.message : error)
+      console.log(`  ⚠️  Storj upload failed:`, error instanceof Error ? error.message : error)
     }
   }
   
-  // Fallback to local storage
+  // Also save locally (for local development)
   const uploadsDir = process.env.UPLOAD_DIR || './uploads'
   const fullPath = join(process.cwd(), uploadsDir, fileKey)
   const dir = dirname(fullPath)
@@ -79,6 +68,8 @@ async function uploadPhoto(fileKey: string, fileBuffer: Buffer, contentType: str
   await writeFile(fullPath, fileBuffer)
   
   console.log(`  ✅ Saved locally: ${fileKey}`)
+  
+  // Return the original fileKey (not storjKey) for database storage
   return fileKey
 }
 

@@ -3,6 +3,7 @@ import { readFile } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
 import { prisma } from '@/lib/db'
+import { generateDownloadUrl, isStorjConfigured } from '@/lib/storj'
 
 // Cache images for 1 year (immutable)
 export const revalidate = 31536000
@@ -55,41 +56,94 @@ export async function GET(
       )
     }
 
-    // Try to serve from local file system first (fastest)
-    const uploadsDir = process.env.UPLOAD_DIR || './uploads'
-    let filePath = join(process.cwd(), uploadsDir, photoFileKey)
-    
-    // Normalize path
-    filePath = filePath.replace(/\\/g, '/')
-    
-    if (existsSync(filePath)) {
-      try {
-        const fileBuffer = await readFile(filePath)
-        const extension = photoFileKey.split('.').pop()?.toLowerCase() || 'png'
-        let contentType = 'image/png'
-        
-        switch (extension) {
-          case 'jpg':
-          case 'jpeg':
-            contentType = 'image/jpeg'
-            break
-          case 'png':
-            contentType = 'image/png'
-            break
-          case 'webp':
-            contentType = 'image/webp'
-            break
-        }
+    // Try to serve from local file system first (for local development)
+    if (process.env.NODE_ENV !== 'production') {
+      const uploadsDir = process.env.UPLOAD_DIR || './uploads'
+      let filePath = join(process.cwd(), uploadsDir, photoFileKey)
+      
+      // Normalize path
+      filePath = filePath.replace(/\\/g, '/')
+      
+      if (existsSync(filePath)) {
+        try {
+          const fileBuffer = await readFile(filePath)
+          const extension = photoFileKey.split('.').pop()?.toLowerCase() || 'png'
+          let contentType = 'image/png'
+          
+          switch (extension) {
+            case 'jpg':
+            case 'jpeg':
+              contentType = 'image/jpeg'
+              break
+            case 'png':
+              contentType = 'image/png'
+              break
+            case 'webp':
+              contentType = 'image/webp'
+              break
+          }
 
-        return new NextResponse(fileBuffer, {
+          return new NextResponse(fileBuffer, {
+            headers: {
+              'Content-Type': contentType,
+              'Cache-Control': 'public, max-age=31536000, immutable',
+              'Content-Disposition': 'inline',
+            },
+          })
+        } catch (error) {
+          console.error('Error reading local file:', error)
+        }
+      }
+    }
+
+    // Use Storj for production/deployment
+    if (isStorjConfigured()) {
+      try {
+        // Normalize file key for Storj
+        let normalizedKey = photoFileKey.trim()
+        const bucketName = process.env.STORJ_BUCKET_NAME || 'kmselection'
+        
+        // Convert yuva-pankh/photos/... to nominations/yuva-pankh/photos/... format
+        if (normalizedKey.startsWith('yuva-pankh/')) {
+          normalizedKey = `nominations/${normalizedKey}`
+        }
+        
+        // Remove bucket prefixes
+        normalizedKey = normalizedKey.replace(/^kmselection\/kmselection\//, '')
+        normalizedKey = normalizedKey.replace(/^kmselection\/nominations\//, 'nominations/')
+        normalizedKey = normalizedKey.replace(/^nominations\/nominations\//, 'nominations/')
+        
+        if (normalizedKey.startsWith(`${bucketName}/`)) {
+          normalizedKey = normalizedKey.substring(bucketName.length + 1)
+        }
+        
+        // Ensure it starts with nominations/
+        if (!normalizedKey.startsWith('nominations/')) {
+          // Try to find nominations/ in the path
+          const nominationsMatch = normalizedKey.match(/nominations\/.+/)
+          if (nominationsMatch) {
+            normalizedKey = nominationsMatch[0]
+          } else {
+            // Add nominations/ prefix if not present
+            normalizedKey = `nominations/${normalizedKey}`
+          }
+        }
+        
+        console.log(`Generating Storj URL for photo: ${photoFileKey} -> ${normalizedKey}`)
+        
+        // Generate Storj download URL (7 days expiry)
+        const downloadUrl = await generateDownloadUrl(normalizedKey, 604800)
+        
+        // Redirect to Storj URL
+        return NextResponse.redirect(downloadUrl, {
+          status: 302,
           headers: {
-            'Content-Type': contentType,
-            'Cache-Control': 'public, max-age=31536000, immutable',
-            'Content-Disposition': 'inline',
+            'Cache-Control': 'public, max-age=604800', // Cache redirect for 7 days
           },
         })
-      } catch (error) {
-        console.error('Error reading local file:', error)
+      } catch (storjError) {
+        console.error('Error generating Storj URL:', storjError)
+        // Fall through to fallback
       }
     }
 
