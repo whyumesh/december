@@ -1400,9 +1400,20 @@ export default function YuvaPankVotingPage() {
                 <div className="mb-6 sm:mb-8">
                   <h2 className="text-xl sm:text-3xl font-bold text-gray-900">{content[selectedLanguage].title}</h2>
                   {voterZone && (
-                    <p className="text-gray-600">
-                      {content[selectedLanguage].yourZone}: <strong>{selectedLanguage === 'english' ? voterZone.name : voterZone.nameGujarati}</strong> - {content[selectedLanguage].selectUpTo} {voterZone.seats} {voterZone.seats > 1 ? content[selectedLanguage].candidates : content[selectedLanguage].candidate}
-                    </p>
+                    <div className="space-y-2">
+                      <p className="text-gray-600">
+                        {content[selectedLanguage].yourZone}: <strong>{selectedLanguage === 'english' ? voterZone.name : voterZone.nameGujarati}</strong> - {content[selectedLanguage].selectUpTo} {voterZone.seats} {voterZone.seats > 1 ? content[selectedLanguage].candidates : content[selectedLanguage].candidate}
+                      </p>
+                      {voterZone.code === 'KUTCH' && voterZone.seats === 1 && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+                          <p className="font-medium">
+                            {selectedLanguage === 'english' 
+                              ? 'Note: 1 seat is pre-declared. Please vote for 1 candidate from the available options.'
+                              : 'નોંધ: 1 બેઠક પહેલેથી જ ઘોષિત છે. કૃપા કરીને ઉપલબ્ધ વિકલ્પોમાંથી 1 ઉમેદવારને મત આપો.'}
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
 
@@ -1447,6 +1458,13 @@ export default function YuvaPankVotingPage() {
                   </CardTitle>
                   <CardDescription>
                     {content[selectedLanguage].selectUpTo} {zone.seats} {zone.seats > 1 ? content[selectedLanguage].candidates : content[selectedLanguage].candidate} {content[selectedLanguage].yourZone.toLowerCase()}
+                    {zone.code === 'KUTCH' && zone.seats === 1 && (
+                      <span className="block mt-1 text-blue-600 font-medium">
+                        {selectedLanguage === 'english' 
+                          ? '(1 seat is pre-declared)'
+                          : '(1 બેઠક પહેલેથી જ ઘોષિત છે)'}
+                      </span>
+                    )}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
