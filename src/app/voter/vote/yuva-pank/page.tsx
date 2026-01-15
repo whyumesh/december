@@ -487,60 +487,15 @@ export default function YuvaPankVotingPage() {
         setZones([zone])
         
         // Generate photo URLs for candidates with photos (in parallel for better performance)
+        // Use optimized direct image endpoint (no async API calls needed)
         const urls: Record<string, string> = {}
-        const photoPromises: Promise<void>[] = []
-        
         for (const candidate of randomizedCandidates) {
           if (candidate.photoFileKey) {
-            const promise = (async () => {
-              try {
-                console.log(`🖼️ Generating photo URL for Yuva Pankh candidate ${candidate.id} (${candidate.name}) with fileKey:`, candidate.photoFileKey);
-                const photoResponse = await fetch("/api/admin/view-document", {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({ fileKey: candidate.photoFileKey }),
-                })
-                
-                if (photoResponse.ok) {
-                  const urlData = await photoResponse.json()
-                  const photoUrl = urlData.downloadUrl || urlData.url;
-                  if (photoUrl) {
-                    urls[candidate.id] = photoUrl;
-                    console.log(`✅ Photo URL generated for Yuva Pankh candidate ${candidate.id}:`, photoUrl.substring(0, 100) + '...');
-                  } else {
-                    console.warn(`⚠️ No photo URL in response for candidate ${candidate.id} - Response:`, urlData);
-                  }
-                } else {
-                  const errorText = await photoResponse.text();
-                  let errorData;
-                  try {
-                    errorData = JSON.parse(errorText);
-                  } catch {
-                    errorData = { error: errorText };
-                  }
-                  console.error(`❌ Failed to get photo URL for candidate ${candidate.id}:`, {
-                    status: photoResponse.status,
-                    error: errorData.error || errorData.details || errorText,
-                    fileKey: candidate.photoFileKey,
-                    normalizedKey: errorData.normalizedKey,
-                    originalKey: errorData.originalKey
-                  });
-                }
-              } catch (error) {
-                console.error(`❌ Error generating URL for candidate ${candidate.id}:`, error)
-              }
-            })()
-            photoPromises.push(promise)
-          } else {
-            console.log(`ℹ️ No photoFileKey for Yuva Pankh candidate ${candidate.id} (${candidate.name})`);
+            // Direct image endpoint - much faster than API calls
+            urls[candidate.id] = `/api/images/yuva-pankh/${candidate.id}`
           }
         }
-        
-        // Wait for all photo URLs to be generated
-        await Promise.all(photoPromises)
-        console.log(`📸 Generated ${Object.keys(urls).length} photo URLs out of ${photoPromises.length} Yuva Pankh candidates with photos`);
+        console.log(`📸 Set ${Object.keys(urls).length} photo URLs for Yuva Pankh candidates (optimized loading)`);
         setPhotoUrls(urls)
     } catch (error) {
       console.error('❌ Error fetching candidates:', error)
