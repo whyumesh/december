@@ -265,7 +265,7 @@ export default function HomePage() {
                                             <Link href="/voter/login" className="block">
                                                 <Button className="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-semibold">
                                                     <Vote className="h-4 w-4 mr-2" />
-                                                    Voting is now open for Anya Gujarat and Kutch zones
+                                                    Voting is now open for Kutch zones
                                                 </Button>
                                             </Link>
                                         </div>
@@ -295,7 +295,7 @@ export default function HomePage() {
                             <Link href="/voter/login">
                                 <Button className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold">
                                     <Vote className="h-4 w-4 mr-2" />
-                                    Voting is now open for Anya Gujarat and Kutch zones
+                                    Voting is now open for Kutch zones
                                 </Button>
                             </Link>
                         </div>
@@ -1015,7 +1015,7 @@ export default function HomePage() {
                             <Link href="/voter/login">
                                 <Button className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold">
                                     <Vote className="h-4 w-4 mr-2" />
-                                    Voting is now open for Anya Gujarat and Kutch zones
+                                    Voting is now open for Kutch zones
                                 </Button>
                             </Link>
                         </div>
