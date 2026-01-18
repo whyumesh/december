@@ -553,7 +553,7 @@ export default function VoterManagementPage() {
                                             <th className="text-left p-2 sm:p-3 text-xs sm:text-sm font-medium text-gray-700 hidden lg:table-cell">Email</th>
                                             <th className="text-left p-2 sm:p-3 text-xs sm:text-sm font-medium text-gray-700 hidden md:table-cell">City</th>
                                             <th className="text-left p-2 sm:p-3 text-xs sm:text-sm font-medium text-gray-700">Mobile</th>
-                                            <th className="text-left p-2 sm:p-3 text-xs sm:text-sm font-medium text-gray-700 hidden lg:table-cell">Yuva Pank Zone</th>
+                                            <th className="text-left p-2 sm:p-3 text-xs sm:text-sm font-medium text-gray-700">Yuva Pank Zone</th>
                                             <th className="text-left p-2 sm:p-3 text-xs sm:text-sm font-medium text-gray-700 hidden lg:table-cell">Karobari Zone</th>
                                             <th className="text-left p-2 sm:p-3 text-xs sm:text-sm font-medium text-gray-700 hidden lg:table-cell">Trustee Zone</th>
                                             <th className="text-left p-2 sm:p-3 text-xs sm:text-sm font-medium text-gray-700">Status</th>
@@ -588,7 +588,7 @@ export default function VoterManagementPage() {
                                                 <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-600 font-mono">
                                                     {voter.phone}
                                                 </td>
-                                                <td className="p-2 sm:p-3 hidden lg:table-cell">
+                                                <td className="p-2 sm:p-3">
                                                     {voter.yuvaPankZone ? (
                                                         <Badge className="bg-green-100 text-green-800">
                                                             {voter.yuvaPankZone.name}
