@@ -1,13 +1,44 @@
 import { PrismaClient } from '@prisma/client'
+import * as fs from 'fs'
+
+// Load environment variables from .env.local
+function loadEnvFile(filePath: string) {
+  if (fs.existsSync(filePath)) {
+    const content = fs.readFileSync(filePath, 'utf-8')
+    content.split('\n').forEach(line => {
+      const trimmed = line.trim()
+      if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
+        const [key, ...valueParts] = trimmed.split('=')
+        const value = valueParts.join('=').trim().replace(/^["']|["']$/g, '')
+        if (!process.env[key.trim()]) {
+          process.env[key.trim()] = value
+        }
+      }
+    })
+  }
+}
+
+loadEnvFile('.env.local')
+loadEnvFile('.env')
 
 const prisma = new PrismaClient()
 
-// Map region names to zone codes (matching the PDF filenames)
+// Map region names to zone codes (matching the upload route and other scripts)
 const regionToZoneMapping: Record<string, {
   yuvaPank: string | null
   karobari: string | null
   trustee: string | null
 }> = {
+  'Mumbai': {
+    yuvaPank: 'MUMBAI',
+    karobari: 'MUMBAI',
+    trustee: 'MUMBAI'
+  },
+  'Raigad': {
+    yuvaPank: 'RAIGAD',
+    karobari: 'RAIGAD',
+    trustee: 'RAIGAD'
+  },
   'Karnataka & Goa': {
     yuvaPank: 'KARNATAKA_GOA',
     karobari: 'KARNATAKA_GOA',
@@ -18,33 +49,43 @@ const regionToZoneMapping: Record<string, {
     karobari: 'KARNATAKA_GOA',
     trustee: 'KARNATAKA_GOA'
   },
-  'Raigad': {
-    yuvaPank: 'RAIGAD',
-    karobari: 'RAIGAD',
-    trustee: 'RAIGAD'
+  'Karnataka-Goa': {
+    yuvaPank: 'KARNATAKA_GOA',
+    karobari: 'KARNATAKA_GOA',
+    trustee: 'KARNATAKA_GOA'
   },
-  'Mumbai': {
-    yuvaPank: null, // Not allowed for Yuva Pankh (only Karnataka & Goa and Raigad are allowed)
-    karobari: 'MUMBAI',
-    trustee: 'MUMBAI'
+  'Kutch': {
+    yuvaPank: 'KUTCH',
+    karobari: 'KUTCH',
+    trustee: 'KUTCH'
   },
   'Bhuj': {
-    yuvaPank: null, // Not allowed for Yuva Pankh
+    yuvaPank: 'BHUJ_ANJAR',
     karobari: 'BHUJ',
     trustee: 'BHUJ'
   },
-  'Kutch': {
-    yuvaPank: null,
-    karobari: 'KUTCH',
-    trustee: 'BHUJ' // Bhuj for trustees
-  },
   'Anjar': {
-    yuvaPank: null,
+    yuvaPank: 'BHUJ_ANJAR',
     karobari: 'ANJAR',
     trustee: 'ANJAR_ANYA_GUJARAT'
   },
+  'Abdasa': {
+    yuvaPank: 'KUTCH',
+    karobari: 'ABDASA',
+    trustee: 'ABDASA_GARDA'
+  },
+  'Garda': {
+    yuvaPank: 'KUTCH',
+    karobari: 'GARADA',
+    trustee: 'ABDASA_GARDA'
+  },
+  'Abdasa & Garda': {
+    yuvaPank: 'KUTCH',
+    karobari: 'ABDASA', // Using ABDASA as the Karobari zone for Abdasa & Garda
+    trustee: 'ABDASA_GARDA'
+  },
   'Anya Gujarat': {
-    yuvaPank: null,
+    yuvaPank: 'ANYA_GUJARAT',
     karobari: 'ANYA_GUJARAT',
     trustee: 'ANJAR_ANYA_GUJARAT'
   }
@@ -88,11 +129,17 @@ async function fixVoterZones() {
   for (const voter of voters) {
     try {
       // Normalize region name
-      const region = voter.region?.trim() || ''
+      let region = voter.region?.trim() || ''
+      
+      // Handle common variations
+      if (region === 'Karnataka-Goa') {
+        region = 'Karnataka & Goa'
+      }
       
       // Find matching zone mapping
       const mapping = regionToZoneMapping[region] || 
                      regionToZoneMapping[region.replace(/&/g, 'and')] ||
+                     regionToZoneMapping[region.replace(/and/g, '&')] ||
                      null
       
       if (!mapping) {

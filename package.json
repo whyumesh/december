@@ -28,6 +28,7 @@
     "validate:voters": "tsx scripts/validate-voters.ts",
     "check:regions": "tsx scripts/check-voter-regions.ts",
     "fix:zones": "tsx scripts/fix-voter-zones.ts",
+    "check:zones": "tsx scripts/check-zone-assignments.ts",
     "upload:voters:final": "tsx scripts/upload-final-input.ts",
     "validate:deployment": "node scripts/validate-deployment.js",
     "verify:zones": "tsx scripts/verify-zone-assignments.ts",
