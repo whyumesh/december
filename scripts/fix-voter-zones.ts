@@ -91,6 +91,39 @@ const regionToZoneMapping: Record<string, {
   }
 }
 
+// Helper function to calculate age as of a specific date from DOB
+function calculateAgeAsOf(dob: string | null, referenceDate: Date): number | null {
+  if (!dob) return null
+  
+  try {
+    // Handle DD/MM/YYYY format
+    const parts = dob.split('/')
+    if (parts.length !== 3) return null
+    
+    const day = parseInt(parts[0], 10)
+    const month = parseInt(parts[1], 10) - 1 // JavaScript months are 0-indexed
+    const year = parseInt(parts[2], 10)
+    
+    if (isNaN(day) || isNaN(month) || isNaN(year)) return null
+    
+    const birthDate = new Date(year, month, day)
+    if (birthDate.getDate() !== day || birthDate.getMonth() !== month || birthDate.getFullYear() !== year) {
+      return null
+    }
+    
+    let age = referenceDate.getFullYear() - birthDate.getFullYear()
+    const monthDiff = referenceDate.getMonth() - birthDate.getMonth()
+    
+    if (monthDiff < 0 || (monthDiff === 0 && referenceDate.getDate() < birthDate.getDate())) {
+      age--
+    }
+    
+    return age
+  } catch {
+    return null
+  }
+}
+
 async function findZoneId(code: string | null, electionType: string): Promise<string | null> {
   if (!code) return null
   
@@ -107,13 +140,14 @@ async function findZoneId(code: string | null, electionType: string): Promise<st
 async function fixVoterZones() {
   console.log('🔧 Starting voter zone reassignment...\n')
   
-  // Get all voters
+  // Get all voters with DOB for accurate age calculation
   const voters = await prisma.voter.findMany({
     select: {
       id: true,
       name: true,
       region: true,
       age: true,
+      dob: true, // Include DOB for accurate age calculation
       yuvaPankZoneId: true,
       karobariZoneId: true,
       trusteeZoneId: true,
@@ -148,11 +182,23 @@ async function fixVoterZones() {
         continue
       }
       
-      // Calculate age if not available
-      let age = voter.age || 25 // Default age if not available
+      // Calculate age as of August 31, 2025 for Yuva Pankh eligibility
+      const cutoffDate = new Date('2025-08-31T23:59:59')
+      let ageAsOfCutoff: number | null = null
+      
+      if (voter.dob) {
+        ageAsOfCutoff = calculateAgeAsOf(voter.dob, cutoffDate)
+      }
+      
+      // Fallback to stored age if DOB is not available
+      const age = ageAsOfCutoff !== null ? ageAsOfCutoff : (voter.age || 25)
+      
+      // For Yuva Pankh: use age as of Aug 31, 2025 (must be 18-39)
+      // For Karobari and Trustee: use age (must be 18+)
+      const isEligibleForYuvaPankh = ageAsOfCutoff !== null && ageAsOfCutoff >= 18 && ageAsOfCutoff <= 39
       
       // Find zones
-      const yuvaPankZoneId = (age >= 18 && age <= 39 && mapping.yuvaPank) 
+      const yuvaPankZoneId = (isEligibleForYuvaPankh && mapping.yuvaPank) 
         ? await findZoneId(mapping.yuvaPank, 'YUVA_PANK')
         : null
       

@@ -23,6 +23,39 @@ loadEnvFile('.env')
 
 const prisma = new PrismaClient()
 
+// Helper function to calculate age as of a specific date from DOB
+function calculateAgeAsOf(dob: string | null, referenceDate: Date): number | null {
+  if (!dob) return null
+  
+  try {
+    // Handle DD/MM/YYYY format
+    const parts = dob.split('/')
+    if (parts.length !== 3) return null
+    
+    const day = parseInt(parts[0], 10)
+    const month = parseInt(parts[1], 10) - 1 // JavaScript months are 0-indexed
+    const year = parseInt(parts[2], 10)
+    
+    if (isNaN(day) || isNaN(month) || isNaN(year)) return null
+    
+    const birthDate = new Date(year, month, day)
+    if (birthDate.getDate() !== day || birthDate.getMonth() !== month || birthDate.getFullYear() !== year) {
+      return null
+    }
+    
+    let age = referenceDate.getFullYear() - birthDate.getFullYear()
+    const monthDiff = referenceDate.getMonth() - birthDate.getMonth()
+    
+    if (monthDiff < 0 || (monthDiff === 0 && referenceDate.getDate() < birthDate.getDate())) {
+      age--
+    }
+    
+    return age
+  } catch {
+    return null
+  }
+}
+
 async function checkZoneAssignments() {
   console.log('🔍 Checking Voter Zone Assignments\n')
   console.log('='.repeat(80))
@@ -55,13 +88,23 @@ async function checkZoneAssignments() {
     }
   })
   
-  const votersMissingYuvaPank = await prisma.voter.count({
+  // Calculate missing Yuva Pank voters based on age as of Aug 31, 2025
+  const cutoffDate = new Date('2025-08-31T23:59:59')
+  const allVotersForYuvaPank = await prisma.voter.findMany({
     where: {
       voterId: { not: { startsWith: 'TEST_' } },
-      age: { gte: 18, lte: 39 },
-      yuvaPankZoneId: null
+      yuvaPankZoneId: null,
+      dob: { not: null }
+    },
+    select: {
+      dob: true
     }
   })
+  
+  const votersMissingYuvaPank = allVotersForYuvaPank.filter(v => {
+    const ageAsOfCutoff = calculateAgeAsOf(v.dob, cutoffDate)
+    return ageAsOfCutoff !== null && ageAsOfCutoff >= 18 && ageAsOfCutoff <= 39
+  }).length
   
   const votersMissingKarobari = await prisma.voter.count({
     where: {
@@ -173,22 +216,29 @@ async function checkZoneAssignments() {
   const missingYuvaPank = await prisma.voter.findMany({
     where: {
       voterId: { not: { startsWith: 'TEST_' } },
-      age: { gte: 18, lte: 39 },
-      yuvaPankZoneId: null
+      yuvaPankZoneId: null,
+      dob: { not: null }
     },
-    take: 5,
     select: {
       voterId: true,
       name: true,
       region: true,
-      age: true
+      age: true,
+      dob: true
     }
   })
   
-  if (missingYuvaPank.length > 0) {
-    console.log(`\n   Missing Yuva Pank Zone (showing first ${missingYuvaPank.length}):`)
-    missingYuvaPank.forEach(v => {
-      console.log(`      - ${v.voterId}: ${v.name} (${v.region}, age ${v.age})`)
+  // Filter by age as of Aug 31, 2025
+  const eligibleMissingYuvaPank = missingYuvaPank.filter(v => {
+    const ageAsOfCutoff = calculateAgeAsOf(v.dob, cutoffDate)
+    return ageAsOfCutoff !== null && ageAsOfCutoff >= 18 && ageAsOfCutoff <= 39
+  }).slice(0, 5)
+  
+  if (eligibleMissingYuvaPank.length > 0) {
+    console.log(`\n   Missing Yuva Pank Zone (age 18-39 as of Aug 31, 2025, showing first ${eligibleMissingYuvaPank.length}):`)
+    eligibleMissingYuvaPank.forEach(v => {
+      const ageAsOfCutoff = calculateAgeAsOf(v.dob, cutoffDate)
+      console.log(`      - ${v.voterId}: ${v.name} (${v.region}, age ${v.age}, age as of Aug 31, 2025: ${ageAsOfCutoff})`)
     })
   }
   
@@ -201,7 +251,12 @@ async function checkZoneAssignments() {
       region: 'Abdasa & Garda',
       voterId: { not: { startsWith: 'TEST_' } }
     },
-    include: {
+    select: {
+      voterId: true,
+      name: true,
+      age: true,
+      dob: true,
+      region: true,
       yuvaPankZone: { select: { code: true, name: true } },
       karobariZone: { select: { code: true, name: true } },
       trusteeZone: { select: { code: true, name: true } }
@@ -212,9 +267,15 @@ async function checkZoneAssignments() {
   if (abdasaGardaVoters.length > 0) {
     console.log(`\n   Found ${abdasaGardaVoters.length} sample voters from "Abdasa & Garda":`)
     abdasaGardaVoters.forEach(v => {
+      const ageAsOfCutoff = v.dob ? calculateAgeAsOf(v.dob, cutoffDate) : null
+      const ageDisplay = ageAsOfCutoff !== null 
+        ? `${v.age || 'N/A'} (age as of Aug 31, 2025: ${ageAsOfCutoff})`
+        : (v.age || 'N/A')
+      
       console.log(`\n   📌 ${v.voterId}: ${v.name}`)
-      console.log(`      Age: ${v.age || 'N/A'}`)
-      console.log(`      Yuva Pank Zone: ${v.yuvaPankZone ? v.yuvaPankZone.name : '❌ Missing'}`)
+      console.log(`      Age: ${ageDisplay}`)
+      console.log(`      DOB: ${v.dob || 'N/A'}`)
+      console.log(`      Yuva Pank Zone: ${v.yuvaPankZone ? v.yuvaPankZone.name : '❌ Missing'} ${ageAsOfCutoff !== null && ageAsOfCutoff >= 18 && ageAsOfCutoff <= 39 ? '(eligible)' : ageAsOfCutoff !== null ? '(not eligible - age)' : ''}`)
       console.log(`      Karobari Zone: ${v.karobariZone ? v.karobariZone.name : '❌ Missing'}`)
       console.log(`      Trustee Zone: ${v.trusteeZone ? v.trusteeZone.name : '❌ Missing'}`)
     })
