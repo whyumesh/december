@@ -229,14 +229,19 @@ async function handler(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // Return success response without exposing OTP
+    // Return success response; in development include OTP so it's visible in Network tab
+    const isDev = process.env.NODE_ENV === 'development'
     const successResponse = NextResponse.json({ 
       message: message,
       success: true,
-      method: useEmail ? 'email' : 'sms'
+      method: useEmail ? 'email' : 'sms',
+      ...(isDev && { devOtp: otpCode }),
     })
     
     console.log('=== Send OTP Handler Success ===')
+    if (isDev) {
+      console.log('   OTP (see also response.devOtp in Network tab):', otpCode)
+    }
     console.log('Response status:', 200)
     return successResponse
 
