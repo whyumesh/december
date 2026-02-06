@@ -113,7 +113,6 @@ export default function OfflineTrusteesLoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="e.g. offline-admin-1@kms-election.com"
                   autoComplete="email"
                   required
                 />
@@ -127,7 +126,6 @@ export default function OfflineTrusteesLoginPage() {
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="e.g. OfflineVote1!"
                     autoComplete="current-password"
                     required
                     className="pr-10"
