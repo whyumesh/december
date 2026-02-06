@@ -941,7 +941,7 @@ export default function VoterDashboard() {
                           <CheckCircle className="h-4 w-4 mr-2" />
                           {content[selectedLanguage].alreadyVoted}
                         </Button>
-                      ) : election.id === 'trustees' && election.isAgeRestricted ? (
+                      ) : election.id === 'trustees' && (election as { isAgeRestricted?: boolean }).isAgeRestricted ? (
                         <>
                           <div className="mb-3 p-3 bg-gray-50 border border-gray-200 rounded-md">
                             <div className="flex items-start">

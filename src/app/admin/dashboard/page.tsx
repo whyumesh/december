@@ -109,6 +109,19 @@ interface DashboardStats {
     voterStats?: VoterStatistics;
 }
 
+interface OfflineVoteZoneCount {
+    zoneId: string;
+    zoneName: string;
+    count: number;
+}
+
+interface OfflineVoteStats {
+    total: number;
+    merged: number;
+    unmerged: number;
+    byZone?: OfflineVoteZoneCount[];
+}
+
 interface RegionTurnout {
     zoneId: string;
     zoneCode: string;
@@ -195,6 +208,8 @@ export default function AdminDashboard() {
     const [isExporting, setIsExporting] = useState(false);
     const [results, setResults] = useState<ResultsData | null>(null);
     const [isLoadingResults, setIsLoadingResults] = useState(false);
+    const [offlineVotes, setOfflineVotes] = useState<OfflineVoteStats>({ total: 0, merged: 0, unmerged: 0, byZone: [] });
+    const [isMerging, setIsMerging] = useState(false);
     const router = useRouter();
 
     const fetchDashboardData = useCallback(async (isRefresh = false) => {
@@ -238,6 +253,10 @@ export default function AdminDashboard() {
                 console.log('Stats set:', data.stats);
             } else {
                 console.warn('No stats in response:', data);
+            }
+
+            if (data.offlineVotes) {
+                setOfflineVotes(data.offlineVotes);
             }
 
             if (data.recentCandidates) {
@@ -500,6 +519,38 @@ export default function AdminDashboard() {
             router.push("/admin/login");
         }
     };
+
+    const handleMergeOfflineVotes = async () => {
+        if (!confirm(`Are you sure you want to merge ${offlineVotes.unmerged} unmerged offline vote(s) into online results (offline + online)? This action cannot be undone.`)) {
+            return
+        }
+
+        setIsMerging(true)
+        setError(null)
+
+        try {
+            const response = await fetch('/api/admin/offline-votes/trustees/merge', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to merge offline votes')
+            }
+
+            alert(`Successfully merged ${data.mergedCount} offline vote(s) from ${data.voterCount} voter(s).`)
+            
+            // Refresh dashboard data
+            await fetchDashboardData(true)
+        } catch (error: any) {
+            setError(error.message || 'Failed to merge offline votes')
+            alert(`Merge failed: ${error.message || 'Unknown error'}`)
+        } finally {
+            setIsMerging(false)
+        }
+    }
 
     const handleExportInsights = async () => {
         try {
@@ -901,6 +952,88 @@ export default function AdminDashboard() {
                             Export Data
                         </Button>
                     </div>
+                    </CardContent>
+                </Card>
+
+                {/* Offline Vote Management Section */}
+                <Card className="mb-8">
+                    <CardHeader>
+                        <CardTitle>Offline Vote Management</CardTitle>
+                        <CardDescription>
+                            Manage offline votes for trustee elections
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {/* Statistics */}
+                        <div className="grid grid-cols-3 gap-4 mb-4">
+                            <Card>
+                                <CardContent className="p-4 text-center">
+                                    <div className="text-2xl font-bold">{offlineVotes.total}</div>
+                                    <div className="text-sm text-gray-600">Total Offline Votes</div>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardContent className="p-4 text-center">
+                                    <div className="text-2xl font-bold text-green-600">{offlineVotes.merged}</div>
+                                    <div className="text-sm text-gray-600">Merged</div>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardContent className="p-4 text-center">
+                                    <div className="text-2xl font-bold text-orange-600">{offlineVotes.unmerged}</div>
+                                    <div className="text-sm text-gray-600">Unmerged</div>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        {/* Offline vote count per zone */}
+                        {offlineVotes.byZone && offlineVotes.byZone.length > 0 && (
+                            <div className="mb-4">
+                                <div className="text-sm font-medium text-gray-700 mb-2">Offline votes per zone</div>
+                                <div className="flex flex-wrap gap-2">
+                                    {offlineVotes.byZone.map((z) => (
+                                        <Badge key={z.zoneId} variant="secondary" className="text-xs py-1.5 px-2">
+                                            {z.zoneName}: <span className="font-semibold ml-1">{z.count}</span>
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Actions - Enter Offline Vote is only via /admin/offline-votes/login (15 offline admins) */}
+                        <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
+                            <Link href="/admin/offline-votes/trustees/list">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-xs"
+                                >
+                                    <Eye className="h-3 w-3 mr-1" />
+                                    View Offline Votes
+                                </Button>
+                            </Link>
+                            {offlineVotes.unmerged > 0 && (
+                                <Button
+                                    variant="default"
+                                    size="sm"
+                                    className="text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                                    onClick={handleMergeOfflineVotes}
+                                    disabled={isMerging}
+                                >
+                                    {isMerging ? (
+                                        <>
+                                            <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                                            Merging...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <CheckCircle className="h-3 w-3 mr-1" />
+                                            Merge offline + online ({offlineVotes.unmerged})
+                                        </>
+                                    )}
+                                </Button>
+                            )}
+                        </div>
                     </CardContent>
                 </Card>
 

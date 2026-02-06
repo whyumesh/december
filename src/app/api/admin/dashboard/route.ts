@@ -292,6 +292,67 @@ export async function GET(request: NextRequest) {
       count: stat._count.id
     }))
 
+    // Get offline vote statistics for trustee election
+    const trusteeElection = await prisma.election.findFirst({
+      where: { type: 'TRUSTEES', status: 'ACTIVE' }
+    })
+    
+    let offlineVoteStats: [number, number, number] = [0, 0, 0]
+    let offlineVotesByZone: Array<{ zoneId: string; zoneName: string; count: number }> = []
+
+    if (trusteeElection) {
+      offlineVoteStats = await Promise.all([
+        prisma.offlineVote.count({
+          where: { electionId: trusteeElection.id }
+        }),
+        prisma.offlineVote.count({
+          where: { electionId: trusteeElection.id, isMerged: true }
+        }),
+        prisma.offlineVote.count({
+          where: { electionId: trusteeElection.id, isMerged: false }
+        })
+      ]) as [number, number, number]
+
+      const offlineVotesForZones = await prisma.offlineVote.findMany({
+        where: { electionId: trusteeElection.id },
+        select: {
+          trusteeCandidateId: true,
+          trusteeCandidate: {
+            select: {
+              zoneId: true,
+              zone: { select: { id: true, name: true } }
+            }
+          }
+        }
+      })
+      const zoneCountMap = new Map<string, { name: string; count: number }>()
+      let notaCount = 0
+      for (const v of offlineVotesForZones) {
+        if (!v.trusteeCandidate?.zoneId) {
+          notaCount++
+          continue
+        }
+        const z = v.trusteeCandidate.zone
+        if (!z) {
+          notaCount++
+          continue
+        }
+        const key = z.id
+        if (!zoneCountMap.has(key)) {
+          zoneCountMap.set(key, { name: z.name, count: 0 })
+        }
+        zoneCountMap.get(key)!.count++
+      }
+      offlineVotesByZone = Array.from(zoneCountMap.entries()).map(([zoneId, { name, count }]) => ({
+        zoneId,
+        zoneName: name,
+        count
+      })).sort((a, b) => b.count - a.count)
+      if (notaCount > 0) {
+        offlineVotesByZone.push({ zoneId: '_nota', zoneName: 'NOTA (no candidate selected)', count: notaCount })
+      }
+    }
+
     const [totalYuvaPankhCandidates, totalYuvaPankhNominees, totalKarobariCandidates, totalTrusteeCandidates] = await Promise.all([
       prisma.yuvaPankhCandidate.count(),
       prisma.yuvaPankhNominee.count(),
@@ -608,6 +669,12 @@ export async function GET(request: NextRequest) {
     const response = {
       stats,
       recentCandidates: formattedCandidates,
+      offlineVotes: {
+        total: offlineVoteStats[0],
+        merged: offlineVoteStats[1],
+        unmerged: offlineVoteStats[2],
+        byZone: offlineVotesByZone
+      },
       timestamp: new Date().toISOString()
     };
 
