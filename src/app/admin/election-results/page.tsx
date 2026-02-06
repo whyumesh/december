@@ -46,6 +46,14 @@ interface ZoneResult {
   candidates: CandidateResult[]
 }
 
+interface CandidateResult {
+  id: string
+  name: string
+  votes: number
+  onlineVotes?: number
+  offlineVotes?: number
+}
+
 interface ElectionResults {
   yuvaPankh: {
     name: string
@@ -58,6 +66,8 @@ interface ElectionResults {
   trustee: {
     name: string
     zones: ZoneResult[]
+    zonesOffline?: ZoneResult[]
+    zonesMerged?: ZoneResult[]
   }
   timestamp: string
 }
@@ -93,6 +103,7 @@ export default function ElectionResults() {
   const [isOtp2Verified, setIsOtp2Verified] = useState(false)
   const [isSendingOtp2, setIsSendingOtp2] = useState(false)
   const [isVerifyingOtp2, setIsVerifyingOtp2] = useState(false)
+  const [trusteeViewMode, setTrusteeViewMode] = useState<'online' | 'offline' | 'merged'>('merged')
   
   const router = useRouter()
 
@@ -740,55 +751,110 @@ export default function ElectionResults() {
                   <span>{results.trustee.name}</span>
                 </CardTitle>
                 <CardDescription>
-                  Trustee election results by zone
+                  Trustee election results by zone - View online, offline, or merged votes
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {results.trustee.zones.length > 0 ? (
-                  <div className="space-y-6">
-                    {results.trustee.zones.map((zoneResult) => (
-                      <div key={zoneResult.zoneId} className="border rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-4">
-                          <div>
-                            <h4 className="font-semibold text-lg">{zoneResult.zone?.name || 'Unknown Zone'}</h4>
-                            <p className="text-gray-600">{zoneResult.zone?.nameGujarati || 'Unknown Zone (Gujarati)'}</p>
-                            <p className="text-sm text-gray-500">Zone {zoneResult.zone?.code || 'N/A'} • {zoneResult.zone?.seats || 0} seats</p>
-                          </div>
-                          <Badge variant="outline" className="text-purple-600">
-                            {zoneResult.candidates.length} candidates
-                          </Badge>
-                        </div>
-                        <div className="space-y-2">
-                          {zoneResult.candidates.map((candidate, index) => (
-                            <div key={candidate.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                              <div className="flex items-center space-x-3">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
-                                  index === 0 ? 'bg-yellow-100 text-yellow-800' : 
-                                  index === 1 ? 'bg-gray-100 text-gray-800' : 
-                                  index === 2 ? 'bg-orange-100 text-orange-800' : 
-                                  'bg-blue-100 text-blue-800'
-                                }`}>
-                                  {index + 1}
-                                </div>
-                                <span className="font-medium">{candidate.name}</span>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <Trophy className="h-4 w-4 text-yellow-600" />
-                                <span className="font-bold text-lg">{candidate.votes}</span>
-                                <span className="text-sm text-gray-500">votes</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                {/* View Mode Tabs */}
+                <div className="flex gap-2 mb-6 border-b">
+                  <Button
+                    variant={trusteeViewMode === 'online' ? 'default' : 'ghost'}
+                    onClick={() => setTrusteeViewMode('online')}
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600"
+                  >
+                    Online Votes
+                  </Button>
+                  <Button
+                    variant={trusteeViewMode === 'offline' ? 'default' : 'ghost'}
+                    onClick={() => setTrusteeViewMode('offline')}
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600"
+                  >
+                    Offline Votes
+                  </Button>
+                  <Button
+                    variant={trusteeViewMode === 'merged' ? 'default' : 'ghost'}
+                    onClick={() => setTrusteeViewMode('merged')}
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600"
+                  >
+                    Merged Votes
+                  </Button>
+                </div>
+
+                {(() => {
+                  let zonesToShow: ZoneResult[] = []
+                  let viewLabel = ''
+
+                  switch (trusteeViewMode) {
+                    case 'online':
+                      zonesToShow = results.trustee.zones || []
+                      viewLabel = 'Online'
+                      break
+                    case 'offline':
+                      zonesToShow = results.trustee.zonesOffline || []
+                      viewLabel = 'Offline'
+                      break
+                    case 'merged':
+                      zonesToShow = results.trustee.zonesMerged || results.trustee.zones || []
+                      viewLabel = 'Merged'
+                      break
+                  }
+
+                  return zonesToShow.length > 0 ? (
+                    <div className="space-y-6">
+                      <div className="mb-4">
+                        <Badge variant="outline" className="text-purple-600">
+                          Showing {viewLabel} Votes
+                        </Badge>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Vote className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                    <p className="text-gray-500">No votes recorded for Trustee election</p>
-                  </div>
-                )}
+                      {zonesToShow.map((zoneResult) => (
+                        <div key={zoneResult.zoneId} className="border rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-4">
+                            <div>
+                              <h4 className="font-semibold text-lg">{zoneResult.zone?.name || 'Unknown Zone'}</h4>
+                              <p className="text-gray-600">{zoneResult.zone?.nameGujarati || 'Unknown Zone (Gujarati)'}</p>
+                              <p className="text-sm text-gray-500">Zone {zoneResult.zone?.code || 'N/A'} • {zoneResult.zone?.seats || 0} seats</p>
+                            </div>
+                            <Badge variant="outline" className="text-purple-600">
+                              {zoneResult.candidates.length} candidates
+                            </Badge>
+                          </div>
+                          <div className="space-y-2">
+                            {zoneResult.candidates.map((candidate, index) => (
+                              <div key={candidate.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div className="flex items-center space-x-3">
+                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
+                                    index === 0 ? 'bg-yellow-100 text-yellow-800' : 
+                                    index === 1 ? 'bg-gray-100 text-gray-800' : 
+                                    index === 2 ? 'bg-orange-100 text-orange-800' : 
+                                    'bg-blue-100 text-blue-800'
+                                  }`}>
+                                    {index + 1}
+                                  </div>
+                                  <span className="font-medium">{candidate.name}</span>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <Trophy className="h-4 w-4 text-yellow-600" />
+                                  <span className="font-bold text-lg">{candidate.votes}</span>
+                                  <span className="text-sm text-gray-500">votes</span>
+                                  {trusteeViewMode === 'merged' && (candidate.onlineVotes !== undefined || candidate.offlineVotes !== undefined) && (
+                                    <span className="text-xs text-gray-400 ml-2">
+                                      ({candidate.onlineVotes || 0} online, {candidate.offlineVotes || 0} offline)
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Vote className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                      <p className="text-gray-500">No {viewLabel.toLowerCase()} votes recorded for Trustee election</p>
+                    </div>
+                  )
+                })()}
               </CardContent>
             </Card>
           </div>

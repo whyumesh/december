@@ -149,10 +149,42 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // Process Trustee results
+    // Process Trustee results - separate online and offline
     const trusteeVotes = votes.filter(vote => vote.trusteeCandidateId !== null);
     const trusteeResults = new Map();
+    const trusteeResultsOffline = new Map();
     
+    // Get offline votes for trustee election
+    const trusteeElection = await prisma.election.findFirst({
+      where: { type: 'TRUSTEES', status: 'ACTIVE' }
+    })
+    
+    const offlineTrusteeVotes = trusteeElection ? await prisma.offlineVote.findMany({
+      where: {
+        electionId: trusteeElection.id,
+        trusteeCandidateId: { not: null }
+      },
+      include: {
+        trusteeCandidate: {
+          include: {
+            user: {
+              select: { name: true }
+            },
+            zone: {
+              select: {
+                id: true,
+                name: true,
+                nameGujarati: true,
+                code: true,
+                seats: true
+              }
+            }
+          }
+        }
+      }
+    }) : []
+    
+    // Process online votes
     trusteeVotes.forEach(vote => {
       if (vote.trusteeCandidate && vote.trusteeCandidate.zone) {
         const zoneId = vote.trusteeCandidate.zoneId;
@@ -178,6 +210,33 @@ export async function GET(request: NextRequest) {
         zoneData.candidates.get(candidateId).votes++;
       }
     });
+    
+    // Process offline votes
+    offlineTrusteeVotes.forEach(vote => {
+      if (vote.trusteeCandidate && vote.trusteeCandidate.zone) {
+        const zoneId = vote.trusteeCandidate.zoneId;
+        const candidateId = vote.trusteeCandidateId;
+        const candidateName = vote.trusteeCandidate.user?.name || vote.trusteeCandidate.name || 'Unknown';
+        const zone = vote.trusteeCandidate.zone;
+        
+        if (!trusteeResultsOffline.has(zoneId)) {
+          trusteeResultsOffline.set(zoneId, {
+            zone: zone,
+            candidates: new Map()
+          });
+        }
+        
+        const zoneData = trusteeResultsOffline.get(zoneId);
+        if (!zoneData.candidates.has(candidateId)) {
+          zoneData.candidates.set(candidateId, {
+            id: candidateId,
+            name: candidateName,
+            votes: 0
+          });
+        }
+        zoneData.candidates.get(candidateId).votes++;
+      }
+    });
 
     // Convert Maps to arrays and sort by votes
     const formatResults = (resultsMap: Map<string, any>) => {
@@ -188,6 +247,62 @@ export async function GET(request: NextRequest) {
           .sort((a: any, b: any) => b.votes - a.votes)
       }));
     };
+
+    // Merge online and offline results for trustee
+    const trusteeMergedResults = new Map()
+    const allTrusteeZones = new Set([
+      ...Array.from(trusteeResults.keys()),
+      ...Array.from(trusteeResultsOffline.keys())
+    ])
+    
+    allTrusteeZones.forEach(zoneId => {
+      const onlineZone = trusteeResults.get(zoneId)
+      const offlineZone = trusteeResultsOffline.get(zoneId)
+      const zone = onlineZone?.zone || offlineZone?.zone
+      
+      if (!zone) return
+      
+      trusteeMergedResults.set(zoneId, {
+        zone: zone,
+        candidates: new Map()
+      })
+      
+      const mergedZone = trusteeMergedResults.get(zoneId)
+      
+      // Add online votes
+      if (onlineZone) {
+        onlineZone.candidates.forEach((candidate: any, candidateId: string) => {
+          if (!mergedZone.candidates.has(candidateId)) {
+            mergedZone.candidates.set(candidateId, {
+              id: candidateId,
+              name: candidate.name,
+              votes: 0,
+              onlineVotes: 0,
+              offlineVotes: 0
+            })
+          }
+          mergedZone.candidates.get(candidateId).votes += candidate.votes
+          mergedZone.candidates.get(candidateId).onlineVotes = candidate.votes
+        })
+      }
+      
+      // Add offline votes
+      if (offlineZone) {
+        offlineZone.candidates.forEach((candidate: any, candidateId: string) => {
+          if (!mergedZone.candidates.has(candidateId)) {
+            mergedZone.candidates.set(candidateId, {
+              id: candidateId,
+              name: candidate.name,
+              votes: 0,
+              onlineVotes: 0,
+              offlineVotes: 0
+            })
+          }
+          mergedZone.candidates.get(candidateId).votes += candidate.votes
+          mergedZone.candidates.get(candidateId).offlineVotes = candidate.votes
+        })
+      }
+    })
 
     const response = {
       yuvaPankh: {
@@ -200,7 +315,9 @@ export async function GET(request: NextRequest) {
       },
       trustee: {
         name: 'Trust Mandal',
-        zones: formatResults(trusteeResults)
+        zones: formatResults(trusteeResults),
+        zonesOffline: formatResults(trusteeResultsOffline),
+        zonesMerged: formatResults(trusteeMergedResults)
       },
       timestamp: new Date().toISOString()
     };

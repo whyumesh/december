@@ -173,6 +173,13 @@ export default function AdminLoginPage() {
                   <LogIn className="h-4 w-4 mr-2" />
                   {isLoading ? 'Signing in...' : 'Sign In'}
                 </Button>
+
+                <p className="text-center text-sm text-gray-500 pt-2">
+                  Offline vote admin (1–15)?{' '}
+                  <Link href="/admin/offline-votes/trustees/login" className="text-blue-600 hover:underline font-medium">
+                    Log in here
+                  </Link>
+                </p>
               </form>
               
             </CardContent>

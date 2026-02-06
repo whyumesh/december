@@ -31,6 +31,7 @@ export const authOptions: NextAuthOptions = {
             name: 'Election Administrator',
             role: 'ADMIN',
             phone: '+1234567890',
+            isOfflineVoteAdmin: false,
           }
         }
 
@@ -75,9 +76,9 @@ export const authOptions: NextAuthOptions = {
             return null
           }
 
-          // Determine user role based on relations
+          // Determine user role based on relations (and User.role for offline admins)
           let role = 'USER'
-          if (user.adminProfile) {
+          if (user.adminProfile || user.role === 'ADMIN') {
             role = 'ADMIN'
           } else if (user.karobariAdminProfile) {
             role = 'KAROBARI_ADMIN'
@@ -87,12 +88,14 @@ export const authOptions: NextAuthOptions = {
             role = 'CANDIDATE'
           }
 
+          const isOfflineVoteAdmin = !!user.adminProfile?.isOfflineVoteAdmin
           return {
             id: user.id,
             email: user.email || '',
             name: user.name,
             role: role,
             phone: user.phone || '',
+            isOfflineVoteAdmin,
           }
         } catch (error) {
           // If database connection fails, only allow hardcoded admin
@@ -110,6 +113,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.role = user.role
         token.phone = user.phone
+        token.isOfflineVoteAdmin = user.isOfflineVoteAdmin ?? false
       }
       return token
     },
@@ -118,6 +122,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.sub!
         session.user.role = token.role as string
         session.user.phone = token.phone as string
+        session.user.isOfflineVoteAdmin = token.isOfflineVoteAdmin ?? false
       }
       return session
     }
