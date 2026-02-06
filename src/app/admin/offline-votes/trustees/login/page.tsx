@@ -8,27 +8,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { ClipboardCheck, AlertCircle, ArrowLeft, LogIn, Eye, EyeOff, Users, ChevronDown, ChevronUp } from 'lucide-react'
+import { ClipboardCheck, AlertCircle, ArrowLeft, LogIn, Eye, EyeOff } from 'lucide-react'
 import Logo from '@/components/Logo'
 import Footer from '@/components/Footer'
-
-const OFFLINE_VOTE_ADMIN_CREDENTIALS = [
-  { id: 1, email: 'offline-admin-1@kms-election.com', password: 'OfflineVote1!' },
-  { id: 2, email: 'offline-admin-2@kms-election.com', password: 'OfflineVote2!' },
-  { id: 3, email: 'offline-admin-3@kms-election.com', password: 'OfflineVote3!' },
-  { id: 4, email: 'offline-admin-4@kms-election.com', password: 'OfflineVote4!' },
-  { id: 5, email: 'offline-admin-5@kms-election.com', password: 'OfflineVote5!' },
-  { id: 6, email: 'offline-admin-6@kms-election.com', password: 'OfflineVote6!' },
-  { id: 7, email: 'offline-admin-7@kms-election.com', password: 'OfflineVote7!' },
-  { id: 8, email: 'offline-admin-8@kms-election.com', password: 'OfflineVote8!' },
-  { id: 9, email: 'offline-admin-9@kms-election.com', password: 'OfflineVote9!' },
-  { id: 10, email: 'offline-admin-10@kms-election.com', password: 'OfflineVote10!' },
-  { id: 11, email: 'offline-admin-11@kms-election.com', password: 'OfflineVote11!' },
-  { id: 12, email: 'offline-admin-12@kms-election.com', password: 'OfflineVote12!' },
-  { id: 13, email: 'offline-admin-13@kms-election.com', password: 'OfflineVote13!' },
-  { id: 14, email: 'offline-admin-14@kms-election.com', password: 'OfflineVote14!' },
-  { id: 15, email: 'offline-admin-15@kms-election.com', password: 'OfflineVote15!' },
-]
 
 export default function OfflineTrusteesLoginPage() {
   const [email, setEmail] = useState('')
@@ -36,7 +18,6 @@ export default function OfflineTrusteesLoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [showCredentials, setShowCredentials] = useState(false)
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -52,7 +33,7 @@ export default function OfflineTrusteesLoginPage() {
       })
 
       if (result?.error) {
-        setError('Invalid credentials. Use one of the 15 offline vote admin accounts below.')
+        setError('Invalid credentials. Please check your email and password.')
         return
       }
 
@@ -69,7 +50,7 @@ export default function OfflineTrusteesLoginPage() {
 
       if (!session.user.isOfflineVoteAdmin) {
         await signOut({ redirect: false })
-        setError('This login is for the 15 offline vote admins only. Use the main admin login for full dashboard access.')
+        setError('This login is for offline vote admins only. Use the main admin login for full dashboard access.')
         return
       }
 
@@ -79,11 +60,6 @@ export default function OfflineTrusteesLoginPage() {
     } finally {
       setIsLoading(false)
     }
-  }
-
-  const fillCredential = (cred: (typeof OFFLINE_VOTE_ADMIN_CREDENTIALS)[0]) => {
-    setEmail(cred.email)
-    setPassword(cred.password)
   }
 
   return (
@@ -118,7 +94,7 @@ export default function OfflineTrusteesLoginPage() {
             </div>
             <CardTitle className="text-2xl text-gray-900">Offline Trustee Vote – Login</CardTitle>
             <CardDescription>
-              Sign in with one of the 15 offline vote admin accounts to enter trustee votes
+              Sign in with your offline vote admin account to enter trustee votes
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -184,67 +160,6 @@ export default function OfflineTrusteesLoginPage() {
               </p>
             </form>
           </CardContent>
-        </Card>
-
-        {/* 15 login IDs */}
-        <Card>
-          <button
-            type="button"
-            onClick={() => setShowCredentials(!showCredentials)}
-            className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 rounded-lg transition-colors"
-          >
-            <span className="flex items-center gap-2 font-medium text-gray-900">
-              <Users className="h-5 w-5 text-indigo-600" />
-              15 Offline Vote Admin Login IDs
-            </span>
-            {showCredentials ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-          </button>
-          {showCredentials && (
-            <CardContent className="pt-0">
-              <p className="text-sm text-gray-600 mb-4">
-                Click a row to fill the login form. Keep these credentials secure.
-              </p>
-              <div className="border rounded-md overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-gray-100 text-left">
-                      <th className="px-3 py-2 font-medium text-gray-700">#</th>
-                      <th className="px-3 py-2 font-medium text-gray-700">Email</th>
-                      <th className="px-3 py-2 font-medium text-gray-700">Password</th>
-                      <th className="px-3 py-2 font-medium text-gray-700 w-20">Use</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {OFFLINE_VOTE_ADMIN_CREDENTIALS.map((cred) => (
-                      <tr
-                        key={cred.id}
-                        className="border-t hover:bg-indigo-50/50 cursor-pointer"
-                        onClick={() => fillCredential(cred)}
-                      >
-                        <td className="px-3 py-2 text-gray-600">{cred.id}</td>
-                        <td className="px-3 py-2 font-mono text-xs break-all">{cred.email}</td>
-                        <td className="px-3 py-2 font-mono text-xs">{cred.password}</td>
-                        <td className="px-3 py-2">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 text-xs"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              fillCredential(cred)
-                            }}
-                          >
-                            Use
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          )}
         </Card>
       </div>
 
