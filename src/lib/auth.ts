@@ -59,12 +59,12 @@ export const authOptions: NextAuthOptions = {
           })
 
           if (!user) {
-            console.log('User not found for email:', userEmail)
+            console.log('[AUTH] User not found for email:', userEmail)
             return null
           }
 
           if (!user.password) {
-            console.log('User has no password set:', userEmail)
+            console.log('[AUTH] User has no password set:', userEmail)
             return null
           }
 
@@ -72,9 +72,11 @@ export const authOptions: NextAuthOptions = {
           const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
 
           if (!isPasswordValid) {
-            console.log('Password mismatch for email:', userEmail)
+            console.log('[AUTH] Password mismatch for email:', userEmail)
             return null
           }
+
+          console.log('[AUTH] Password verified successfully for:', userEmail)
 
           // Determine user role based on relations (and User.role for offline admins)
           let role = 'USER'
@@ -89,6 +91,12 @@ export const authOptions: NextAuthOptions = {
           }
 
           const isOfflineVoteAdmin = !!user.adminProfile?.isOfflineVoteAdmin
+          console.log('[AUTH] Login successful:', {
+            email: userEmail,
+            role,
+            isOfflineVoteAdmin,
+            hasAdminProfile: !!user.adminProfile
+          })
           return {
             id: user.id,
             email: user.email || '',
