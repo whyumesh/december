@@ -39,10 +39,11 @@ export const authOptions: NextAuthOptions = {
         try {
           // Check if DATABASE_URL is available before attempting database operations
           if (!process.env.DATABASE_URL) {
-            console.log('DATABASE_URL not set - skipping database authentication')
+            console.log('[AUTH] DATABASE_URL not set - skipping database authentication')
             return null
           }
           
+          console.log('[AUTH] Attempting authentication for:', credentials.email)
           const userEmail = credentials.email.toLowerCase()
           const user = await prisma.user.findFirst({
             where: {
@@ -107,7 +108,12 @@ export const authOptions: NextAuthOptions = {
           }
         } catch (error) {
           // If database connection fails, only allow hardcoded admin
-          console.error('Database connection failed during authentication:', error)
+          console.error('[AUTH] Database connection failed during authentication:', error)
+          console.error('[AUTH] Error details:', {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined,
+            email: credentials.email
+          })
           return null
         }
       }
