@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { AlertCircle, CheckCircle, ArrowLeft, Loader2, User, MapPin, Users, Search } from 'lucide-react'
+import { AlertCircle, CheckCircle, ArrowLeft, Loader2, Users, Search } from 'lucide-react'
 import Link from 'next/link'
 import Logo from '@/components/Logo'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
@@ -64,6 +64,8 @@ export default function OfflineVoteEntryPage() {
   const [zones, setZones] = useState<Zone[]>([])
   const [selectedTrustees, setSelectedTrustees] = useState<Record<string, string[]>>({})
   const [zoneSearchTerms, setZoneSearchTerms] = useState<Record<string, string>>({})
+  const [zoneSearchTerms2, setZoneSearchTerms2] = useState<Record<string, string>>({}) // Second search box for Mumbai
+  const [showPreview, setShowPreview] = useState(false)
   const [showPickerByZone, setShowPickerByZone] = useState<Record<string, boolean>>({})
   const [notes, setNotes] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -185,8 +187,25 @@ export default function OfflineVoteEntryPage() {
     return false
   }
 
+  /** Match search term against multiple search terms (for Mumbai with 2 search boxes) */
+  const trusteeMatchesMultipleSearch = (trustee: Trustee, term1: string, term2: string): boolean => {
+    const match1 = term1 ? trusteeMatchesSearch(trustee, term1) : false
+    const match2 = term2 ? trusteeMatchesSearch(trustee, term2) : false
+    // If both search boxes have terms, trustee must match at least one
+    if (term1 && term2) {
+      return match1 || match2
+    }
+    // If only one has a term, use that
+    if (term1) return match1
+    if (term2) return match2
+    return false
+  }
+
   const handleTrusteeSelect = (zoneId: string, trusteeId: string, zoneSeats: number) => {
     const maxSeats = Math.max(1, Number(zoneSeats) || 1)
+    const zone = zones.find(z => z.id === zoneId)
+    const isMumbai = zone?.code === 'MUMBAI'
+    
     setSelectedTrustees(prev => {
       const current = prev[zoneId] || []
       const idx = current.indexOf(trusteeId)
@@ -197,7 +216,14 @@ export default function OfflineVoteEntryPage() {
       if (current.length >= maxSeats) return prev
       return { ...prev, [zoneId]: [...current, trusteeId] }
     })
-    setShowPickerByZone(prev => ({ ...prev, [zoneId]: false }))
+    
+    // Clear search boxes after selection (for Mumbai, clear both search boxes)
+    if (isMumbai) {
+      setZoneSearchTerms(prev => ({ ...prev, [zoneId]: '' }))
+      setZoneSearchTerms2(prev => ({ ...prev, [zoneId]: '' }))
+    } else {
+      setZoneSearchTerms(prev => ({ ...prev, [zoneId]: '' }))
+    }
   }
 
   const handleRemoveTrustee = (zoneId: string, trusteeId: string) => {
@@ -221,6 +247,16 @@ export default function OfflineVoteEntryPage() {
         setError(`Zone "${zone.name}": select at most ${maxSeats} trustee(s).`)
         return
       }
+    }
+
+    // Show preview instead of submitting directly
+    setShowPreview(true)
+  }
+
+  const handleConfirmSubmit = async () => {
+    if (!voterInfo?.voterId) {
+      setError('Voter information is missing. Please go back and validate VID again.')
+      return
     }
 
     setIsSubmitting(true)
@@ -251,22 +287,26 @@ export default function OfflineVoteEntryPage() {
 
       if (!response.ok) {
         setError(data.error || 'Failed to submit offline vote')
+        setShowPreview(false)
         return
       }
 
       setSuccess(true)
+      setShowPreview(false)
       setTimeout(() => {
         setStep('vid')
         setVid('')
         setVoterInfo(null)
         setSelectedTrustees({})
         setZoneSearchTerms({})
+        setZoneSearchTerms2({})
         setShowPickerByZone({})
         setNotes('')
         setSuccess(false)
       }, 3000)
     } catch (err: any) {
       setError(err.message || 'Failed to submit offline vote')
+      setShowPreview(false)
     } finally {
       setIsSubmitting(false)
     }
@@ -369,26 +409,6 @@ export default function OfflineVoteEntryPage() {
 
             {step === 'form' && voterInfo && (
               <div className="space-y-6">
-                {/* Voter Info Display - name, region, trustee zone only */}
-                <Card className="bg-emerald-50/80 border-emerald-200">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base flex items-center gap-2 text-emerald-900">
-                      <User className="h-4 w-4" />
-                      Voter
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-1.5 text-sm">
-                    <div className="font-medium text-emerald-900">{voterInfo.name}</div>
-                    <div className="text-emerald-800">{voterInfo.region}</div>
-                    {voterInfo.trusteeZone && (
-                      <div className="flex items-center gap-1.5 text-emerald-800">
-                        <MapPin className="h-3.5 w-3 shrink-0" />
-                        {voterInfo.trusteeZone.name}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
                 {/* Trustee Selection */}
                 <div>
                   <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -422,13 +442,20 @@ export default function OfflineVoteEntryPage() {
                   ) : (
                     <div className="space-y-6">
                         {zones.map((zone) => {
+                          const isMumbai = zone.code === 'MUMBAI'
                           const zoneSearch = (zoneSearchTerms[zone.id] || '').trim()
-                          const filtered = zoneSearch
-                            ? zone.trustees.filter((t) => trusteeMatchesSearch(t, zoneSearch))
-                            : []
+                          const zoneSearch2 = isMumbai ? (zoneSearchTerms2[zone.id] || '').trim() : ''
+                          const filtered = isMumbai
+                            ? (zoneSearch || zoneSearch2
+                                ? zone.trustees.filter((t) => trusteeMatchesMultipleSearch(t, zoneSearch, zoneSearch2))
+                                : [])
+                            : (zoneSearch
+                                ? zone.trustees.filter((t) => trusteeMatchesSearch(t, zoneSearch))
+                                : [])
                           const selected = selectedTrustees[zone.id] || []
                           const maxSeats = Math.max(1, zone.seats)
-                          const showPicker = selected.length === 0 || showPickerByZone[zone.id]
+                          // Show search boxes if seats are still available (same behavior for all zones)
+                          const showPicker = selected.length < maxSeats
                           return (
                             <Card key={zone.id} className="border-teal-200/80 overflow-hidden">
                               <CardHeader className="bg-teal-50/50 pb-3">
@@ -441,87 +468,141 @@ export default function OfflineVoteEntryPage() {
                                 </CardDescription>
                               </CardHeader>
                               <CardContent className="pt-4 space-y-3">
-                                {showPicker ? (
+                                {selected.length > 0 && (
+                                  <div className="space-y-2 mb-4">
+                                    {selected.map((id) => {
+                                      const trustee = zone.trustees.find((t) => t.id === id)
+                                      if (!trustee) return null
+                                      return (
+                                        <div
+                                          key={trustee.id}
+                                          className="flex items-center justify-between gap-2 p-3 rounded-lg border-2 border-teal-200 bg-teal-50/80"
+                                        >
+                                          <div>
+                                            <div className="font-medium text-teal-900">{trustee.name}</div>
+                                            <div className="text-sm text-teal-600">{trustee.region}</div>
+                                          </div>
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            className="text-teal-600 hover:text-red-600 hover:bg-red-50 shrink-0"
+                                            onClick={() => handleRemoveTrustee(zone.id, trustee.id)}
+                                          >
+                                            Remove
+                                          </Button>
+                                        </div>
+                                      )
+                                    })}
+                                  </div>
+                                )}
+                                {showPicker && (
                                   <>
-                                    <div className="flex items-center gap-2">
-                                      <Search className="h-4 w-4 text-teal-600" />
-                                      <Input
-                                        value={zoneSearchTerms[zone.id] || ''}
-                                        onChange={(e) => setZoneSearchTerms((prev) => ({ ...prev, [zone.id]: e.target.value }))}
-                                        placeholder={`Search trustees in ${zone.name} (name or initials)`}
-                                        className="flex-1 border-teal-200 focus:border-teal-500 focus:ring-teal-500/20"
-                                      />
-                                    </div>
-                                    {!zoneSearch ? (
-                                      <p className="text-sm text-teal-600 py-4">Type in the search box to see candidates for this zone.</p>
-                                    ) : (
-                                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                        {filtered.map((trustee) => {
-                                          const isSelected = selected.includes(trustee.id)
-                                          const atLimit = selected.length >= maxSeats
-                                          return (
-                                            <button
-                                              key={trustee.id}
-                                              type="button"
-                                              onClick={() => atLimit && !isSelected ? undefined : handleTrusteeSelect(zone.id, trustee.id, zone.seats)}
-                                              className={`p-3 border-2 rounded-lg text-left transition-all ${
-                                                isSelected ? 'border-teal-500 bg-teal-50' : 'border-teal-200 hover:border-teal-400 hover:bg-teal-50/50'
-                                              } ${atLimit && !isSelected ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                            >
-                                              <div className="flex items-start justify-between gap-2">
-                                                <div className="flex-1 min-w-0">
-                                                  <div className="font-medium text-teal-900">{trustee.name}</div>
-                                                  <div className="text-sm text-teal-600">{trustee.region}</div>
-                                                </div>
-                                                {isSelected && <CheckCircle className="h-5 w-5 text-teal-600 shrink-0" />}
-                                              </div>
-                                            </button>
-                                          )
-                                        })}
-                                        {filtered.length === 0 && (
-                                          <p className="text-sm text-teal-600 col-span-full">No trustees match &quot;{zoneSearch}&quot;.</p>
+                                    {isMumbai ? (
+                                      <>
+                                        {selected.length === 0 && (
+                                          <div className="flex items-center gap-2">
+                                            <Search className="h-4 w-4 text-teal-600" />
+                                            <Input
+                                              value={zoneSearchTerms[zone.id] || ''}
+                                              onChange={(e) => setZoneSearchTerms((prev) => ({ ...prev, [zone.id]: e.target.value }))}
+                                              placeholder={`Search trustees in ${zone.name} (name or initials) - Search 1`}
+                                              className="flex-1 border-teal-200 focus:border-teal-500 focus:ring-teal-500/20"
+                                            />
+                                          </div>
                                         )}
+                                        {selected.length < maxSeats && (
+                                          <div className="flex items-center gap-2">
+                                            <Search className="h-4 w-4 text-teal-600" />
+                                            <Input
+                                              value={zoneSearchTerms2[zone.id] || ''}
+                                              onChange={(e) => setZoneSearchTerms2((prev) => ({ ...prev, [zone.id]: e.target.value }))}
+                                              placeholder={`Search trustees in ${zone.name} (name or initials) - Search 2`}
+                                              className="flex-1 border-teal-200 focus:border-teal-500 focus:ring-teal-500/20"
+                                            />
+                                          </div>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <div className="flex items-center gap-2">
+                                        <Search className="h-4 w-4 text-teal-600" />
+                                        <Input
+                                          value={zoneSearchTerms[zone.id] || ''}
+                                          onChange={(e) => setZoneSearchTerms((prev) => ({ ...prev, [zone.id]: e.target.value }))}
+                                          placeholder={`Search trustees in ${zone.name} (name or initials)`}
+                                          className="flex-1 border-teal-200 focus:border-teal-500 focus:ring-teal-500/20"
+                                        />
                                       </div>
                                     )}
-                                  </>
-                                ) : (
-                                  <>
-                                    <div className="space-y-2">
-                                      {selected.map((id) => {
-                                        const trustee = zone.trustees.find((t) => t.id === id)
-                                        if (!trustee) return null
-                                        return (
-                                          <div
-                                            key={trustee.id}
-                                            className="flex items-center justify-between gap-2 p-3 rounded-lg border-2 border-teal-200 bg-teal-50/80"
-                                          >
-                                            <div>
-                                              <div className="font-medium text-teal-900">{trustee.name}</div>
-                                              <div className="text-sm text-teal-600">{trustee.region}</div>
-                                            </div>
-                                            <Button
-                                              type="button"
-                                              variant="ghost"
-                                              size="sm"
-                                              className="text-teal-600 hover:text-red-600 hover:bg-red-50 shrink-0"
-                                              onClick={() => handleRemoveTrustee(zone.id, trustee.id)}
-                                            >
-                                              Remove
-                                            </Button>
-                                          </div>
-                                        )
-                                      })}
-                                    </div>
-                                    {selected.length < maxSeats && (
-                                      <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        className="border-teal-300 text-teal-700 hover:bg-teal-50"
-                                        onClick={() => setShowPickerByZone((prev) => ({ ...prev, [zone.id]: true }))}
-                                      >
-                                        + Add another trustee
-                                      </Button>
+                                    {isMumbai ? (
+                                      // For Mumbai, show candidates if either search box has a term
+                                      (!zoneSearch && !zoneSearch2) ? (
+                                        <p className="text-sm text-teal-600 py-4">Type in the search box{selected.length === 0 ? 'es' : ''} to see candidates for this zone.</p>
+                                      ) : (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                          {filtered.map((trustee) => {
+                                            const isSelected = selected.includes(trustee.id)
+                                            const atLimit = selected.length >= maxSeats
+                                            return (
+                                              <button
+                                                key={trustee.id}
+                                                type="button"
+                                                onClick={() => atLimit && !isSelected ? undefined : handleTrusteeSelect(zone.id, trustee.id, zone.seats)}
+                                                className={`p-3 border-2 rounded-lg text-left transition-all ${
+                                                  isSelected ? 'border-teal-500 bg-teal-50' : 'border-teal-200 hover:border-teal-400 hover:bg-teal-50/50'
+                                                } ${atLimit && !isSelected ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                              >
+                                                <div className="flex items-start justify-between gap-2">
+                                                  <div className="flex-1 min-w-0">
+                                                    <div className="font-medium text-teal-900">{trustee.name}</div>
+                                                    <div className="text-sm text-teal-600">{trustee.region}</div>
+                                                  </div>
+                                                  {isSelected && <CheckCircle className="h-5 w-5 text-teal-600 shrink-0" />}
+                                                </div>
+                                              </button>
+                                            )
+                                          })}
+                                          {filtered.length === 0 && (
+                                            <p className="text-sm text-teal-600 col-span-full">
+                                              No trustees match {(zoneSearch && zoneSearch2) ? 'the search terms' : `"${zoneSearch || zoneSearch2}"`}.
+                                            </p>
+                                          )}
+                                        </div>
+                                      )
+                                    ) : (
+                                      !zoneSearch ? (
+                                        <p className="text-sm text-teal-600 py-4">Type in the search box to see candidates for this zone.</p>
+                                      ) : (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                          {filtered.map((trustee) => {
+                                            const isSelected = selected.includes(trustee.id)
+                                            const atLimit = selected.length >= maxSeats
+                                            return (
+                                              <button
+                                                key={trustee.id}
+                                                type="button"
+                                                onClick={() => atLimit && !isSelected ? undefined : handleTrusteeSelect(zone.id, trustee.id, zone.seats)}
+                                                className={`p-3 border-2 rounded-lg text-left transition-all ${
+                                                  isSelected ? 'border-teal-500 bg-teal-50' : 'border-teal-200 hover:border-teal-400 hover:bg-teal-50/50'
+                                                } ${atLimit && !isSelected ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                              >
+                                                <div className="flex items-start justify-between gap-2">
+                                                  <div className="flex-1 min-w-0">
+                                                    <div className="font-medium text-teal-900">{trustee.name}</div>
+                                                    <div className="text-sm text-teal-600">{trustee.region}</div>
+                                                  </div>
+                                                  {isSelected && <CheckCircle className="h-5 w-5 text-teal-600 shrink-0" />}
+                                                </div>
+                                              </button>
+                                            )
+                                          })}
+                                          {filtered.length === 0 && (
+                                            <p className="text-sm text-teal-600 col-span-full">
+                                              No trustees match &quot;{zoneSearch}&quot;.
+                                            </p>
+                                          )}
+                                        </div>
+                                      )
                                     )}
                                   </>
                                 )}
@@ -546,6 +627,83 @@ export default function OfflineVoteEntryPage() {
                   />
                 </div>
 
+                {/* Preview Modal */}
+                {showPreview && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                    <Card className="w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+                      <CardHeader>
+                        <CardTitle>Preview Before Submission</CardTitle>
+                        <CardDescription>Review your selections before submitting the offline vote</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                          <div className="font-semibold text-sm text-gray-700">Voter ID:</div>
+                          <div className="text-gray-900">{voterInfo?.voterId}</div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="font-semibold text-sm text-gray-700">Selected Trustees:</div>
+                          {zones.map((zone) => {
+                            const selected = selectedTrustees[zone.id] || []
+                            if (selected.length === 0) {
+                              return (
+                                <div key={zone.id} className="text-sm text-gray-600 pl-4">
+                                  <strong>{zone.name}:</strong> NOTA (No selection)
+                                </div>
+                              )
+                            }
+                            return (
+                              <div key={zone.id} className="space-y-1 pl-4">
+                                <div className="font-medium text-sm text-gray-700">{zone.name}:</div>
+                                {selected.map((id) => {
+                                  const trustee = zone.trustees.find((t) => t.id === id)
+                                  if (!trustee) return null
+                                  return (
+                                    <div key={trustee.id} className="text-sm text-gray-600 pl-4">
+                                      • {trustee.name} ({trustee.region})
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            )
+                          })}
+                        </div>
+
+                        {notes && (
+                          <div className="space-y-2">
+                            <div className="font-semibold text-sm text-gray-700">Notes:</div>
+                            <div className="text-sm text-gray-600 whitespace-pre-wrap">{notes}</div>
+                          </div>
+                        )}
+
+                        <div className="flex gap-4 pt-4">
+                          <Button
+                            variant="outline"
+                            onClick={() => setShowPreview(false)}
+                            className="flex-1"
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            onClick={handleConfirmSubmit}
+                            disabled={isSubmitting}
+                            className="flex-1"
+                          >
+                            {isSubmitting ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Submitting...
+                              </>
+                            ) : (
+                              'Confirm & Submit'
+                            )}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
                 {/* Actions */}
                 <div className="flex gap-4">
                   <Button
@@ -554,9 +712,11 @@ export default function OfflineVoteEntryPage() {
                       setStep('vid')
                       setVoterInfo(null)
                       setSelectedTrustees({})
-                        setZoneSearchTerms({})
-                        setShowPickerByZone({})
+                      setZoneSearchTerms({})
+                      setZoneSearchTerms2({})
+                      setShowPickerByZone({})
                       setNotes('')
+                      setShowPreview(false)
                     }}
                     className="flex-1"
                   >
@@ -567,14 +727,7 @@ export default function OfflineVoteEntryPage() {
                     disabled={isSubmitting}
                     className="flex-1"
                   >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Submitting...
-                      </>
-                    ) : (
-                      'Submit Offline Vote'
-                    )}
+                    Preview & Submit
                   </Button>
                 </div>
               </div>

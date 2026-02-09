@@ -28,6 +28,28 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error): State {
+    // Ignore MetaMask and browser extension errors
+    const errorMessage = error.message || ''
+    const errorStack = error.stack || ''
+    const isMetaMaskError = 
+      errorMessage.includes('Failed to connect to MetaMask') ||
+      errorMessage.includes('MetaMask') ||
+      errorMessage.includes('ethereum') ||
+      errorStack.includes('chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn') ||
+      errorStack.includes('moz-extension://') ||
+      errorStack.includes('safari-extension://') ||
+      errorStack.includes('inpage.js')
+    
+    // Don't show error UI for MetaMask errors
+    if (isMetaMaskError) {
+      console.warn('MetaMask extension error suppressed:', error.message)
+      return {
+        hasError: false,
+        error: null,
+        errorInfo: null
+      }
+    }
+    
     return {
       hasError: true,
       error,
@@ -36,6 +58,26 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    // Check if this is a MetaMask error
+    const errorMessage = error.message || ''
+    const errorStack = error.stack || ''
+    const componentStack = errorInfo.componentStack || ''
+    const isMetaMaskError = 
+      errorMessage.includes('Failed to connect to MetaMask') ||
+      errorMessage.includes('MetaMask') ||
+      errorMessage.includes('ethereum') ||
+      errorStack.includes('chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn') ||
+      errorStack.includes('moz-extension://') ||
+      errorStack.includes('safari-extension://') ||
+      errorStack.includes('inpage.js') ||
+      componentStack.includes('chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn')
+    
+    // Suppress MetaMask errors silently
+    if (isMetaMaskError) {
+      console.warn('MetaMask extension error suppressed:', error.message)
+      return
+    }
+
     this.setState({
       error,
       errorInfo

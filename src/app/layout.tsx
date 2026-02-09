@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import SessionProvider from "@/components/providers/SessionProvider";
+import MetaMaskErrorHandler from "@/components/MetaMaskErrorHandler";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -69,6 +70,7 @@ export default function RootLayout({
     return (
         <html lang="en" suppressHydrationWarning>
             <body className={inter.className} suppressHydrationWarning>
+                <MetaMaskErrorHandler />
                 <ErrorBoundary>
                     <SessionProvider>
                         <div className="min-h-screen bg-gray-50">
