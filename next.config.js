@@ -2,23 +2,15 @@
 const nextConfig = {
   turbopack: {},
   images: {
-    domains: ['localhost', 'upload.wikimedia.org'],
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'upload.wikimedia.org',
-        pathname: '/**',
-      },
+      { protocol: 'https', hostname: 'upload.wikimedia.org', pathname: '/**' },
+      { protocol: 'http', hostname: 'localhost', pathname: '/**' },
     ],
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 60,
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
-  // Skip font optimization during build if network fails (non-blocking)
-  optimizeFonts: process.env.SKIP_FONT_OPTIMIZATION !== 'true',
-  
-  // Performance optimizations
   experimental: {
     optimizePackageImports: [
       'lucide-react', 
@@ -35,9 +27,10 @@ const nextConfig = {
       '@radix-ui/react-separator',
       '@radix-ui/react-slot',
       '@radix-ui/react-tabs',
-      '@radix-ui/react-toast'
+      '@radix-ui/react-toast',
     ],
-    outputFileTracingIncludes: {
+  },
+  outputFileTracingIncludes: {
       '*': [
         'node_modules/next/**',
         'node_modules/styled-jsx/**',
@@ -51,9 +44,9 @@ const nextConfig = {
         'node_modules/@prisma/engines/**/query-engine-rhel-openssl-3.0.x*',
         'node_modules/@prisma/engines/**/libquery_engine-rhel-openssl-3.0.x.so.node',
       ],
-    },
-    outputFileTracingExcludes: {
-      '*': [
+  },
+  outputFileTracingExcludes: {
+    '*': [
         'node_modules/@swc/core-linux-x64-gnu/**/*',
         'node_modules/@swc/core-darwin-x64/**/*',
         'node_modules/@swc/core-darwin-arm64/**/*',
@@ -107,12 +100,9 @@ const nextConfig = {
         '.next/routes-manifest.json',
         '.next/prerender-manifest.json',
         '.next/images-manifest.json',
-      ],
-    },
-    serverComponentsExternalPackages: [],
+    ],
   },
   transpilePackages: [],
-  swcMinify: true,
   webpack: (config, { dev, isServer }) => {
     if (!dev && !isServer) {
       config.optimization.usedExports = true
@@ -189,12 +179,9 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   generateBuildId: async () => {
     return 'build-' + Date.now()
   },
 }
 
-module.exports = nextConfi
+module.exports = nextConfig
