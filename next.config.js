@@ -30,20 +30,12 @@ const nextConfig = {
       '@radix-ui/react-toast',
     ],
   },
+  // Only include Prisma engine for Vercel (rhel). Do NOT include node_modules/next/** —
+  // that forces 100MB+ into every function and exceeds the 250 MB limit.
   outputFileTracingIncludes: {
-      '*': [
-        'node_modules/next/**',
-        'node_modules/styled-jsx/**',
-        'node_modules/@prisma/client/**',
-        'node_modules/.prisma/client/**',
-        'node_modules/.prisma/client/libquery_engine-linux-musl-openssl-3.0.x.so.node',
-        'node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node',
-        'node_modules/.prisma/client/libquery_engine-linux-musl*',
-        'node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x*',
-        'node_modules/@prisma/engines/**/query-engine-linux-musl-openssl-3.0.x*',
-        'node_modules/@prisma/engines/**/query-engine-rhel-openssl-3.0.x*',
-        'node_modules/@prisma/engines/**/libquery_engine-rhel-openssl-3.0.x.so.node',
-      ],
+    '*': [
+      'node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node',
+    ],
   },
   outputFileTracingExcludes: {
     '*': [
