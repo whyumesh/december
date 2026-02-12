@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  turbopack: {},
   images: {
     domains: ['localhost', 'upload.wikimedia.org'],
     remotePatterns: [
@@ -36,15 +37,12 @@ const nextConfig = {
       '@radix-ui/react-tabs',
       '@radix-ui/react-toast'
     ],
-    // Output file tracing - explicitly include critical dependencies
-    // Vercel needs these explicitly listed to include them in serverless functions
     outputFileTracingIncludes: {
       '*': [
         'node_modules/next/**',
         'node_modules/styled-jsx/**',
         'node_modules/@prisma/client/**',
         'node_modules/.prisma/client/**',
-        // Include all Prisma engine binaries (both musl and rhel)
         'node_modules/.prisma/client/libquery_engine-linux-musl-openssl-3.0.x.so.node',
         'node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node',
         'node_modules/.prisma/client/libquery_engine-linux-musl*',
@@ -54,10 +52,8 @@ const nextConfig = {
         'node_modules/@prisma/engines/**/libquery_engine-rhel-openssl-3.0.x.so.node',
       ],
     },
-    // Exclude unnecessary files from function bundle to reduce size
     outputFileTracingExcludes: {
       '*': [
-        // Exclude platform-specific SWC binaries (keep only what's needed)
         'node_modules/@swc/core-linux-x64-gnu/**/*',
         'node_modules/@swc/core-darwin-x64/**/*',
         'node_modules/@swc/core-darwin-arm64/**/*',
@@ -66,19 +62,15 @@ const nextConfig = {
         'node_modules/terser/**/*',
         'node_modules/webpack/**/*',
         'node_modules/.cache/**/*',
-        // Exclude Prisma engines for other platforms (keep linux-musl and rhel for Vercel)
         'node_modules/.prisma/client/libquery_engine-darwin*',
         'node_modules/.prisma/client/libquery_engine-windows*',
         'node_modules/.prisma/client/libquery_engine-debian*',
-        // Keep rhel-openssl-3.0.x - needed for Vercel platform detection
         'node_modules/@prisma/engines/**/query-engine-darwin*',
         'node_modules/@prisma/engines/**/query-engine-windows*',
         'node_modules/@prisma/engines/**/query-engine-debian*',
-        // Keep rhel-openssl-3.0.x - needed for Vercel platform detection
         'node_modules/@prisma/engines/**/migration-engine*',
         'node_modules/@prisma/engines/**/introspection-engine*',
         'node_modules/@prisma/engines/**/prisma-fmt*',
-        // Exclude test files and documentation
         '**/*.test.*',
         '**/*.spec.*',
         '**/__tests__/**/*',
@@ -92,27 +84,22 @@ const nextConfig = {
         '**/example/**',
         '**/docs/**',
         '**/documentation/**',
-        // CRITICAL: NEVER exclude Next.js or Prisma files
         '!node_modules/next/**',
         '!node_modules/styled-jsx/**',
         '!node_modules/@prisma/client/**',
         '!node_modules/.prisma/client/**',
-        // Exclude TypeScript source files (but keep .d.ts and critical packages)
         '**/*.ts',
         '!**/*.d.ts',
         '!node_modules/next/**/*.ts',
         '!node_modules/@prisma/client/**/*.ts',
         '!node_modules/.prisma/client/**/*.ts',
-        // Exclude unnecessary Radix UI files
         'node_modules/@radix-ui/**/*.stories.*',
         'node_modules/@radix-ui/**/README*',
-        // Exclude large unused dependencies
         'node_modules/recharts/**/*.ts',
         'node_modules/recharts/**/examples/**',
         'node_modules/date-fns/**/locale/**',
         'node_modules/date-fns/**/esm/**',
         'node_modules/date-fns/**/fp/**',
-        // Exclude .next build artifacts (but keep chunks)
         '.next/cache/**',
         '.next/trace*',
         '.next/static/**',
@@ -122,23 +109,15 @@ const nextConfig = {
         '.next/images-manifest.json',
       ],
     },
-    // Let Next.js handle server components naturally - no externalization
     serverComponentsExternalPackages: [],
   },
-  // Configure middleware to avoid Edge Function issues
   transpilePackages: [],
-  // Enable SWC minification
   swcMinify: true,
-  // Simplified webpack config - let Next.js handle bundling automatically
-  // No manual externals manipulation - rely on outputFileTracingIncludes instead
   webpack: (config, { dev, isServer }) => {
-    // Only apply client-side optimizations
     if (!dev && !isServer) {
-      // Enable tree shaking for client bundle
       config.optimization.usedExports = true
       config.optimization.sideEffects = false
       
-      // Split chunks for better caching
       config.optimization.splitChunks = {
         chunks: 'all',
         cacheGroups: {
@@ -157,13 +136,8 @@ const nextConfig = {
       }
     }
     
-    // For server-side: Let Next.js/Vercel handle bundling automatically
-    // outputFileTracingIncludes ensures Prisma is included
-    // No need to manipulate externals - it causes webpack errors
-    
     return config
   },
-  // Security headers
   async headers() {
     return [
       {
@@ -210,22 +184,17 @@ const nextConfig = {
       },
     ]
   },
-  // Disable source maps in production
   productionBrowserSourceMaps: false,
-  // Enable compression
   compress: true,
-  // Skip type checking during build for speed
   typescript: {
     ignoreBuildErrors: true,
   },
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // Optimize build speed - already set above
-  // Force all pages to be dynamic (prevent static generation)
   generateBuildId: async () => {
     return 'build-' + Date.now()
   },
 }
 
-module.exports = nextConfig
+module.exports = nextConfi

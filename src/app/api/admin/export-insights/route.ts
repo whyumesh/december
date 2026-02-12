@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { excludeTestVoters } from '@/lib/voter-utils'
+import { encryptXlsxBuffer, getExcelExportPassword } from '@/lib/xlsx-encryption'
 
 // Force dynamic rendering - never cache this route
 export const dynamic = 'force-dynamic'
@@ -1109,6 +1110,11 @@ export async function GET(request: NextRequest) {
     const buffer = await workbook.xlsx.writeBuffer()
     console.log(`Excel buffer generated: ${buffer.byteLength} bytes`)
 
+    // Encrypt buffer so Excel requires a password to open
+    console.log('Encrypting Excel export with password...')
+    const encryptedBuffer = await encryptXlsxBuffer(buffer, getExcelExportPassword())
+    console.log(`Encrypted buffer size: ${encryptedBuffer.byteLength} bytes`)
+
     clearTimeout(timeoutWarning)
     
     const timestamp = new Date().toISOString().split('T')[0]
@@ -1120,12 +1126,12 @@ export async function GET(request: NextRequest) {
     console.log(`Buffer size: ${(buffer.byteLength / 1024 / 1024).toFixed(2)} MB`)
 
     // Validate buffer before sending
-    if (!buffer) {
+    if (!encryptedBuffer) {
       throw new Error('Failed to generate Excel buffer')
     }
 
     // Get buffer length (handle different buffer types)
-    const bufferLength = buffer.byteLength || (buffer as any).length || 0
+    const bufferLength = encryptedBuffer.byteLength || (encryptedBuffer as any).length || 0
     
     if (bufferLength === 0) {
       throw new Error('Generated Excel file is empty')
@@ -1133,19 +1139,8 @@ export async function GET(request: NextRequest) {
 
     console.log(`Sending Excel file: ${filename}, size: ${(bufferLength / 1024 / 1024).toFixed(2)} MB`)
 
-    // Convert buffer to Uint8Array if needed for better compatibility
-    let responseBody: BodyInit
-    if (buffer instanceof Uint8Array) {
-      responseBody = buffer
-    } else if (buffer instanceof ArrayBuffer) {
-      responseBody = new Uint8Array(buffer)
-    } else if (Buffer.isBuffer(buffer)) {
-      // Node.js Buffer - convert to Uint8Array for better browser compatibility
-      responseBody = new Uint8Array(buffer)
-    } else {
-      // Fallback: try to use as-is
-      responseBody = buffer as any
-    }
+    // Convert buffer to Uint8Array for better browser compatibility
+    const responseBody: BodyInit = new Uint8Array(encryptedBuffer)
 
     return new NextResponse(responseBody, {
       status: 200,

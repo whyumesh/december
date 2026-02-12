@@ -206,6 +206,8 @@ export default function AdminDashboard() {
     const [error, setError] = useState<string | null>(null);
     const [isUpdating, setIsUpdating] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    const [isExportingOfflineVotes, setIsExportingOfflineVotes] = useState(false);
+    const [isExportingOnlineVotes, setIsExportingOnlineVotes] = useState(false);
     const [results, setResults] = useState<ResultsData | null>(null);
     const [isLoadingResults, setIsLoadingResults] = useState(false);
     const [offlineVotes, setOfflineVotes] = useState<OfflineVoteStats>({ total: 0, merged: 0, unmerged: 0, byZone: [] });
@@ -678,6 +680,110 @@ export default function AdminDashboard() {
         }
     };
 
+    const downloadExcelFromApi = async (url: string, fallbackFilename: string) => {
+        // Add cache-busting timestamp to ensure fresh data
+        const timestamp = new Date().getTime();
+        const sep = url.includes('?') ? '&' : '?';
+        const response = await fetch(`${url}${sep}t=${timestamp}`, {
+            method: 'GET',
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
+        });
+
+        if (!response.ok) {
+            let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.error || errorData.details || errorMessage;
+            } catch { /* ignore */ }
+            throw new Error(errorMessage);
+        }
+
+        const contentType = response.headers.get('Content-Type');
+        const isExcelFile = contentType && (
+            contentType.includes('spreadsheet') ||
+            contentType.includes('excel') ||
+            contentType.includes('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') ||
+            contentType.includes('application/vnd.ms-excel') ||
+            contentType.includes('application/octet-stream')
+        );
+
+        if (!isExcelFile) {
+            const text = await response.text();
+            try {
+                const errorData = JSON.parse(text);
+                throw new Error(errorData.error || errorData.details || 'Invalid response format');
+            } catch {
+                throw new Error(`Invalid response format from server. Content-Type: ${contentType}`);
+            }
+        }
+
+        const blob = await response.blob();
+        if (blob.size === 0) {
+            throw new Error('Exported file is empty. Please try again.');
+        }
+
+        const urlObj = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = urlObj;
+        a.style.display = 'none';
+
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = fallbackFilename;
+        if (contentDisposition) {
+            const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+            if (filenameMatch && filenameMatch[1]) {
+                filename = filenameMatch[1].replace(/['"]/g, '');
+            }
+        }
+
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+
+        setTimeout(() => {
+            window.URL.revokeObjectURL(urlObj);
+            if (document.body.contains(a)) {
+                document.body.removeChild(a);
+            }
+        }, 100);
+    }
+
+    const handleExportOfflineVotes = async () => {
+        try {
+            setIsExportingOfflineVotes(true);
+            setError(null);
+            const ts = new Date().toISOString().split('T')[0];
+            await downloadExcelFromApi('/api/admin/export-offline-votes', `offline-votes-${ts}.xlsx`);
+        } catch (error) {
+            console.error('Error exporting offline votes:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Failed to export offline votes';
+            setError(`Export failed: ${errorMessage}`);
+            alert(`Export Offline Votes failed: ${errorMessage}`);
+        } finally {
+            setIsExportingOfflineVotes(false);
+        }
+    }
+
+    const handleExportOnlineVotes = async () => {
+        try {
+            setIsExportingOnlineVotes(true);
+            setError(null);
+            const ts = new Date().toISOString().split('T')[0];
+            await downloadExcelFromApi('/api/admin/export-online-votes', `online-votes-${ts}.xlsx`);
+        } catch (error) {
+            console.error('Error exporting online votes:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Failed to export online votes';
+            setError(`Export failed: ${errorMessage}`);
+            alert(`Export Online Votes failed: ${errorMessage}`);
+        } finally {
+            setIsExportingOnlineVotes(false);
+        }
+    }
+
     const getStatusBadge = (status: string) => {
         switch (status) {
             case "PENDING":
@@ -877,6 +983,44 @@ export default function AdminDashboard() {
                                 </>
                             )}
                         </Button>
+                        <Button
+                            variant="default"
+                            size="sm"
+                            className="text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                            onClick={handleExportOfflineVotes}
+                            disabled={isExportingOfflineVotes}
+                        >
+                            {isExportingOfflineVotes ? (
+                                <>
+                                    <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                                    Exporting...
+                                </>
+                            ) : (
+                                <>
+                                    <Download className="h-3 w-3 mr-1" />
+                                    Export Offline Votes
+                                </>
+                            )}
+                        </Button>
+                        <Button
+                            variant="default"
+                            size="sm"
+                            className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white"
+                            onClick={handleExportOnlineVotes}
+                            disabled={isExportingOnlineVotes}
+                        >
+                            {isExportingOnlineVotes ? (
+                                <>
+                                    <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                                    Exporting...
+                                </>
+                            ) : (
+                                <>
+                                    <Download className="h-3 w-3 mr-1" />
+                                    Export Online Votes
+                                </>
+                            )}
+                        </Button>
                         <Link href="/admin/candidates">
                             <Button
                                 variant="outline"
@@ -947,10 +1091,6 @@ export default function AdminDashboard() {
                                 Manage Elections
                             </Button>
                         </Link>
-                        <Button variant="outline" size="sm" className="text-xs">
-                            <Download className="h-3 w-3 mr-1" />
-                            Export Data
-                        </Button>
                     </div>
                     </CardContent>
                 </Card>

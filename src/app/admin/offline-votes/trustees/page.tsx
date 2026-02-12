@@ -8,10 +8,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { AlertCircle, CheckCircle, ArrowLeft, Loader2, Users, Search } from 'lucide-react'
-import Link from 'next/link'
+import { AlertCircle, CheckCircle, Loader2, Users, Search } from 'lucide-react'
 import Logo from '@/components/Logo'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
+import { sortTrusteeZones } from '@/lib/trustee-zone-order'
 
 interface Trustee {
   id: string
@@ -54,8 +54,19 @@ interface VoterInfo {
   email?: string
 }
 
+interface UploadedVoteItem {
+  voterId: string
+  timestamp: string | null
+  votesByZone: Array<{
+    code: string
+    name: string
+    seats: number
+    selectedCandidateNames: string[]
+  }>
+}
+
 export default function OfflineVoteEntryPage() {
-  const { isAuthenticated, isLoading: authLoading } = useAdminAuth()
+  const { isAuthenticated, isLoading: authLoading, user } = useAdminAuth()
   const router = useRouter()
   
   const [step, setStep] = useState<'vid' | 'form'>('vid')
@@ -73,12 +84,45 @@ export default function OfflineVoteEntryPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [uploadedVotes, setUploadedVotes] = useState<UploadedVoteItem[]>([])
+  const [isLoadingUploadedVids, setIsLoadingUploadedVids] = useState(false)
+  const [uploadedVidsError, setUploadedVidsError] = useState('')
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/admin/offline-votes/trustees/login')
     }
   }, [isAuthenticated, authLoading, router])
+
+  const fetchUploadedVids = async () => {
+    setIsLoadingUploadedVids(true)
+    setUploadedVidsError('')
+    try {
+      const response = await fetch('/api/admin/offline-votes/trustees/vids')
+      const data = await response.json()
+      if (!response.ok) {
+        setUploadedVotes([])
+        setUploadedVidsError(data.error || 'Failed to load uploaded VIDs')
+        return
+      }
+      const items = Array.isArray(data?.items) ? data.items : []
+      setUploadedVotes(
+        items.filter((it: any) => typeof it?.voterId === 'string' && it.voterId.trim().length > 0)
+      )
+    } catch (err: any) {
+      setUploadedVotes([])
+      setUploadedVidsError(err?.message || 'Failed to load uploaded VIDs')
+    } finally {
+      setIsLoadingUploadedVids(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && step === 'vid') {
+      fetchUploadedVids()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, isAuthenticated, step])
 
   const handleValidateVID = async () => {
     if (!vid.trim()) {
@@ -165,7 +209,7 @@ export default function OfflineVoteEntryPage() {
         zoneMap[trustee.zone.id].trustees.push(trustee)
       })
 
-      setZones(Object.values(zoneMap).sort((a, b) => a.name.localeCompare(b.name)))
+      setZones(sortTrusteeZones(Object.values(zoneMap)))
     } catch (err: any) {
       setError(err.message || 'Failed to load trustees')
     } finally {
@@ -292,6 +336,8 @@ export default function OfflineVoteEntryPage() {
       }
 
       setSuccess(true)
+      // Refresh VID list so the newly submitted VID appears immediately
+      fetchUploadedVids()
       setShowPreview(false)
       setTimeout(() => {
         setStep('vid')
@@ -324,17 +370,23 @@ export default function OfflineVoteEntryPage() {
     return null
   }
 
+  const loginId = (user as any)?.email || (user as any)?.name || (user as any)?.id || 'Unknown'
+  const normalizedVid = vid.trim().toLowerCase()
+  const filteredUploadedVotes = normalizedVid
+    ? uploadedVotes.filter((v) => v.voterId.toLowerCase().includes(normalizedVid))
+    : uploadedVotes
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50/90 to-emerald-50/90 py-8 px-4">
       <div className="max-w-6xl mx-auto">
         <div className="mb-6">
-          <Link href="/admin/dashboard">
-            <Button variant="ghost" className="mb-4">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
-            </Button>
-          </Link>
           <Logo />
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-700">
+            <span className="font-medium">Login ID:</span>
+            <Badge variant="outline" className="border-teal-300 text-teal-900 bg-white/60">
+              {loginId}
+            </Badge>
+          </div>
         </div>
 
         <Card className="mb-6">
@@ -404,6 +456,79 @@ export default function OfflineVoteEntryPage() {
                     'Validate & Continue'
                   )}
                 </Button>
+
+                {/* Uploaded VIDs list (VID only, no names) */}
+                <div className="mt-2 rounded-lg border border-teal-200 bg-white/70 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-sm font-semibold text-slate-900">
+                      Offline votes uploaded (VID only)
+                    </div>
+                    <Badge variant="secondary">
+                      {filteredUploadedVotes.length}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-600">
+                    This list filters automatically as you type the VID above.
+                  </p>
+
+                  {isLoadingUploadedVids ? (
+                    <div className="mt-3 flex items-center gap-2 text-sm text-slate-600">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading uploaded VIDs…
+                    </div>
+                  ) : uploadedVidsError ? (
+                    <div className="mt-3 text-sm text-red-700">
+                      {uploadedVidsError}
+                    </div>
+                  ) : filteredUploadedVotes.length === 0 ? (
+                    <div className="mt-3 text-sm text-slate-600">
+                      No uploaded offline votes found{normalizedVid ? ` matching "${vid.trim()}"` : ''}.
+                    </div>
+                  ) : (
+                    <div className="mt-3 max-h-48 overflow-auto rounded-md border border-teal-100 bg-white">
+                      <div className="divide-y divide-teal-50">
+                        {filteredUploadedVotes.slice(0, 100).map((item) => {
+                          const ts = item.timestamp ? new Date(item.timestamp).toLocaleString() : '—'
+                          return (
+                            <details key={item.voterId} className="px-3 py-2">
+                              <summary className="cursor-pointer list-none">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <div className="text-sm text-slate-900 font-semibold">VID: {item.voterId}</div>
+                                  <div className="text-xs text-slate-600">Timestamp: {ts}</div>
+                                </div>
+                              </summary>
+                              <div className="mt-3 space-y-3">
+                                {item.votesByZone.map((z) => {
+                                  const seats = Math.max(1, Number(z.seats) || 1)
+                                  const picked = Array.isArray(z.selectedCandidateNames) ? z.selectedCandidateNames : []
+                                  const seatValues = picked.slice(0, seats)
+                                  while (seatValues.length < seats) seatValues.push('NOTA')
+                                  return (
+                                    <div key={z.code} className="rounded-md border border-teal-100 bg-teal-50/40 p-3">
+                                      <div className="flex items-center justify-between gap-2">
+                                        <div className="text-sm font-semibold text-teal-900">{z.name}</div>
+                                        <Badge variant="outline" className="border-teal-200 text-teal-900 bg-white/60">
+                                          {seats} seat{seats !== 1 ? 's' : ''}
+                                        </Badge>
+                                      </div>
+                                      <ul className="mt-2 space-y-1">
+                                        {seatValues.map((val, idx) => (
+                                          <li key={`${z.code}_${idx}`} className="text-sm text-slate-800">
+                                            <span className="font-medium">{idx + 1}.</span> {val}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            </details>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -645,25 +770,31 @@ export default function OfflineVoteEntryPage() {
                           <div className="font-semibold text-sm text-gray-700">Selected Trustees:</div>
                           {zones.map((zone) => {
                             const selected = selectedTrustees[zone.id] || []
-                            if (selected.length === 0) {
-                              return (
-                                <div key={zone.id} className="text-sm text-gray-600 pl-4">
-                                  <strong>{zone.name}:</strong> NOTA (No selection)
-                                </div>
-                              )
+                            const maxSeats = Math.max(1, zone.seats ?? 1)
+                            const seatValues: Array<{ label: string; region?: string }> = []
+                            for (let i = 0; i < maxSeats; i++) {
+                              const id = selected[i]
+                              if (!id) {
+                                seatValues.push({ label: 'NOTA' })
+                                continue
+                              }
+                              const trustee = zone.trustees.find((t) => t.id === id)
+                              if (!trustee) {
+                                seatValues.push({ label: 'NOTA' })
+                                continue
+                              }
+                              seatValues.push({ label: trustee.name, region: trustee.region })
                             }
                             return (
                               <div key={zone.id} className="space-y-1 pl-4">
-                                <div className="font-medium text-sm text-gray-700">{zone.name}:</div>
-                                {selected.map((id) => {
-                                  const trustee = zone.trustees.find((t) => t.id === id)
-                                  if (!trustee) return null
-                                  return (
-                                    <div key={trustee.id} className="text-sm text-gray-600 pl-4">
-                                      • {trustee.name} ({trustee.region})
-                                    </div>
-                                  )
-                                })}
+                                <div className="font-medium text-sm text-gray-700">
+                                  {zone.name}: <span className="text-gray-500 font-normal">{maxSeats} seat{maxSeats !== 1 ? 's' : ''}</span>
+                                </div>
+                                {seatValues.map((v, idx) => (
+                                  <div key={`${zone.id}_${idx}`} className="text-sm text-gray-600 pl-4">
+                                    • Seat {idx + 1}: {v.label}{v.region ? ` (${v.region})` : ''}
+                                  </div>
+                                ))}
                               </div>
                             )
                           })}

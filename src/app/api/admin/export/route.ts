@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { encryptXlsxBuffer, getExcelExportPassword } from '@/lib/xlsx-encryption'
 
 // Force dynamic rendering - never cache this route
 export const dynamic = 'force-dynamic'
@@ -243,8 +244,9 @@ export async function GET(request: NextRequest) {
       })
 
       const buffer = await workbook.xlsx.writeBuffer()
+      const encrypted = await encryptXlsxBuffer(buffer, getExcelExportPassword())
 
-      return new NextResponse(buffer, {
+      return new NextResponse(encrypted, {
         headers: {
           'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           'Content-Disposition': `attachment; filename="election-data-${new Date().toISOString().split('T')[0]}.xlsx"`

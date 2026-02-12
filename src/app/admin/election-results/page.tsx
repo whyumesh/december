@@ -104,6 +104,8 @@ export default function ElectionResults() {
   const [isSendingOtp2, setIsSendingOtp2] = useState(false)
   const [isVerifyingOtp2, setIsVerifyingOtp2] = useState(false)
   const [trusteeViewMode, setTrusteeViewMode] = useState<'online' | 'offline' | 'merged'>('merged')
+  const [revealStage, setRevealStage] = useState<'locked' | 'animating' | 'ready'>('locked')
+  const [revealedWinners, setRevealedWinners] = useState<Record<string, boolean>>({})
   
   const router = useRouter()
 
@@ -612,8 +614,47 @@ export default function ElectionResults() {
     }
   }
 
+  const startReveal = () => {
+    setRevealStage('animating')
+    setRevealedWinners({})
+    window.setTimeout(() => {
+      setRevealStage('ready')
+    }, 1200)
+  }
+
+  const resetReveal = () => {
+    setRevealStage('locked')
+    setRevealedWinners({})
+  }
+
+  const winnerKey = (electionKey: string, viewKey: string, zoneId: string, rank: number) =>
+    `${electionKey}:${viewKey}:${zoneId}:${rank}`
+
+  const revealWinner = (key: string) => {
+    setRevealedWinners((prev) => ({ ...prev, [key]: true }))
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {revealStage === 'animating' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl ring-1 ring-slate-200">
+            <div className="flex flex-col items-center text-center">
+              <div className="mb-4 h-14 w-14 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center animate-pulse">
+                <Trophy className="h-7 w-7 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900">Revealing Results</h3>
+              <p className="mt-2 text-sm text-slate-600">
+                Please wait a moment…
+              </p>
+              <div className="mt-6 flex items-center gap-2 text-sm text-slate-600">
+                <RefreshCw className="h-4 w-4 animate-spin" />
+                <span>Preparing winner cards</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -637,6 +678,28 @@ export default function ElectionResults() {
                 <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
                 Refresh
               </Button>
+              {results && (
+                <>
+                  {revealStage === 'locked' ? (
+                    <Button
+                      onClick={startReveal}
+                      className="w-full sm:w-auto text-sm bg-purple-600 hover:bg-purple-700 text-white"
+                    >
+                      <Trophy className="h-4 w-4 mr-2" />
+                      Start Result Reveal
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      onClick={resetReveal}
+                      className="w-full sm:w-auto text-sm"
+                      disabled={revealStage === 'animating'}
+                    >
+                      Reset Reveal
+                    </Button>
+                  )}
+                </>
+              )}
               <Button
                 variant="outline"
                 onClick={handleLogout}
@@ -709,7 +772,27 @@ export default function ElectionResults() {
                         </div>
                         <div className="space-y-2">
                           {zoneResult.candidates.map((candidate, index) => (
-                            <div key={candidate.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            (() => {
+                              const seats = Math.max(0, zoneResult.zone?.seats || 0)
+                              const rank = index + 1
+                              const isWinnerRank = seats > 0 && rank <= seats
+                              const key = winnerKey('yuvaPankh', 'final', zoneResult.zoneId, rank)
+                              const isRevealed = !!revealedWinners[key]
+                              const canReveal = revealStage === 'ready' && isWinnerRank && !isRevealed
+                              const showName = !isWinnerRank || (revealStage !== 'locked' && isRevealed)
+                              const displayName = showName ? candidate.name : (revealStage === 'locked' ? 'Hidden' : 'Click to reveal')
+
+                              return (
+                                <button
+                                  type="button"
+                                  key={candidate.id}
+                                  onClick={() => (canReveal ? revealWinner(key) : undefined)}
+                                  disabled={!canReveal}
+                                  className={`w-full flex items-center justify-between p-3 rounded-lg text-left transition-all ${
+                                    isWinnerRank ? 'bg-gradient-to-r from-amber-50 to-white border border-amber-200 hover:shadow-sm' : 'bg-gray-50'
+                                  } ${canReveal ? 'cursor-pointer' : 'cursor-default'} ${!showName && revealStage !== 'locked' ? 'hover:ring-2 hover:ring-purple-200' : ''}`}
+                                  aria-label={isWinnerRank ? `Rank ${rank} winner card` : `Rank ${rank} candidate card`}
+                                >
                               <div className="flex items-center space-x-3">
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
                                   index === 0 ? 'bg-yellow-100 text-yellow-800' : 
@@ -719,14 +802,22 @@ export default function ElectionResults() {
                                 }`}>
                                   {index + 1}
                                 </div>
-                                <span className="font-medium">{candidate.name}</span>
+                                <span
+                                  className={`font-medium ${
+                                    showName ? 'text-slate-900' : 'text-slate-500'
+                                  } ${isWinnerRank && isRevealed ? 'animate-in fade-in slide-in-from-bottom-1 duration-300' : ''}`}
+                                >
+                                  {displayName}
+                                </span>
                               </div>
                               <div className="flex items-center space-x-2">
                                 <Trophy className="h-4 w-4 text-yellow-600" />
                                 <span className="font-bold text-lg">{candidate.votes}</span>
                                 <span className="text-sm text-gray-500">votes</span>
                               </div>
-                            </div>
+                                </button>
+                              )
+                            })()
                           ))}
                         </div>
                       </div>
@@ -820,7 +911,27 @@ export default function ElectionResults() {
                           </div>
                           <div className="space-y-2">
                             {zoneResult.candidates.map((candidate, index) => (
-                              <div key={candidate.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                              (() => {
+                                const seats = Math.max(0, zoneResult.zone?.seats || 0)
+                                const rank = index + 1
+                                const isWinnerRank = seats > 0 && rank <= seats
+                                const key = winnerKey('trustee', trusteeViewMode, zoneResult.zoneId, rank)
+                                const isRevealed = !!revealedWinners[key]
+                                const canReveal = revealStage === 'ready' && isWinnerRank && !isRevealed
+                                const showName = !isWinnerRank || (revealStage !== 'locked' && isRevealed)
+                                const displayName = showName ? candidate.name : (revealStage === 'locked' ? 'Hidden' : 'Click to reveal')
+
+                                return (
+                                  <button
+                                    type="button"
+                                    key={candidate.id}
+                                    onClick={() => (canReveal ? revealWinner(key) : undefined)}
+                                    disabled={!canReveal}
+                                    className={`w-full flex items-center justify-between p-3 rounded-lg text-left transition-all ${
+                                      isWinnerRank ? 'bg-gradient-to-r from-purple-50 to-white border border-purple-200 hover:shadow-sm' : 'bg-gray-50'
+                                    } ${canReveal ? 'cursor-pointer' : 'cursor-default'} ${!showName && revealStage !== 'locked' ? 'hover:ring-2 hover:ring-purple-200' : ''}`}
+                                    aria-label={isWinnerRank ? `Rank ${rank} winner card` : `Rank ${rank} candidate card`}
+                                  >
                                 <div className="flex items-center space-x-3">
                                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
                                     index === 0 ? 'bg-yellow-100 text-yellow-800' : 
@@ -830,7 +941,13 @@ export default function ElectionResults() {
                                   }`}>
                                     {index + 1}
                                   </div>
-                                  <span className="font-medium">{candidate.name}</span>
+                                  <span
+                                    className={`font-medium ${
+                                      showName ? 'text-slate-900' : 'text-slate-500'
+                                    } ${isWinnerRank && isRevealed ? 'animate-in fade-in slide-in-from-bottom-1 duration-300' : ''}`}
+                                  >
+                                    {displayName}
+                                  </span>
                                 </div>
                                 <div className="flex items-center space-x-2">
                                   <Trophy className="h-4 w-4 text-yellow-600" />
@@ -842,7 +959,9 @@ export default function ElectionResults() {
                                     </span>
                                   )}
                                 </div>
-                              </div>
+                                  </button>
+                                )
+                              })()
                             ))}
                           </div>
                         </div>
