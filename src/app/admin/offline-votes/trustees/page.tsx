@@ -534,6 +534,17 @@ export default function OfflineVoteEntryPage() {
 
             {step === 'form' && voterInfo && (
               <div className="space-y-6">
+                {/* VID display */}
+                <div className="flex flex-wrap items-center gap-2 p-4 rounded-lg border border-teal-200 bg-teal-50/80">
+                  <span className="text-sm font-medium text-teal-800">Voter ID (VID):</span>
+                  <Badge variant="outline" className="border-teal-300 text-teal-900 bg-white font-mono text-base px-3 py-1">
+                    {vid.trim() || voterInfo.voterId}
+                  </Badge>
+                  {voterInfo.name && (
+                    <span className="text-sm text-teal-700">— {voterInfo.name}</span>
+                  )}
+                </div>
+
                 {/* Trustee Selection */}
                 <div>
                   <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
