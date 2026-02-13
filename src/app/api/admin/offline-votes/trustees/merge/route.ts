@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { canMergeOfflineVotes } from '@/lib/offline-vote-auth'
-import { handleError } from '@/lib/error-handler'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -105,11 +104,16 @@ export async function POST(request: NextRequest) {
             continue
           }
 
-          // Create Vote records for each offline vote
+          // Deduplicate by trusteeCandidateId (Vote has unique [voterId, electionId, trusteeCandidateId])
+          const seenCandidateIds = new Set<string>()
           for (const offlineVote of votes) {
-            if (!offlineVote.trusteeCandidateId) {
-              continue // Skip votes without trustee candidate
+            if (!offlineVote.trusteeCandidateId || !offlineVote.trusteeCandidate) {
+              continue // Skip votes without trustee candidate or deleted candidate
             }
+            if (seenCandidateIds.has(offlineVote.trusteeCandidateId)) {
+              continue // Avoid unique constraint: one Vote per (voter, election, candidate)
+            }
+            seenCandidateIds.add(offlineVote.trusteeCandidateId)
 
             await tx.vote.create({
               data: {
@@ -117,7 +121,7 @@ export async function POST(request: NextRequest) {
                 electionId: election.id,
                 trusteeCandidateId: offlineVote.trusteeCandidateId,
                 timestamp: offlineVote.timestamp,
-                ipAddress: null, // Offline votes don't have IP
+                ipAddress: null,
                 userAgent: 'Offline Vote Entry',
                 latitude: null,
                 longitude: null
@@ -138,7 +142,7 @@ export async function POST(request: NextRequest) {
             }
           })
 
-          mergedCount += votes.length
+          mergedCount += seenCandidateIds.size
         } catch (error: any) {
           errors.push(`Error merging votes for ${voterId}: ${error.message}`)
           errorCount++
@@ -155,10 +159,17 @@ export async function POST(request: NextRequest) {
       errors: errors.length > 0 ? errors : undefined
     })
 
-  } catch (error) {
-    return handleError(error, {
-      endpoint: request.nextUrl.pathname,
-      method: request.method
-    })
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Merge failed'
+    const code = error && typeof error === 'object' && 'code' in error ? (error as { code: string }).code : undefined
+    console.error('Offline votes merge error:', error)
+    return NextResponse.json(
+      {
+        error: message,
+        code: code || 'MERGE_ERROR',
+        details: process.env.NODE_ENV !== 'production' && error instanceof Error ? error.stack : undefined
+      },
+      { status: 500 }
+    )
   }
 }
