@@ -63,33 +63,64 @@ export async function POST(request: NextRequest) {
     let errorCount = 0
     const errors: string[] = []
 
-    // Merge votes in a transaction
-    await prisma.$transaction(async (tx) => {
-      for (const [voterId, votes] of votesByVoter.entries()) {
-        try {
-          // Find voter by VID
-          const voter = await tx.voter.findUnique({
-            where: { voterId }
-          })
+    // Process each voter in a separate short transaction to avoid "Transaction not found"
+    // (long single transactions can time out or lose the connection in serverless/pooled envs)
+    for (const [voterId, votes] of votesByVoter.entries()) {
+      try {
+        await prisma.$transaction(
+          async (tx) => {
+            const voter = await tx.voter.findUnique({
+              where: { voterId }
+            })
 
-          if (!voter) {
-            errors.push(`Voter not found for VID: ${voterId}`)
-            errorCount++
-            continue
-          }
-
-          // Check if voter already has online votes
-          const existingVotes = await tx.vote.count({
-            where: {
-              voterId: voter.id,
-              electionId: election.id
+            if (!voter) {
+              errors.push(`Voter not found for VID: ${voterId}`)
+              throw new Error('VOTER_NOT_FOUND') // no writes; exit tx and count as error
             }
-          })
 
-          if (existingVotes > 0) {
-            errors.push(`Voter ${voterId} already has online votes. Skipping merge.`)
-            errorCount++
-            // Still mark offline votes as merged to prevent retry
+            const existingVotes = await tx.vote.count({
+              where: {
+                voterId: voter.id,
+                electionId: election.id
+              }
+            })
+
+            if (existingVotes > 0) {
+              errors.push(`Voter ${voterId} already has online votes. Skipping merge.`)
+              await tx.offlineVote.updateMany({
+                where: {
+                  voterId,
+                  electionId: election.id,
+                  isMerged: false
+                },
+                data: {
+                  isMerged: true,
+                  mergedAt: new Date()
+                }
+              })
+              return // commit tx so offline votes are marked merged
+            }
+
+            const seenCandidateIds = new Set<string>()
+            for (const offlineVote of votes) {
+              if (!offlineVote.trusteeCandidateId || !offlineVote.trusteeCandidate) continue
+              if (seenCandidateIds.has(offlineVote.trusteeCandidateId)) continue
+              seenCandidateIds.add(offlineVote.trusteeCandidateId)
+
+              await tx.vote.create({
+                data: {
+                  voterId: voter.id,
+                  electionId: election.id,
+                  trusteeCandidateId: offlineVote.trusteeCandidateId,
+                  timestamp: offlineVote.timestamp,
+                  ipAddress: null,
+                  userAgent: 'Offline Vote Entry',
+                  latitude: null,
+                  longitude: null
+                }
+              })
+            }
+
             await tx.offlineVote.updateMany({
               where: {
                 voterId,
@@ -101,54 +132,21 @@ export async function POST(request: NextRequest) {
                 mergedAt: new Date()
               }
             })
-            continue
-          }
 
-          // Deduplicate by trusteeCandidateId (Vote has unique [voterId, electionId, trusteeCandidateId])
-          const seenCandidateIds = new Set<string>()
-          for (const offlineVote of votes) {
-            if (!offlineVote.trusteeCandidateId || !offlineVote.trusteeCandidate) {
-              continue // Skip votes without trustee candidate or deleted candidate
-            }
-            if (seenCandidateIds.has(offlineVote.trusteeCandidateId)) {
-              continue // Avoid unique constraint: one Vote per (voter, election, candidate)
-            }
-            seenCandidateIds.add(offlineVote.trusteeCandidateId)
-
-            await tx.vote.create({
-              data: {
-                voterId: voter.id,
-                electionId: election.id,
-                trusteeCandidateId: offlineVote.trusteeCandidateId,
-                timestamp: offlineVote.timestamp,
-                ipAddress: null,
-                userAgent: 'Offline Vote Entry',
-                latitude: null,
-                longitude: null
-              }
-            })
-          }
-
-          // Mark offline votes as merged
-          await tx.offlineVote.updateMany({
-            where: {
-              voterId,
-              electionId: election.id,
-              isMerged: false
-            },
-            data: {
-              isMerged: true,
-              mergedAt: new Date()
-            }
-          })
-
-          mergedCount += seenCandidateIds.size
-        } catch (error: any) {
-          errors.push(`Error merging votes for ${voterId}: ${error.message}`)
+            mergedCount += seenCandidateIds.size
+          },
+          { timeout: 15000 }
+        )
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : ''
+        if (msg === 'VOTER_NOT_FOUND') {
+          errorCount++
+        } else if (msg) {
+          errors.push(`Error merging votes for ${voterId}: ${msg}`)
           errorCount++
         }
       }
-    })
+    }
 
     return NextResponse.json({
       success: true,
