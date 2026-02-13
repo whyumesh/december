@@ -408,3 +408,12 @@ model OfflineVote {
   @@index([timestamp])
   @@map("offline_votes")
 }
+
+model ElectionConfig {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String?
+  updatedAt DateTime @updatedAt
+
+  @@map("election_config")
+}

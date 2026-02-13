@@ -19,7 +19,8 @@ export async function GET(request: NextRequest) {
         karobari: { name: 'Karobari Members', regions: [], totalRegions: 0, totalVoters: 0, totalVotes: 0 },
         trustee: { name: 'Trustee Members', regions: [], totalRegions: 0, totalVoters: 0, totalVotes: 0 },
         yuvaPankh: { name: 'Yuva Pankh Members', regions: [], totalRegions: 0, totalVoters: 0, totalVotes: 0 },
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        declared: false
       })
     }
     // Check cache first
@@ -327,13 +328,27 @@ export async function GET(request: NextRequest) {
     console.log('Sample Yuva Pankh data:', yuvaPankhTurnout.slice(0, 3));
     console.log('Sample Trustee data:', trusteeTurnout.slice(0, 3));
 
+    // Check if results are declared for landing page
+    let declared = false;
+    try {
+      const config = await prisma.electionConfig.findUnique({
+        where: { key: 'resultsDeclaredAt' },
+        select: { value: true }
+      });
+      declared = !!config?.value;
+    } catch (e) {
+      // If ElectionConfig table doesn't exist yet, declared stays false
+    }
+
+    const payload = { ...response, declared };
+
     // Cache the response
     cache.set(cacheKey, {
-      data: response,
+      data: payload,
       timestamp: Date.now()
     });
 
-    const apiResponse = NextResponse.json(response);
+    const apiResponse = NextResponse.json(payload);
     
     // Set appropriate caching headers
     apiResponse.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');

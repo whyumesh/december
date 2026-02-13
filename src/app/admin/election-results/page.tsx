@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -17,16 +17,18 @@ import {
   RefreshCw, 
   AlertCircle,
   Trophy,
-  TrendingUp,
-  MapPin,
   Lock,
   Eye,
-  EyeOff
+  EyeOff,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink
 } from 'lucide-react'
 import Link from 'next/link'
 import Logo from '@/components/Logo'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
 import Footer from '@/components/Footer'
+import { getTrusteeZoneSortKey } from '@/lib/trustee-zone-order'
 
 interface CandidateResult {
   id: string
@@ -106,7 +108,16 @@ export default function ElectionResults() {
   const [trusteeViewMode, setTrusteeViewMode] = useState<'online' | 'offline' | 'merged'>('merged')
   const [revealStage, setRevealStage] = useState<'locked' | 'animating' | 'ready'>('locked')
   const [revealedWinners, setRevealedWinners] = useState<Record<string, boolean>>({})
-  
+  const [showLandingAnimation, setShowLandingAnimation] = useState(false)
+  const [curtainsOpen, setCurtainsOpen] = useState(false)
+  const [partyVisible, setPartyVisible] = useState(false)
+  const [isDeclaring, setIsDeclaring] = useState(false)
+  const [isRevoking, setIsRevoking] = useState(false)
+  const [declareError, setDeclareError] = useState<string | null>(null)
+  const [declarationStatus, setDeclarationStatus] = useState<{ declared: boolean; declaredAt?: string | null } | null>(null)
+  const [declarationToken, setDeclarationToken] = useState<string | null>(null)
+  const [tokenError, setTokenError] = useState<string | null>(null)
+  const landingShownRef = useRef(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -115,13 +126,78 @@ export default function ElectionResults() {
     }
   }, [isAuthenticated, isAdmin, authLoading, isPasswordAuthenticated, isOtp1Verified, isOtp2Verified])
 
+  const fetchDeclarationStatus = async () => {
+    try {
+      const res = await fetch('/api/admin/declare-results', { credentials: 'include' })
+      const data = await res.json().catch(() => ({}))
+      setDeclarationStatus({
+        declared: !!data.declared,
+        declaredAt: data.declaredAt ?? null
+      })
+    } catch {
+      setDeclarationStatus(null)
+    }
+  }
+
+  useEffect(() => {
+    if (results && isPasswordAuthenticated) fetchDeclarationStatus()
+  }, [results, isPasswordAuthenticated])
+
+  // After password + both OTPs + results loaded: get declaration token (authority to declare on landing)
+  useEffect(() => {
+    if (!results || !password || !isOtp1Verified || !isOtp2Verified) return
+    let cancelled = false
+    setTokenError(null)
+    fetch('/api/admin/results-declaration-token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ resultsPassword: password })
+    })
+      .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
+      .then(({ ok, data }) => {
+        if (cancelled) return
+        if (ok && data.token) {
+          setDeclarationToken(data.token)
+          setPassword('')
+        } else {
+          setTokenError(data.error || 'Could not get declaration authority.')
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setTokenError('Could not get declaration authority.')
+      })
+    return () => { cancelled = true }
+  }, [results, password, isOtp1Verified, isOtp2Verified])
+
+  // When results first load, show curtain + party popper landing animation once
+  useEffect(() => {
+    if (!results || landingShownRef.current) return
+    landingShownRef.current = true
+    setShowLandingAnimation(true)
+    setCurtainsOpen(false)
+    setPartyVisible(false)
+    const t1 = setTimeout(() => setCurtainsOpen(true), 80)
+    const t2 = setTimeout(() => setPartyVisible(true), 600)
+    const t3 = setTimeout(() => {
+      setShowLandingAnimation(false)
+      setCurtainsOpen(false)
+      setPartyVisible(false)
+    }, 3200)
+    return () => {
+      clearTimeout(t1)
+      clearTimeout(t2)
+      clearTimeout(t3)
+    }
+  }, [results])
+
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setPasswordError('')
     
     if (password === ELECTION_RESULTS_PASSWORD) {
       setIsPasswordAuthenticated(true)
-      setPassword('')
+      // Keep password in state until we have declaration token (after both OTPs)
       // Automatically send OTP to phone 1
       await sendOtp1()
     } else {
@@ -636,6 +712,43 @@ export default function ElectionResults() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Landing animation: curtains open + party poppers */}
+      {showLandingAnimation && results && (
+        <div className="fixed inset-0 z-[100] overflow-hidden pointer-events-none">
+          <div
+            className={`results-curtain results-curtain-left ${curtainsOpen ? 'results-curtain-open' : ''}`}
+            aria-hidden
+          />
+          <div
+            className={`results-curtain results-curtain-right ${curtainsOpen ? 'results-curtain-open' : ''}`}
+            aria-hidden
+          />
+          <div className={`results-landing-center ${partyVisible ? 'results-landing-visible' : ''}`}>
+            <div className="flex flex-col items-center gap-4">
+              <span className="text-6xl sm:text-7xl" aria-hidden>🎉</span>
+              <span className="text-5xl sm:text-6xl" aria-hidden>🎊</span>
+              <p className="text-white text-xl sm:text-2xl font-bold drop-shadow-lg mt-2">
+                Election Results
+              </p>
+              <p className="text-purple-200 text-sm sm:text-base">SKMMMS Election 2026</p>
+            </div>
+            {/* Simple confetti dots */}
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div
+                key={i}
+                className="results-confetti-dot"
+                style={{
+                  left: `${15 + i * 12}%`,
+                  top: '40%',
+                  background: ['#fbbf24', '#34d399', '#f472b6', '#60a5fa', '#a78bfa', '#f97316'][i % 6],
+                  animationDelay: `${0.1 * i}s`,
+                }}
+                aria-hidden
+              />
+            ))}
+          </div>
+        </div>
+      )}
       {revealStage === 'animating' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="mx-4 w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl ring-1 ring-slate-200">
@@ -698,6 +811,82 @@ export default function ElectionResults() {
                       Reset Reveal
                     </Button>
                   )}
+                  {tokenError && (
+                    <p className="text-sm text-amber-700 w-full sm:w-auto">{tokenError}</p>
+                  )}
+                  <Button
+                    variant="outline"
+                    disabled={isDeclaring || declarationStatus?.declared === true || !declarationToken}
+                    className="w-full sm:w-auto text-sm border-amber-300 text-amber-800 hover:bg-amber-50"
+                    onClick={async () => {
+                      if (!declarationToken) return
+                      setDeclareError(null)
+                      setIsDeclaring(true)
+                      try {
+                        const res = await fetch('/api/admin/declare-results', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${declarationToken}`
+                          },
+                          credentials: 'include',
+                          body: JSON.stringify({ action: 'declare' })
+                        })
+                        const json = await res.json().catch(() => ({}))
+                        if (!res.ok) {
+                          setDeclareError(json.error || json.details || 'Failed to declare results')
+                          return
+                        }
+                        await fetchDeclarationStatus()
+                        window.open('/', '_blank', 'noopener,noreferrer')
+                      } catch (e) {
+                        setDeclareError('Failed to declare results')
+                      } finally {
+                        setIsDeclaring(false)
+                      }
+                    }}
+                  >
+                    <ExternalLink className={`h-4 w-4 mr-2 ${isDeclaring ? 'animate-pulse' : ''}`} />
+                    {isDeclaring ? 'Declaring…' : declarationStatus?.declared ? 'Declared on landing' : 'Result Declaration on Landing Page'}
+                  </Button>
+                  {declarationStatus?.declared === true && (
+                    <Button
+                      variant="outline"
+                      disabled={isRevoking || !declarationToken}
+                      className="w-full sm:w-auto text-sm border-red-200 text-red-700 hover:bg-red-50"
+                      onClick={async () => {
+                        if (!declarationToken) return
+                        setDeclareError(null)
+                        setIsRevoking(true)
+                        try {
+                          const res = await fetch('/api/admin/declare-results', {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                              Authorization: `Bearer ${declarationToken}`
+                            },
+                            credentials: 'include',
+                            body: JSON.stringify({ action: 'revoke' })
+                          })
+                          const json = await res.json().catch(() => ({}))
+                          if (!res.ok) {
+                            setDeclareError(json.error || 'Failed to revoke declaration')
+                            return
+                          }
+                          await fetchDeclarationStatus()
+                        } catch (e) {
+                          setDeclareError('Failed to revoke declaration')
+                        } finally {
+                          setIsRevoking(false)
+                        }
+                      }}
+                    >
+                      {isRevoking ? 'Revoking…' : 'Take back from landing / Revoke declaration'}
+                    </Button>
+                  )}
+                  {declareError && (
+                    <p className="text-sm text-red-600 w-full sm:w-auto">{declareError}</p>
+                  )}
                 </>
               )}
               <Button
@@ -731,11 +920,12 @@ export default function ElectionResults() {
         )}
 
         {/* Page Header */}
-        <div className="mb-6 sm:mb-8">
-          <h2 className="text-2xl sm:text-3xl text-gray-900">Election Results</h2>
-          <p className="text-gray-600">Live results by zone for all elections</p>
+        <div className="mb-6 sm:mb-8 rounded-xl bg-white/80 backdrop-blur-sm border border-slate-200/80 p-6 shadow-sm">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Election Results</h2>
+          <p className="text-gray-600 mt-1">Live results by zone for all elections</p>
           {results && (
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-sm text-gray-500 mt-2 flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
               Last updated: {new Date(results.timestamp).toLocaleString()}
             </p>
           )}
@@ -745,7 +935,7 @@ export default function ElectionResults() {
         {results && (
           <div className="space-y-8">
             {/* Yuva Pankh Results */}
-            <Card>
+            <Card className="overflow-hidden border-2 border-green-100 shadow-md">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   {getElectionIcon('yuvaPankh')}
@@ -758,70 +948,103 @@ export default function ElectionResults() {
               <CardContent>
                 {results.yuvaPankh.zones.length > 0 ? (
                   <div className="space-y-6">
-                    {results.yuvaPankh.zones.map((zoneResult) => (
-                      <div key={zoneResult.zoneId} className="border rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-4">
-                          <div>
-                            <h4 className="font-semibold text-lg">{zoneResult.zone?.name || 'Unknown Zone'}</h4>
-                            <p className="text-gray-600">{zoneResult.zone?.nameGujarati || 'Unknown Zone (Gujarati)'}</p>
-                            <p className="text-sm text-gray-500">Zone {zoneResult.zone?.code || 'N/A'} • {zoneResult.zone?.seats || 0} seats</p>
+                    {results.yuvaPankh.zones.map((zoneResult) => {
+                      const seats = Math.max(0, zoneResult.zone?.seats || 0)
+                      const winners = zoneResult.candidates.slice(0, seats)
+                      const others = zoneResult.candidates.slice(seats)
+                      return (
+                        <div key={zoneResult.zoneId} className="border rounded-lg p-4 border-green-100 bg-white">
+                          <div className="flex items-center justify-between mb-4">
+                            <div>
+                              <h4 className="font-semibold text-lg">{zoneResult.zone?.name || 'Unknown Zone'}</h4>
+                              <p className="text-gray-600">{zoneResult.zone?.nameGujarati || 'Unknown Zone (Gujarati)'}</p>
+                              <p className="text-sm text-gray-500">Zone {zoneResult.zone?.code || 'N/A'} • {seats} seat{seats !== 1 ? 's' : ''}</p>
+                            </div>
+                            <Badge variant="outline" className="text-green-600">
+                              {zoneResult.candidates.length} candidates
+                            </Badge>
                           </div>
-                          <Badge variant="outline" className="text-green-600">
-                            {zoneResult.candidates.length} candidates
-                          </Badge>
-                        </div>
-                        <div className="space-y-2">
-                          {zoneResult.candidates.map((candidate, index) => (
-                            (() => {
-                              const seats = Math.max(0, zoneResult.zone?.seats || 0)
+                          {/* Winners - visible */}
+                          <div className="space-y-2">
+                            <p className="text-xs font-semibold text-green-700 uppercase tracking-wide mb-2">Winners</p>
+                            {winners.map((candidate, index) => {
                               const rank = index + 1
-                              const isWinnerRank = seats > 0 && rank <= seats
                               const key = winnerKey('yuvaPankh', 'final', zoneResult.zoneId, rank)
                               const isRevealed = !!revealedWinners[key]
-                              const canReveal = revealStage === 'ready' && isWinnerRank && !isRevealed
-                              const showName = !isWinnerRank || (revealStage !== 'locked' && isRevealed)
+                              const canReveal = revealStage === 'ready' && !isRevealed
+                              const showName = revealStage !== 'locked' && isRevealed
                               const displayName = showName ? candidate.name : (revealStage === 'locked' ? 'Hidden' : 'Click to reveal')
-
                               return (
                                 <button
                                   type="button"
                                   key={candidate.id}
                                   onClick={() => (canReveal ? revealWinner(key) : undefined)}
                                   disabled={!canReveal}
-                                  className={`w-full flex items-center justify-between p-3 rounded-lg text-left transition-all ${
-                                    isWinnerRank ? 'bg-gradient-to-r from-amber-50 to-white border border-amber-200 hover:shadow-sm' : 'bg-gray-50'
-                                  } ${canReveal ? 'cursor-pointer' : 'cursor-default'} ${!showName && revealStage !== 'locked' ? 'hover:ring-2 hover:ring-purple-200' : ''}`}
-                                  aria-label={isWinnerRank ? `Rank ${rank} winner card` : `Rank ${rank} candidate card`}
+                                  className={`w-full flex items-center justify-between p-3 rounded-lg text-left transition-all bg-gradient-to-r from-amber-50 to-white border border-amber-200 hover:shadow-sm ${canReveal ? 'cursor-pointer hover:ring-2 hover:ring-green-200' : 'cursor-default'}`}
+                                  aria-label={`Rank ${rank} winner`}
                                 >
-                              <div className="flex items-center space-x-3">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
-                                  index === 0 ? 'bg-yellow-100 text-yellow-800' : 
-                                  index === 1 ? 'bg-gray-100 text-gray-800' : 
-                                  index === 2 ? 'bg-orange-100 text-orange-800' : 
-                                  'bg-blue-100 text-blue-800'
-                                }`}>
-                                  {index + 1}
-                                </div>
-                                <span
-                                  className={`font-medium ${
-                                    showName ? 'text-slate-900' : 'text-slate-500'
-                                  } ${isWinnerRank && isRevealed ? 'animate-in fade-in slide-in-from-bottom-1 duration-300' : ''}`}
-                                >
-                                  {displayName}
-                                </span>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <Trophy className="h-4 w-4 text-yellow-600" />
-                                <span className="font-bold text-lg">{candidate.votes}</span>
-                                <span className="text-sm text-gray-500">votes</span>
-                              </div>
+                                  <div className="flex items-center space-x-3">
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
+                                      index === 0 ? 'bg-yellow-100 text-yellow-800' :
+                                      index === 1 ? 'bg-gray-100 text-gray-800' :
+                                      index === 2 ? 'bg-orange-100 text-orange-800' :
+                                      'bg-blue-100 text-blue-800'
+                                    }`}>
+                                      {index + 1}
+                                    </div>
+                                    <span className={`font-medium ${showName ? 'text-slate-900 results-reveal-name' : 'text-slate-500'}`}>
+                                      {displayName}
+                                    </span>
+                                  </div>
+                                  <div className={`flex items-center space-x-2 ${showName ? 'results-reveal-name' : ''}`}>
+                                    <Trophy className="h-4 w-4 text-yellow-600" />
+                                    {showName ? (
+                                      <>
+                                        <span className="font-bold text-lg">{candidate.votes}</span>
+                                        <span className="text-sm text-gray-500">votes</span>
+                                      </>
+                                    ) : (
+                                      <span className="text-slate-400 font-medium">{revealStage === 'locked' ? '—' : 'Click to reveal'}</span>
+                                    )}
+                                  </div>
                                 </button>
                               )
-                            })()
-                          ))}
+                            })}
+                          </div>
+                          {/* Other candidates in dropdown */}
+                          {others.length > 0 && (
+                            <details className="mt-4 group">
+                              <summary className="cursor-pointer list-none flex items-center justify-between gap-2 py-3 px-4 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 text-sm font-medium text-slate-700">
+                                <span className="flex items-center gap-2">
+                                  <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+                                  Other candidates ({others.length})
+                                </span>
+                                <ChevronUp className="h-4 w-4 opacity-0 group-open:opacity-100 transition-opacity" />
+                              </summary>
+                              <div className="pt-3 pl-2 space-y-2 border-l-2 border-slate-200 ml-3">
+                                {others.map((candidate, index) => (
+                                  <div
+                                    key={candidate.id}
+                                    className="flex items-center justify-between py-2 px-3 rounded-md bg-slate-50/80"
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <span className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-xs font-medium">
+                                        {seats + index + 1}
+                                      </span>
+                                      <span className="font-medium text-slate-800">{candidate.name}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-sm">
+                                      <span className="font-semibold text-slate-700">{candidate.votes}</span>
+                                      <span className="text-slate-500">votes</span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </details>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 ) : (
                   <div className="text-center py-8">
@@ -835,40 +1058,46 @@ export default function ElectionResults() {
             {/* Karobari Results - Hidden from UI */}
 
             {/* Trustee Results */}
-            <Card>
-              <CardHeader>
+            <Card className="overflow-hidden border-2 border-purple-100 shadow-md">
+              <CardHeader className="bg-gradient-to-r from-purple-50 to-white border-b border-purple-100">
                 <CardTitle className="flex items-center space-x-2">
                   {getElectionIcon('trustee')}
                   <span>{results.trustee.name}</span>
                 </CardTitle>
                 <CardDescription>
-                  Trustee election results by zone - View online, offline, or merged votes
+                  Trustee election results by zone. Winners are shown first; other candidates are in the dropdown per zone.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6">
                 {/* View Mode Tabs */}
-                <div className="flex gap-2 mb-6 border-b">
+                <div className="flex flex-wrap gap-2 mb-6 pb-4 border-b border-slate-200">
                   <Button
-                    variant={trusteeViewMode === 'online' ? 'default' : 'ghost'}
+                    variant={trusteeViewMode === 'online' ? 'default' : 'outline'}
+                    size="sm"
                     onClick={() => setTrusteeViewMode('online')}
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600"
+                    className={trusteeViewMode === 'online' ? 'bg-purple-600 hover:bg-purple-700' : ''}
                   >
                     Online Votes
                   </Button>
                   <Button
-                    variant={trusteeViewMode === 'offline' ? 'default' : 'ghost'}
+                    variant={trusteeViewMode === 'offline' ? 'default' : 'outline'}
+                    size="sm"
                     onClick={() => setTrusteeViewMode('offline')}
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600"
+                    className={trusteeViewMode === 'offline' ? 'bg-purple-600 hover:bg-purple-700' : ''}
                   >
                     Offline Votes
                   </Button>
                   <Button
-                    variant={trusteeViewMode === 'merged' ? 'default' : 'ghost'}
+                    variant={trusteeViewMode === 'merged' ? 'default' : 'outline'}
+                    size="sm"
                     onClick={() => setTrusteeViewMode('merged')}
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600"
+                    className={trusteeViewMode === 'merged' ? 'bg-purple-600 hover:bg-purple-700' : ''}
                   >
                     Merged Votes
                   </Button>
+                  <Badge variant="secondary" className="ml-2">
+                    {trusteeViewMode === 'merged' ? 'Merged' : trusteeViewMode === 'online' ? 'Online' : 'Offline'} view
+                  </Badge>
                 </div>
 
                 {(() => {
@@ -890,87 +1119,117 @@ export default function ElectionResults() {
                       break
                   }
 
-                  return zonesToShow.length > 0 ? (
+                  const sortedZones = [...zonesToShow].sort(
+                    (a, b) => getTrusteeZoneSortKey(a.zone ?? {}) - getTrusteeZoneSortKey(b.zone ?? {})
+                  )
+                  return sortedZones.length > 0 ? (
                     <div className="space-y-6">
-                      <div className="mb-4">
-                        <Badge variant="outline" className="text-purple-600">
-                          Showing {viewLabel} Votes
-                        </Badge>
-                      </div>
-                      {zonesToShow.map((zoneResult) => (
-                        <div key={zoneResult.zoneId} className="border rounded-lg p-4">
-                          <div className="flex items-center justify-between mb-4">
-                            <div>
-                              <h4 className="font-semibold text-lg">{zoneResult.zone?.name || 'Unknown Zone'}</h4>
-                              <p className="text-gray-600">{zoneResult.zone?.nameGujarati || 'Unknown Zone (Gujarati)'}</p>
-                              <p className="text-sm text-gray-500">Zone {zoneResult.zone?.code || 'N/A'} • {zoneResult.zone?.seats || 0} seats</p>
+                      {sortedZones.map((zoneResult) => {
+                        const seats = Math.max(0, zoneResult.zone?.seats || 0)
+                        const winners = zoneResult.candidates.slice(0, seats)
+                        const others = zoneResult.candidates.slice(seats)
+                        return (
+                          <div key={zoneResult.zoneId} className="rounded-xl border-2 border-purple-100 bg-white p-5 shadow-sm">
+                            <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+                              <div>
+                                <h4 className="font-bold text-lg text-slate-900">{zoneResult.zone?.name || 'Unknown Zone'}</h4>
+                                <p className="text-slate-600 text-sm">{zoneResult.zone?.nameGujarati || ''}</p>
+                                <p className="text-xs text-slate-500 mt-1">Zone {zoneResult.zone?.code || 'N/A'} • {seats} seat{seats !== 1 ? 's' : ''}</p>
+                              </div>
+                              <Badge variant="outline" className="text-purple-700 border-purple-200">
+                                {zoneResult.candidates.length} candidates
+                              </Badge>
                             </div>
-                            <Badge variant="outline" className="text-purple-600">
-                              {zoneResult.candidates.length} candidates
-                            </Badge>
-                          </div>
-                          <div className="space-y-2">
-                            {zoneResult.candidates.map((candidate, index) => (
-                              (() => {
-                                const seats = Math.max(0, zoneResult.zone?.seats || 0)
+                            {/* Winners only - always visible */}
+                            <div className="space-y-2">
+                              <p className="text-xs font-semibold text-purple-700 uppercase tracking-wide mb-2">Winners</p>
+                              {winners.map((candidate, index) => {
                                 const rank = index + 1
-                                const isWinnerRank = seats > 0 && rank <= seats
                                 const key = winnerKey('trustee', trusteeViewMode, zoneResult.zoneId, rank)
                                 const isRevealed = !!revealedWinners[key]
-                                const canReveal = revealStage === 'ready' && isWinnerRank && !isRevealed
-                                const showName = !isWinnerRank || (revealStage !== 'locked' && isRevealed)
+                                const canReveal = revealStage === 'ready' && !isRevealed
+                                const showName = revealStage !== 'locked' && isRevealed
                                 const displayName = showName ? candidate.name : (revealStage === 'locked' ? 'Hidden' : 'Click to reveal')
-
                                 return (
                                   <button
                                     type="button"
                                     key={candidate.id}
                                     onClick={() => (canReveal ? revealWinner(key) : undefined)}
                                     disabled={!canReveal}
-                                    className={`w-full flex items-center justify-between p-3 rounded-lg text-left transition-all ${
-                                      isWinnerRank ? 'bg-gradient-to-r from-purple-50 to-white border border-purple-200 hover:shadow-sm' : 'bg-gray-50'
-                                    } ${canReveal ? 'cursor-pointer' : 'cursor-default'} ${!showName && revealStage !== 'locked' ? 'hover:ring-2 hover:ring-purple-200' : ''}`}
-                                    aria-label={isWinnerRank ? `Rank ${rank} winner card` : `Rank ${rank} candidate card`}
+                                    className={`w-full flex items-center justify-between p-3 rounded-lg text-left transition-all bg-gradient-to-r from-purple-50 to-white border border-purple-200 hover:shadow-sm ${canReveal ? 'cursor-pointer hover:ring-2 hover:ring-purple-200' : 'cursor-default'}`}
+                                    aria-label={`Rank ${rank} winner`}
                                   >
-                                <div className="flex items-center space-x-3">
-                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
-                                    index === 0 ? 'bg-yellow-100 text-yellow-800' : 
-                                    index === 1 ? 'bg-gray-100 text-gray-800' : 
-                                    index === 2 ? 'bg-orange-100 text-orange-800' : 
-                                    'bg-blue-100 text-blue-800'
-                                  }`}>
-                                    {index + 1}
-                                  </div>
-                                  <span
-                                    className={`font-medium ${
-                                      showName ? 'text-slate-900' : 'text-slate-500'
-                                    } ${isWinnerRank && isRevealed ? 'animate-in fade-in slide-in-from-bottom-1 duration-300' : ''}`}
-                                  >
-                                    {displayName}
-                                  </span>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  <Trophy className="h-4 w-4 text-yellow-600" />
-                                  <span className="font-bold text-lg">{candidate.votes}</span>
-                                  <span className="text-sm text-gray-500">votes</span>
-                                  {trusteeViewMode === 'merged' && (candidate.onlineVotes !== undefined || candidate.offlineVotes !== undefined) && (
-                                    <span className="text-xs text-gray-400 ml-2">
-                                      ({candidate.onlineVotes || 0} online, {candidate.offlineVotes || 0} offline)
-                                    </span>
-                                  )}
-                                </div>
+                                    <div className="flex items-center space-x-3">
+                                      <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold ${
+                                        index === 0 ? 'bg-amber-100 text-amber-800' :
+                                        index === 1 ? 'bg-slate-200 text-slate-800' :
+                                        'bg-orange-100 text-orange-800'
+                                      }`}>
+                                        {index + 1}
+                                      </div>
+                                      <span className={`font-semibold ${showName ? 'text-slate-900 results-reveal-name' : 'text-slate-500'}`}>
+                                        {displayName}
+                                      </span>
+                                    </div>
+                                    <div className={`flex items-center gap-2 ${showName ? 'results-reveal-name' : ''}`}>
+                                      <Trophy className="h-4 w-4 text-amber-500" />
+                                      {showName ? (
+                                        <>
+                                          <span className="font-bold text-lg">{candidate.votes}</span>
+                                          <span className="text-sm text-slate-500">votes</span>
+                                          {trusteeViewMode === 'merged' && (candidate.onlineVotes !== undefined || candidate.offlineVotes !== undefined) && (
+                                            <span className="text-xs text-slate-400 hidden sm:inline">
+                                              ({candidate.onlineVotes || 0} on, {candidate.offlineVotes || 0} off)
+                                            </span>
+                                          )}
+                                        </>
+                                      ) : (
+                                        <span className="text-slate-400 font-medium">{revealStage === 'locked' ? '—' : 'Click to reveal'}</span>
+                                      )}
+                                    </div>
                                   </button>
                                 )
-                              })()
-                            ))}
+                              })}
+                            </div>
+                            {/* Other candidates in collapsible */}
+                            {others.length > 0 && (
+                              <details className="mt-4 group">
+                                <summary className="cursor-pointer list-none flex items-center justify-between gap-2 py-3 px-4 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 text-sm font-medium text-slate-700">
+                                  <span className="flex items-center gap-2">
+                                    <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+                                    Other candidates ({others.length})
+                                  </span>
+                                  <ChevronUp className="h-4 w-4 opacity-0 group-open:opacity-100 transition-opacity" />
+                                </summary>
+                                <div className="pt-3 pl-2 space-y-2 border-l-2 border-slate-200 ml-3">
+                                  {others.map((candidate, index) => (
+                                    <div
+                                      key={candidate.id}
+                                      className="flex items-center justify-between py-2 px-3 rounded-md bg-slate-50/80"
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        <span className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-xs font-medium">
+                                          {seats + index + 1}
+                                        </span>
+                                        <span className="font-medium text-slate-800">{candidate.name}</span>
+                                      </div>
+                                      <div className="flex items-center gap-2 text-sm">
+                                        <span className="font-semibold text-slate-700">{candidate.votes}</span>
+                                        <span className="text-slate-500">votes</span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </details>
+                            )}
                           </div>
-                        </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   ) : (
-                    <div className="text-center py-8">
-                      <Vote className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                      <p className="text-gray-500">No {viewLabel.toLowerCase()} votes recorded for Trustee election</p>
+                    <div className="text-center py-12 rounded-xl bg-slate-50 border border-slate-200">
+                      <Vote className="h-12 w-12 mx-auto mb-4 text-slate-400" />
+                      <p className="text-slate-600">No {viewLabel.toLowerCase()} votes recorded for Trustee election</p>
                     </div>
                   )
                 })()}

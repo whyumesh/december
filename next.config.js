@@ -15,10 +15,8 @@ const nextConfig = {
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
-  // Skip font optimization during build if network fails (non-blocking)
   optimizeFonts: process.env.SKIP_FONT_OPTIMIZATION !== 'true',
   
-  // Performance optimizations
   experimental: {
     optimizePackageImports: [
       'lucide-react', 
@@ -197,4 +195,4 @@ const nextConfig = {
   },
 }
 
-module.exports = nextConfi
+module.exports = nextConfig
