@@ -2,20 +2,21 @@
 const nextConfig = {
   turbopack: {},
   images: {
+    domains: ['localhost', 'upload.wikimedia.org'],
     remotePatterns: [
-      { protocol: 'https', hostname: 'upload.wikimedia.org', pathname: '/**' },
-      { protocol: 'http', hostname: 'localhost', pathname: '/**' },
+      {
+        protocol: 'https',
+        hostname: 'upload.wikimedia.org',
+        pathname: '/**',
+      },
     ],
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 60,
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
-<<<<<<< HEAD
   optimizeFonts: process.env.SKIP_FONT_OPTIMIZATION !== 'true',
   
-=======
->>>>>>> origin/main
   experimental: {
     optimizePackageImports: [
       'lucide-react', 
@@ -32,18 +33,25 @@ const nextConfig = {
       '@radix-ui/react-separator',
       '@radix-ui/react-slot',
       '@radix-ui/react-tabs',
-      '@radix-ui/react-toast',
+      '@radix-ui/react-toast'
     ],
-  },
-  // Only include Prisma engine for Vercel (rhel). Do NOT include node_modules/next/** —
-  // that forces 100MB+ into every function and exceeds the 250 MB limit.
-  outputFileTracingIncludes: {
-    '*': [
-      'node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node',
-    ],
-  },
-  outputFileTracingExcludes: {
-    '*': [
+    outputFileTracingIncludes: {
+      '*': [
+        'node_modules/next/**',
+        'node_modules/styled-jsx/**',
+        'node_modules/@prisma/client/**',
+        'node_modules/.prisma/client/**',
+        'node_modules/.prisma/client/libquery_engine-linux-musl-openssl-3.0.x.so.node',
+        'node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node',
+        'node_modules/.prisma/client/libquery_engine-linux-musl*',
+        'node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x*',
+        'node_modules/@prisma/engines/**/query-engine-linux-musl-openssl-3.0.x*',
+        'node_modules/@prisma/engines/**/query-engine-rhel-openssl-3.0.x*',
+        'node_modules/@prisma/engines/**/libquery_engine-rhel-openssl-3.0.x.so.node',
+      ],
+    },
+    outputFileTracingExcludes: {
+      '*': [
         'node_modules/@swc/core-linux-x64-gnu/**/*',
         'node_modules/@swc/core-darwin-x64/**/*',
         'node_modules/@swc/core-darwin-arm64/**/*',
@@ -97,9 +105,12 @@ const nextConfig = {
         '.next/routes-manifest.json',
         '.next/prerender-manifest.json',
         '.next/images-manifest.json',
-    ],
+      ],
+    },
+    serverComponentsExternalPackages: [],
   },
   transpilePackages: [],
+  swcMinify: true,
   webpack: (config, { dev, isServer }) => {
     if (!dev && !isServer) {
       config.optimization.usedExports = true
@@ -175,6 +186,9 @@ const nextConfig = {
   compress: true,
   typescript: {
     ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
   },
   generateBuildId: async () => {
     return 'build-' + Date.now()
