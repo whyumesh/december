@@ -540,9 +540,6 @@ export default function OfflineVoteEntryPage() {
                   <Badge variant="outline" className="border-teal-300 text-teal-900 bg-white font-mono text-base px-3 py-1">
                     {vid.trim() || voterInfo.voterId}
                   </Badge>
-                  {voterInfo.name && (
-                    <span className="text-sm text-teal-700">— {voterInfo.name}</span>
-                  )}
                 </div>
 
                 {/* Trustee Selection */}
