@@ -20,307 +20,159 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(cached)
       }
 
-      // Get all votes with candidate and zone information (exclude test voters)
-      const votes = await prisma.vote.findMany({
-      where: {
-        voter: {
-          voterId: {
-            not: {
-              startsWith: 'TEST_'
-            }
-          }
-        }
-      },
-      include: {
-        yuvaPankhCandidate: {
-          include: {
-            user: {
-              select: {
-                name: true
-              }
-            },
-            zone: {
-              select: {
-                id: true,
-                name: true,
-                nameGujarati: true,
-                code: true,
-                seats: true
-              }
-            }
-          }
-        },
-        karobariCandidate: {
-          include: {
-            user: {
-              select: {
-                name: true
-              }
-            },
-            zone: {
-              select: {
-                id: true,
-                name: true,
-                nameGujarati: true,
-                code: true,
-                seats: true
-              }
-            }
-          }
-        },
-        trusteeCandidate: {
-          include: {
-            user: {
-              select: {
-                name: true
-              }
-            },
-            zone: {
-              select: {
-                id: true,
-                name: true,
-                nameGujarati: true,
-                code: true,
-                seats: true
-              }
-            }
-          }
-        }
-      }
-    });
+      // Build results from Vote table only (same logic as export) so UI matches export data
+      const formatResults = (resultsMap: Map<string, { zone: any; candidates: Map<string, { id: string; name: string; votes: number }> }>) => {
+        return Array.from(resultsMap.entries()).map(([zoneId, zoneData]) => ({
+          zoneId,
+          zone: zoneData.zone,
+          candidates: Array.from(zoneData.candidates.values())
+            .sort((a, b) => b.votes - a.votes)
+        }));
+      };
 
-    // Process Yuva Pankh results
-    const yuvaPankhVotes = votes.filter(vote => vote.yuvaPankhCandidateId !== null);
-    const yuvaPankhResults = new Map();
-    
-    yuvaPankhVotes.forEach(vote => {
-      if (vote.yuvaPankhCandidate && vote.yuvaPankhCandidate.zone) {
-        const zoneId = vote.yuvaPankhCandidate.zoneId;
-        const candidateId = vote.yuvaPankhCandidateId;
-        const candidateName = vote.yuvaPankhCandidate.user?.name || vote.yuvaPankhCandidate.name || 'Unknown';
-        const zone = vote.yuvaPankhCandidate.zone;
-        
+      // Yuva Pankh: Vote table groupBy (same as export-insights)
+      const yuvaPankhVoteCounts = await prisma.vote.groupBy({
+        by: ['yuvaPankhCandidateId'],
+        where: { yuvaPankhCandidateId: { not: null } },
+        _count: { id: true }
+      });
+      const yuvaPankhCandidateIds = yuvaPankhVoteCounts.map(v => v.yuvaPankhCandidateId!).filter(Boolean);
+      const yuvaPankhCandidates = yuvaPankhCandidateIds.length > 0
+        ? await prisma.yuvaPankhCandidate.findMany({
+            where: { id: { in: yuvaPankhCandidateIds } },
+            include: {
+              user: { select: { name: true } },
+              zone: { select: { id: true, name: true, nameGujarati: true, code: true, seats: true } }
+            }
+          })
+        : [];
+      const yuvaPankhResults = new Map<string, { zone: any; candidates: Map<string, { id: string; name: string; votes: number }> }>();
+      yuvaPankhVoteCounts.forEach(vc => {
+        if (!vc.yuvaPankhCandidateId) return;
+        const candidate = yuvaPankhCandidates.find(c => c.id === vc.yuvaPankhCandidateId);
+        if (!candidate?.zone) return;
+        const zoneId = candidate.zoneId;
+        const name = candidate.user?.name || candidate.name || 'Unknown';
+        const votes = vc._count.id;
         if (!yuvaPankhResults.has(zoneId)) {
-          yuvaPankhResults.set(zoneId, {
-            zone: zone,
-            candidates: new Map()
-          });
+          yuvaPankhResults.set(zoneId, { zone: candidate.zone, candidates: new Map() });
         }
-        
-        const zoneData = yuvaPankhResults.get(zoneId);
-        if (!zoneData.candidates.has(candidateId)) {
-          zoneData.candidates.set(candidateId, {
-            id: candidateId,
-            name: candidateName,
-            votes: 0
-          });
-        }
-        zoneData.candidates.get(candidateId).votes++;
-      }
-    });
+        yuvaPankhResults.get(zoneId)!.candidates.set(candidate.id, { id: candidate.id, name, votes });
+      });
 
-    // Process Karobari results
-    const karobariVotes = votes.filter(vote => vote.karobariCandidateId !== null);
-    const karobariResults = new Map();
-    
-    karobariVotes.forEach(vote => {
-      if (vote.karobariCandidate && vote.karobariCandidate.zone) {
-        const zoneId = vote.karobariCandidate.zoneId;
-        const candidateId = vote.karobariCandidateId;
-        const candidateName = vote.karobariCandidate.user?.name || vote.karobariCandidate.name || 'Unknown';
-        const zone = vote.karobariCandidate.zone;
-        
+      // Karobari: Vote table groupBy (same pattern as export)
+      const karobariVoteCounts = await prisma.vote.groupBy({
+        by: ['karobariCandidateId'],
+        where: { karobariCandidateId: { not: null } },
+        _count: { id: true }
+      });
+      const karobariCandidateIds = karobariVoteCounts.map(v => v.karobariCandidateId!).filter(Boolean);
+      const karobariCandidates = karobariCandidateIds.length > 0
+        ? await prisma.karobariCandidate.findMany({
+            where: { id: { in: karobariCandidateIds } },
+            include: {
+              user: { select: { name: true } },
+              zone: { select: { id: true, name: true, nameGujarati: true, code: true, seats: true } }
+            }
+          })
+        : [];
+      const karobariResults = new Map<string, { zone: any; candidates: Map<string, { id: string; name: string; votes: number }> }>();
+      karobariVoteCounts.forEach(vc => {
+        if (!vc.karobariCandidateId) return;
+        const candidate = karobariCandidates.find(c => c.id === vc.karobariCandidateId);
+        if (!candidate?.zone) return;
+        const zoneId = candidate.zoneId;
+        const name = candidate.user?.name || candidate.name || 'Unknown';
+        const votes = vc._count.id;
         if (!karobariResults.has(zoneId)) {
-          karobariResults.set(zoneId, {
-            zone: zone,
-            candidates: new Map()
-          });
+          karobariResults.set(zoneId, { zone: candidate.zone, candidates: new Map() });
         }
-        
-        const zoneData = karobariResults.get(zoneId);
-        if (!zoneData.candidates.has(candidateId)) {
-          zoneData.candidates.set(candidateId, {
-            id: candidateId,
-            name: candidateName,
-            votes: 0
-          });
-        }
-        zoneData.candidates.get(candidateId).votes++;
-      }
-    });
+        karobariResults.get(zoneId)!.candidates.set(candidate.id, { id: candidate.id, name, votes });
+      });
 
-    // Process Trustee results - separate online and offline
-    const trusteeVotes = votes.filter(vote => vote.trusteeCandidateId !== null);
-    const trusteeResults = new Map();
-    const trusteeResultsOffline = new Map();
-    
-    // Get offline votes for trustee election
-    const trusteeElection = await prisma.election.findFirst({
-      where: { type: 'TRUSTEES', status: 'ACTIVE' }
-    })
-    
-    const offlineTrusteeVotes = trusteeElection ? await prisma.offlineVote.findMany({
-      where: {
-        electionId: trusteeElection.id,
-        trusteeCandidateId: { not: null }
-      },
-      include: {
-        trusteeCandidate: {
-          include: {
-            user: {
-              select: { name: true }
+      // Trustee: Vote table groupBy for main/merged display (same as export)
+      const trusteeVoteCounts = await prisma.vote.groupBy({
+        by: ['trusteeCandidateId'],
+        where: { trusteeCandidateId: { not: null } },
+        _count: { id: true }
+      });
+      const trusteeCandidateIds = trusteeVoteCounts.map(v => v.trusteeCandidateId!).filter(Boolean);
+      const trusteeCandidates = trusteeCandidateIds.length > 0
+        ? await prisma.trusteeCandidate.findMany({
+            where: { id: { in: trusteeCandidateIds } },
+            include: {
+              user: { select: { name: true } },
+              zone: { select: { id: true, name: true, nameGujarati: true, code: true, seats: true } }
+            }
+          })
+        : [];
+      const trusteeResultsFromVote = new Map<string, { zone: any; candidates: Map<string, { id: string; name: string; votes: number }> }>();
+      trusteeVoteCounts.forEach(vc => {
+        if (!vc.trusteeCandidateId) return;
+        const candidate = trusteeCandidates.find(c => c.id === vc.trusteeCandidateId);
+        if (!candidate?.zone) return;
+        const zoneId = candidate.zoneId;
+        const name = candidate.user?.name || candidate.name || 'Unknown';
+        const votes = vc._count.id;
+        if (!trusteeResultsFromVote.has(zoneId)) {
+          trusteeResultsFromVote.set(zoneId, { zone: candidate.zone, candidates: new Map() });
+        }
+        trusteeResultsFromVote.get(zoneId)!.candidates.set(candidate.id, { id: candidate.id, name, votes });
+      });
+
+      // Trustee offline-only view (from OfflineVote table, for "Offline" tab)
+      const trusteeElection = await prisma.election.findFirst({
+        where: { type: 'TRUSTEES', status: 'ACTIVE' }
+      });
+      const offlineTrusteeVotes = trusteeElection
+        ? await prisma.offlineVote.findMany({
+            where: {
+              electionId: trusteeElection.id,
+              trusteeCandidateId: { not: null }
             },
-            zone: {
-              select: {
-                id: true,
-                name: true,
-                nameGujarati: true,
-                code: true,
-                seats: true
+            include: {
+              trusteeCandidate: {
+                include: {
+                  user: { select: { name: true } },
+                  zone: { select: { id: true, name: true, nameGujarati: true, code: true, seats: true } }
+                }
               }
             }
-          }
-        }
-      }
-    }) : []
-    
-    // Process online votes
-    trusteeVotes.forEach(vote => {
-      if (vote.trusteeCandidate && vote.trusteeCandidate.zone) {
+          })
+        : [];
+      const trusteeResultsOffline = new Map<string, { zone: any; candidates: Map<string, { id: string; name: string; votes: number }> }>();
+      offlineTrusteeVotes.forEach(vote => {
+        if (!vote.trusteeCandidate?.zone) return;
         const zoneId = vote.trusteeCandidate.zoneId;
-        const candidateId = vote.trusteeCandidateId;
-        const candidateName = vote.trusteeCandidate.user?.name || vote.trusteeCandidate.name || 'Unknown';
+        const candidateId = vote.trusteeCandidateId!;
+        const name = vote.trusteeCandidate.user?.name || vote.trusteeCandidate.name || 'Unknown';
         const zone = vote.trusteeCandidate.zone;
-        
-        if (!trusteeResults.has(zoneId)) {
-          trusteeResults.set(zoneId, {
-            zone: zone,
-            candidates: new Map()
-          });
-        }
-        
-        const zoneData = trusteeResults.get(zoneId);
-        if (!zoneData.candidates.has(candidateId)) {
-          zoneData.candidates.set(candidateId, {
-            id: candidateId,
-            name: candidateName,
-            votes: 0
-          });
-        }
-        zoneData.candidates.get(candidateId).votes++;
-      }
-    });
-    
-    // Process offline votes
-    offlineTrusteeVotes.forEach(vote => {
-      if (vote.trusteeCandidate && vote.trusteeCandidate.zone) {
-        const zoneId = vote.trusteeCandidate.zoneId;
-        const candidateId = vote.trusteeCandidateId;
-        const candidateName = vote.trusteeCandidate.user?.name || vote.trusteeCandidate.name || 'Unknown';
-        const zone = vote.trusteeCandidate.zone;
-        
         if (!trusteeResultsOffline.has(zoneId)) {
-          trusteeResultsOffline.set(zoneId, {
-            zone: zone,
-            candidates: new Map()
-          });
+          trusteeResultsOffline.set(zoneId, { zone, candidates: new Map() });
         }
-        
-        const zoneData = trusteeResultsOffline.get(zoneId);
-        if (!zoneData.candidates.has(candidateId)) {
-          zoneData.candidates.set(candidateId, {
-            id: candidateId,
-            name: candidateName,
-            votes: 0
-          });
-        }
-        zoneData.candidates.get(candidateId).votes++;
-      }
-    });
+        const cand = trusteeResultsOffline.get(zoneId)!.candidates.get(candidateId);
+        if (cand) cand.votes++;
+        else trusteeResultsOffline.get(zoneId)!.candidates.set(candidateId, { id: candidateId, name, votes: 1 });
+      });
 
-    // Convert Maps to arrays and sort by votes
-    const formatResults = (resultsMap: Map<string, any>) => {
-      return Array.from(resultsMap.entries()).map(([zoneId, zoneData]) => ({
-        zoneId,
-        zone: zoneData.zone,
-        candidates: Array.from(zoneData.candidates.values())
-          .sort((a: any, b: any) => b.votes - a.votes)
-      }));
-    };
-
-    // Merge online and offline results for trustee
-    const trusteeMergedResults = new Map()
-    const allTrusteeZones = new Set([
-      ...Array.from(trusteeResults.keys()),
-      ...Array.from(trusteeResultsOffline.keys())
-    ])
-    
-    allTrusteeZones.forEach(zoneId => {
-      const onlineZone = trusteeResults.get(zoneId)
-      const offlineZone = trusteeResultsOffline.get(zoneId)
-      const zone = onlineZone?.zone || offlineZone?.zone
-      
-      if (!zone) return
-      
-      trusteeMergedResults.set(zoneId, {
-        zone: zone,
-        candidates: new Map()
-      })
-      
-      const mergedZone = trusteeMergedResults.get(zoneId)
-      
-      // Add online votes
-      if (onlineZone) {
-        onlineZone.candidates.forEach((candidate: any, candidateId: string) => {
-          if (!mergedZone.candidates.has(candidateId)) {
-            mergedZone.candidates.set(candidateId, {
-              id: candidateId,
-              name: candidate.name,
-              votes: 0,
-              onlineVotes: 0,
-              offlineVotes: 0
-            })
-          }
-          mergedZone.candidates.get(candidateId).votes += candidate.votes
-          mergedZone.candidates.get(candidateId).onlineVotes = candidate.votes
-        })
-      }
-      
-      // Add offline votes
-      if (offlineZone) {
-        offlineZone.candidates.forEach((candidate: any, candidateId: string) => {
-          if (!mergedZone.candidates.has(candidateId)) {
-            mergedZone.candidates.set(candidateId, {
-              id: candidateId,
-              name: candidate.name,
-              votes: 0,
-              onlineVotes: 0,
-              offlineVotes: 0
-            })
-          }
-          mergedZone.candidates.get(candidateId).votes += candidate.votes
-          mergedZone.candidates.get(candidateId).offlineVotes = candidate.votes
-        })
-      }
-    })
-
-    const response = {
-      yuvaPankh: {
-        name: 'Yuva Pankh Samiti',
-        zones: formatResults(yuvaPankhResults)
-      },
-      karobari: {
-        name: 'Karobari Samiti',
-        zones: formatResults(karobariResults)
-      },
-      trustee: {
-        name: 'Trust Mandal',
-        zones: formatResults(trusteeResults),
-        zonesOffline: formatResults(trusteeResultsOffline),
-        zonesMerged: formatResults(trusteeMergedResults)
-      },
-      timestamp: new Date().toISOString()
-    };
+      // UI matches export: zones and zonesMerged = Vote table (same data); zonesOffline = OfflineVote only
+      const response = {
+        yuvaPankh: {
+          name: 'Yuva Pankh Samiti',
+          zones: formatResults(yuvaPankhResults)
+        },
+        karobari: {
+          name: 'Karobari Samiti',
+          zones: formatResults(karobariResults)
+        },
+        trustee: {
+          name: 'Trust Mandal',
+          zones: formatResults(trusteeResultsFromVote),
+          zonesOffline: formatResults(trusteeResultsOffline),
+          zonesMerged: formatResults(trusteeResultsFromVote)
+        },
+        timestamp: new Date().toISOString()
+      };
 
     console.log('Election results processed:', {
       yuvaPankhZones: response.yuvaPankh.zones.length,

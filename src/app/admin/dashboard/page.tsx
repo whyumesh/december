@@ -536,7 +536,18 @@ export default function AdminDashboard() {
                 headers: { 'Content-Type': 'application/json' }
             })
 
-            const data = await response.json()
+            const contentType = response.headers.get('Content-Type') || ''
+            let data: { error?: string; mergedCount?: number; voterCount?: number } = {}
+            if (contentType.includes('application/json')) {
+                try {
+                    data = await response.json()
+                } catch {
+                    throw new Error('Invalid response from server. Please try again.')
+                }
+            } else {
+                const text = await response.text()
+                throw new Error(response.ok ? 'Unexpected response from server.' : (text || `Request failed (${response.status})`))
+            }
 
             if (!response.ok) {
                 throw new Error(data.error || 'Failed to merge offline votes')
@@ -547,8 +558,9 @@ export default function AdminDashboard() {
             // Refresh dashboard data
             await fetchDashboardData(true)
         } catch (error: any) {
-            setError(error.message || 'Failed to merge offline votes')
-            alert(`Merge failed: ${error.message || 'Unknown error'}`)
+            const message = error.message || 'Failed to merge offline votes'
+            setError(message)
+            alert(`Merge failed: ${message}`)
         } finally {
             setIsMerging(false)
         }

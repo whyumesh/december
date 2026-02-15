@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken'
 
 export const dynamic = 'force-dynamic'
 
-const AUTHORIZED_PHONES = ['9448118832', '9930021208']
+const AUTHORIZED_PHONES = ['9821520010', '9930021208']
 
 function getResultsPassword(): string {
   return process.env.ELECTION_RESULTS_PASSWORD || 'Maheshwari@11'

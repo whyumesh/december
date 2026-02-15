@@ -4,18 +4,19 @@ import { prisma } from '@/lib/db'
 export const dynamic = 'force-dynamic'
 
 // Authorized phone numbers for results declaration
-const AUTHORIZED_PHONES = ['9448118832', '9930021208']
+const AUTHORIZED_PHONES = ['9821520010', '9930021208']
 
 export async function POST(request: NextRequest) {
   try {
     const { phone, otp } = await request.json()
 
-    if (!phone || !otp) {
+    if (!phone || (otp !== undefined && otp !== null && String(otp).trim() === '')) {
       return NextResponse.json({ error: 'Phone number and OTP are required' }, { status: 400 })
     }
 
-    // Normalize phone number
-    const normalizedPhone = phone.replace(/\D/g, '')
+    // Normalize phone number and OTP (string comparison in DB)
+    const normalizedPhone = String(phone).replace(/\D/g, '')
+    const otpStr = String(otp).trim()
 
     // Check if phone is authorized
     if (!AUTHORIZED_PHONES.includes(normalizedPhone)) {
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
     const otpRecord = await prisma.oTP.findFirst({
       where: {
         phone: normalizedPhone,
-        code: otp,
+        code: otpStr,
         isUsed: false,
         expiresAt: {
           gt: new Date()

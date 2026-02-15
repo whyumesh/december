@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateOTP } from '@/lib/utils'
-import { sendOTP } from '@/lib/otp'
+import { sendOTPViaSMSIndiaHub } from '@/lib/sms-indiahub'
+import { sendOTP as sendOTPViaTwilio } from '@/lib/otp'
 import { prisma } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
 // Authorized phone numbers for results declaration
-const AUTHORIZED_PHONES = ['9448118832', '9930021208']
+const AUTHORIZED_PHONES = ['9821520010', '9930021208']
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,8 +41,15 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Send OTP via SMS
-    const sendResult = await sendOTP(normalizedPhone, otpCode)
+    // Send OTP: prefer SMS India Hub (same as voter OTP), fallback to Twilio
+    let sendResult: { success: boolean; message: string }
+    const indiaHubResult = await sendOTPViaSMSIndiaHub(normalizedPhone, otpCode)
+    if (indiaHubResult.success) {
+      sendResult = { success: true, message: indiaHubResult.message }
+    } else {
+      const twilioResult = await sendOTPViaTwilio(normalizedPhone, otpCode)
+      sendResult = { success: twilioResult.success, message: twilioResult.message || indiaHubResult.message }
+    }
 
     if (!sendResult.success) {
       return NextResponse.json({ 

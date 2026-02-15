@@ -78,7 +78,7 @@ interface ElectionResults {
 const ELECTION_RESULTS_PASSWORD = 'Maheshwari@11'
 
 // Authorized phone numbers for results declaration
-const AUTHORIZED_PHONE_1 = '9448118832'
+const AUTHORIZED_PHONE_1 = '9821520010'
 const AUTHORIZED_PHONE_2 = '9930021208'
 
 export default function ElectionResults() {
@@ -244,6 +244,20 @@ export default function ElectionResults() {
     router.push('/admin/login')
   }
 
+  // Parse API response safely (avoid JSON parse error on HTML/plain text)
+  const parseResultError = async (response: Response): Promise<{ error?: string; message?: string }> => {
+    const ct = response.headers.get('Content-Type') || ''
+    if (!ct.includes('application/json')) {
+      const text = await response.text()
+      return { error: text || `Request failed (${response.status})` }
+    }
+    try {
+      return await response.json()
+    } catch {
+      return { error: 'Invalid response from server' }
+    }
+  }
+
   // Send OTP to phone 1
   const sendOtp1 = async () => {
     setIsSendingOtp1(true)
@@ -256,12 +270,12 @@ export default function ElectionResults() {
         body: JSON.stringify({ phone: AUTHORIZED_PHONE_1 })
       })
       
-      const data = await response.json()
+      const data = await parseResultError(response)
       
       if (response.ok) {
         setOtp1Error('')
       } else {
-        setOtp1Error(data.error || 'Failed to send OTP')
+        setOtp1Error(data.error || data.message || 'Failed to send OTP')
       }
     } catch (error) {
       setOtp1Error('Failed to send OTP. Please try again.')
@@ -289,7 +303,7 @@ export default function ElectionResults() {
         body: JSON.stringify({ phone: AUTHORIZED_PHONE_1, otp: otp1 })
       })
       
-      const data = await response.json()
+      const data = await parseResultError(response)
       
       if (response.ok) {
         setIsOtp1Verified(true)
@@ -298,7 +312,7 @@ export default function ElectionResults() {
         // Automatically send OTP to phone 2
         sendOtp2()
       } else {
-        setOtp1Error(data.error || 'Invalid OTP')
+        setOtp1Error(data.error || data.message || 'Invalid OTP')
         setOtp1('')
       }
     } catch (error) {
@@ -321,12 +335,12 @@ export default function ElectionResults() {
         body: JSON.stringify({ phone: AUTHORIZED_PHONE_2 })
       })
       
-      const data = await response.json()
+      const data = await parseResultError(response)
       
       if (response.ok) {
         setOtp2Error('')
       } else {
-        setOtp2Error(data.error || 'Failed to send OTP')
+        setOtp2Error(data.error || data.message || 'Failed to send OTP')
       }
     } catch (error) {
       setOtp2Error('Failed to send OTP. Please try again.')
@@ -354,14 +368,14 @@ export default function ElectionResults() {
         body: JSON.stringify({ phone: AUTHORIZED_PHONE_2, otp: otp2 })
       })
       
-      const data = await response.json()
+      const data = await parseResultError(response)
       
       if (response.ok) {
         setIsOtp2Verified(true)
         setOtp2('')
         setOtp2Error('')
       } else {
-        setOtp2Error(data.error || 'Invalid OTP')
+        setOtp2Error(data.error || data.message || 'Invalid OTP')
         setOtp2('')
       }
     } catch (error) {
