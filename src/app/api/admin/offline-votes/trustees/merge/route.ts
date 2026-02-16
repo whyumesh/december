@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { canMergeOfflineVotes } from '@/lib/offline-vote-auth'
+import { getOrCreateTrusteeNotaCandidateForSeat } from '@/lib/nota'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -121,6 +122,42 @@ export async function POST(request: NextRequest) {
               })
             }
 
+            // Merge offline NOTA into master: "all NOTA" placeholder (trusteeCandidateId null)
+            let notaVotesCreated = 0
+            const hasAllNotaPlaceholder = votes.some((v) => !v.trusteeCandidateId)
+            if (hasAllNotaPlaceholder && seenCandidateIds.size === 0 && voter.trusteeZoneId) {
+              const zone = await tx.zone.findUnique({
+                where: { id: voter.trusteeZoneId },
+                select: { seats: true }
+              })
+              if (zone && zone.seats > 0) {
+                const firstOfflineTs = votes.find((v) => v.timestamp)?.timestamp ?? new Date()
+                for (let i = 1; i <= zone.seats; i++) {
+                  const notaCandidateId = await getOrCreateTrusteeNotaCandidateForSeat(
+                    voter.trusteeZoneId,
+                    String(i)
+                  )
+                  await tx.vote.create({
+                    data: {
+                      voterId: voter.id,
+                      electionId: election.id,
+                      trusteeCandidateId: notaCandidateId,
+                      timestamp: firstOfflineTs,
+                      ipAddress: null,
+                      userAgent: 'Offline Vote Entry (NOTA)',
+                      latitude: null,
+                      longitude: null
+                    }
+                  })
+                  notaVotesCreated++
+                }
+              } else if (!zone || zone.seats < 1) {
+                errors.push(`Voter ${voterId}: all NOTA but zone missing or has no seats; NOTA votes not merged.`)
+              }
+            } else if (hasAllNotaPlaceholder && seenCandidateIds.size === 0 && !voter.trusteeZoneId) {
+              errors.push(`Voter ${voterId}: all NOTA but no trustee zone; NOTA votes not merged.`)
+            }
+
             await tx.offlineVote.updateMany({
               where: {
                 voterId,
@@ -133,7 +170,7 @@ export async function POST(request: NextRequest) {
               }
             })
 
-            mergedCount += seenCandidateIds.size
+            mergedCount += seenCandidateIds.size + notaVotesCreated
           },
           { timeout: 15000 }
         )

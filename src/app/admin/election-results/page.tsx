@@ -22,7 +22,9 @@ import {
   EyeOff,
   ChevronDown,
   ChevronUp,
-  ExternalLink
+  ExternalLink,
+  Copy,
+  Download
 } from 'lucide-react'
 import Link from 'next/link'
 import Logo from '@/components/Logo'
@@ -117,6 +119,8 @@ export default function ElectionResults() {
   const [declarationStatus, setDeclarationStatus] = useState<{ declared: boolean; declaredAt?: string | null } | null>(null)
   const [declarationToken, setDeclarationToken] = useState<string | null>(null)
   const [tokenError, setTokenError] = useState<string | null>(null)
+  const [isCopyingWinners, setIsCopyingWinners] = useState(false)
+  const [isDownloadingWinners, setIsDownloadingWinners] = useState(false)
   const landingShownRef = useRef(false)
   const router = useRouter()
 
@@ -383,6 +387,61 @@ export default function ElectionResults() {
       setOtp2('')
     } finally {
       setIsVerifyingOtp2(false)
+    }
+  }
+
+  const formatWinnersAsText = (data: { yuvaPankh: Array<{ name: string; zoneName: string; zoneCode: string; rank: number; votes: number; election: string }>; trustee: Array<{ name: string; zoneName: string; zoneCode: string; rank: number; votes: number; election: string }> }) => {
+    const lines: string[] = ['ALL WINNERS - SKMMMS Election 2026', '='.repeat(50), '']
+    if (data.yuvaPankh.length > 0) {
+      lines.push('--- Yuva Pankh Samiti ---')
+      data.yuvaPankh.forEach(w => {
+        lines.push(`${w.zoneName} (${w.zoneCode}) | Rank ${w.rank} | ${w.name} | ${w.votes} votes`)
+      })
+      lines.push('')
+    }
+    if (data.trustee.length > 0) {
+      lines.push('--- Trust Mandal ---')
+      data.trustee.forEach(w => {
+        lines.push(`${w.zoneName} (${w.zoneCode}) | Rank ${w.rank} | ${w.name} | ${w.votes} votes`)
+      })
+    }
+    return lines.join('\n')
+  }
+
+  const handleCopyWinnersList = async () => {
+    setIsCopyingWinners(true)
+    try {
+      const res = await fetch('/api/admin/winners-list')
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to load winners')
+      const text = formatWinnersAsText(data)
+      await navigator.clipboard.writeText(text)
+      alert('Winners list copied to clipboard.')
+    } catch (e) {
+      alert('Failed to copy winners list: ' + (e instanceof Error ? e.message : 'Unknown error'))
+    } finally {
+      setIsCopyingWinners(false)
+    }
+  }
+
+  const handleDownloadWinnersTxt = async () => {
+    setIsDownloadingWinners(true)
+    try {
+      const res = await fetch('/api/admin/winners-list')
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to load winners')
+      const text = formatWinnersAsText(data)
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `winners-list-${new Date().toISOString().slice(0, 10)}.txt`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      alert('Failed to download winners list: ' + (e instanceof Error ? e.message : 'Unknown error'))
+    } finally {
+      setIsDownloadingWinners(false)
     }
   }
 
@@ -935,14 +994,42 @@ export default function ElectionResults() {
 
         {/* Page Header */}
         <div className="mb-6 sm:mb-8 rounded-xl bg-white/80 backdrop-blur-sm border border-slate-200/80 p-6 shadow-sm">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Election Results</h2>
-          <p className="text-gray-600 mt-1">Live results by zone for all elections</p>
-          {results && (
-            <p className="text-sm text-gray-500 mt-2 flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Last updated: {new Date(results.timestamp).toLocaleString()}
-            </p>
-          )}
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Election Results</h2>
+              <p className="text-gray-600 mt-1">Live results by zone for all elections</p>
+              {results && (
+                <p className="text-sm text-gray-500 mt-2 flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  Last updated: {new Date(results.timestamp).toLocaleString()}
+                </p>
+              )}
+            </div>
+            {results && (results.yuvaPankh.zones.length > 0 || (results.trustee.zones?.length ?? 0) > 0) && (
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyWinnersList}
+                  disabled={isCopyingWinners}
+                  className="gap-2"
+                >
+                  {isCopyingWinners ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
+                  {isCopyingWinners ? 'Copying…' : 'Copy winners list'}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownloadWinnersTxt}
+                  disabled={isDownloadingWinners}
+                  className="gap-2"
+                >
+                  {isDownloadingWinners ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                  {isDownloadingWinners ? 'Downloading…' : 'Download as TXT'}
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Results */}

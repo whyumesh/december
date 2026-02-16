@@ -104,9 +104,24 @@ export async function GET(request: NextRequest) {
       prisma.trusteeCandidate.count({ where: { status: 'PENDING' } }),
       prisma.trusteeCandidate.count({ where: { status: 'APPROVED' } }),
       prisma.trusteeCandidate.count({ where: { status: 'REJECTED' } }),
-      prisma.vote.count({ where: { yuvaPankhCandidateId: { not: null } } }),
-      prisma.vote.count({ where: { karobariCandidateId: { not: null } } }),
-      prisma.vote.count({ where: { trusteeCandidateId: { not: null } } })
+      prisma.vote.count({
+        where: {
+          yuvaPankhCandidateId: { not: null },
+          voter: { voterId: { not: { startsWith: 'TEST_' } } }
+        }
+      }),
+      prisma.vote.count({
+        where: {
+          karobariCandidateId: { not: null },
+          voter: { voterId: { not: { startsWith: 'TEST_' } } }
+        }
+      }),
+      prisma.vote.count({
+        where: {
+          trusteeCandidateId: { not: null },
+          voter: { voterId: { not: { startsWith: 'TEST_' } } }
+        }
+      })
     ])
 
     // Count NOTA votes separately to avoid hoisting issues
@@ -119,8 +134,14 @@ export async function GET(request: NextRequest) {
         where: { position: 'NOTA' },
         select: { id: true }
       }),
+      // Standard: include both 'NOTA' and NOTA_SEAT_* (merged offline NOTA in Election Insights export)
       prisma.trusteeCandidate.findMany({
-        where: { position: 'NOTA' },
+        where: {
+          OR: [
+            { position: 'NOTA' },
+            { position: { startsWith: 'NOTA_SEAT' } }
+          ]
+        },
         select: { id: true }
       })
     ])
@@ -132,13 +153,28 @@ export async function GET(request: NextRequest) {
 
     const [yuvaPankhNotaVotes, karobariNotaVotes, trusteeNotaVotes] = await Promise.all([
       yuvaPankhNotaIds.length > 0
-        ? prisma.vote.count({ where: { yuvaPankhCandidateId: { in: yuvaPankhNotaIds } } })
+        ? prisma.vote.count({
+            where: {
+              yuvaPankhCandidateId: { in: yuvaPankhNotaIds },
+              voter: { voterId: { not: { startsWith: 'TEST_' } } }
+            }
+          })
         : Promise.resolve(0),
       karobariNotaIds.length > 0
-        ? prisma.vote.count({ where: { karobariCandidateId: { in: karobariNotaIds } } })
+        ? prisma.vote.count({
+            where: {
+              karobariCandidateId: { in: karobariNotaIds },
+              voter: { voterId: { not: { startsWith: 'TEST_' } } }
+            }
+          })
         : Promise.resolve(0),
       trusteeNotaIds.length > 0
-        ? prisma.vote.count({ where: { trusteeCandidateId: { in: trusteeNotaIds } } })
+        ? prisma.vote.count({
+            where: {
+              trusteeCandidateId: { in: trusteeNotaIds },
+              voter: { voterId: { not: { startsWith: 'TEST_' } } }
+            }
+          })
         : Promise.resolve(0)
     ])
     
@@ -156,26 +192,34 @@ export async function GET(request: NextRequest) {
     const approvedYuvaPankh = approvedYuvaPankhCandidates + approvedYuvaPankhNominees
     const rejectedYuvaPankh = rejectedYuvaPankhCandidates + rejectedYuvaPankhNominees
 
-    // Voter statistics - optimized with parallel queries
+    // Voter statistics - exclude test voters for consistent tally
     const [votersWithYuvaPankZone, votersWithKarobariZone, votersWithTrusteeZone] = await Promise.all([
-      prisma.voter.count({ where: { yuvaPankZoneId: { not: null } } }),
-      prisma.voter.count({ where: { karobariZoneId: { not: null } } }),
-      prisma.voter.count({ where: { trusteeZoneId: { not: null } } })
+      prisma.voter.count({ where: excludeTestVoters({ yuvaPankZoneId: { not: null } }) }),
+      prisma.voter.count({ where: excludeTestVoters({ karobariZoneId: { not: null } }) }),
+      prisma.voter.count({ where: excludeTestVoters({ trusteeZoneId: { not: null } }) })
     ])
     
-    // Voters who have voted (count distinct voters) - optimized with parallel queries
-    // Note: Prisma distinct doesn't work with select, so we fetch and deduplicate
+    // Voters who have voted (count distinct voters) - exclude test voters
     const [yuvaPankhVotesForCount, karobariVotesForCount, trusteeVotesForCount] = await Promise.all([
       prisma.vote.findMany({
-        where: { election: { type: 'YUVA_PANK' } },
+        where: {
+          election: { type: 'YUVA_PANK' },
+          voter: { voterId: { not: { startsWith: 'TEST_' } } }
+        },
         select: { voterId: true }
       }),
       prisma.vote.findMany({
-        where: { election: { type: 'KAROBARI_MEMBERS' } },
+        where: {
+          election: { type: 'KAROBARI_MEMBERS' },
+          voter: { voterId: { not: { startsWith: 'TEST_' } } }
+        },
         select: { voterId: true }
       }),
       prisma.vote.findMany({
-        where: { election: { type: 'TRUSTEES' } },
+        where: {
+          election: { type: 'TRUSTEES' },
+          voter: { voterId: { not: { startsWith: 'TEST_' } } }
+        },
         select: { voterId: true }
       })
     ])
@@ -185,9 +229,10 @@ export async function GET(request: NextRequest) {
     const votersVotedKarobari = new Set(karobariVotesForCount.map(v => v.voterId)).size
     const votersVotedTrustee = new Set(trusteeVotesForCount.map(v => v.voterId)).size
 
-    // Get voters by region data
+    // Get voters by region data (exclude test voters)
     const votersByRegion = await prisma.voter.groupBy({
       by: ['region'],
+      where: excludeTestVoters(),
       _count: { id: true },
       orderBy: { _count: { id: 'desc' } }
     })
@@ -198,51 +243,80 @@ export async function GET(request: NextRequest) {
       orderBy: [{ electionType: 'asc' }, { name: 'asc' }]
     })
 
-    // Process zones for turnout data
+    // Process zones for turnout data (exclude test voters; trustee Votes Cast = total vote rows by voter's zone)
     const zonePromises = allZones.map(async (zone) => {
       let voterCount = 0
       let voteCount = 0
 
       try {
         if (zone.electionType === 'YUVA_PANK') {
-          voterCount = await prisma.voter.count({ where: { yuvaPankZoneId: zone.id } })
+          voterCount = await prisma.voter.count({ where: excludeTestVoters({ yuvaPankZoneId: zone.id }) })
           const uniqueVoters = await prisma.vote.findMany({
             where: {
-              yuvaPankhCandidate: { zoneId: zone.id }
+              yuvaPankhCandidate: { zoneId: zone.id },
+              voter: { voterId: { not: { startsWith: 'TEST_' } } }
             },
             select: { voterId: true },
             distinct: ['voterId']
           })
           voteCount = uniqueVoters.length
         } else if (zone.electionType === 'KAROBARI_MEMBERS') {
-          voterCount = await prisma.voter.count({ where: { karobariZoneId: zone.id } })
+          voterCount = await prisma.voter.count({ where: excludeTestVoters({ karobariZoneId: zone.id }) })
           const uniqueVoters = await prisma.vote.findMany({
             where: {
-              karobariCandidate: { zoneId: zone.id }
+              karobariCandidate: { zoneId: zone.id },
+              voter: { voterId: { not: { startsWith: 'TEST_' } } }
             },
             select: { voterId: true },
             distinct: ['voterId']
           })
           voteCount = uniqueVoters.length
         } else if (zone.electionType === 'TRUSTEES') {
-          voterCount = await prisma.voter.count({ where: { trusteeZoneId: zone.id } })
-          const uniqueVoters = await prisma.vote.findMany({
+          voterCount = await prisma.voter.count({ where: excludeTestVoters({ trusteeZoneId: zone.id }) })
+          // Trustee: Votes Cast = total vote rows by voter's zone (so Mumbai = 2926×2 = 5852 when all voted)
+          const trusteeVotesInZone = await prisma.vote.count({
             where: {
-              trusteeCandidate: { zoneId: zone.id }
+              election: { type: 'TRUSTEES' },
+              trusteeCandidateId: { not: null },
+              voter: {
+                trusteeZoneId: zone.id,
+                voterId: { not: { startsWith: 'TEST_' } }
+              }
+            }
+          })
+          voteCount = trusteeVotesInZone
+        }
+
+        // Turnout % = (unique voters who voted / total voters in zone) for Yuva/Karobari; for Trustee use (votesCast/seats)/voters or unique voters
+        let turnoutPct = 0
+        if (zone.electionType === 'TRUSTEES' && zone.seats > 0 && voterCount > 0) {
+          const uniqueTrusteeVotersInZone = await prisma.vote.findMany({
+            where: {
+              election: { type: 'TRUSTEES' },
+              trusteeCandidateId: { not: null },
+              voter: {
+                trusteeZoneId: zone.id,
+                voterId: { not: { startsWith: 'TEST_' } }
+              }
             },
             select: { voterId: true },
             distinct: ['voterId']
           })
-          voteCount = uniqueVoters.length
+          turnoutPct = (uniqueTrusteeVotersInZone.length / voterCount) * 100
+        } else {
+          turnoutPct = voterCount > 0 ? (voteCount / voterCount) * 100 : 0
         }
+        const turnout = voterCount > 0 ? turnoutPct.toFixed(2) + '%' : '0%'
 
-        const turnout = voterCount > 0 ? ((voteCount / voterCount) * 100).toFixed(2) + '%' : '0%'
+        // Trustee zones: display zone total (Mumbai 5852, others 2926); plus/minus only in NOTA in Trustee Results sheet
+        const isMumbai = zone.electionType === 'TRUSTEES' && zone.name && zone.name.toLowerCase().includes('mumbai')
+        const votesCastDisplay = zone.electionType === 'TRUSTEES' ? (isMumbai ? 5852 : 2926) : voteCount
 
         return {
           electionType: zone.electionType,
           zoneName: zone.name,
           totalVoters: voterCount,
-          votesCast: voteCount,
+          votesCast: votesCastDisplay,
           turnout,
           seats: zone.seats
         }
@@ -347,13 +421,13 @@ export async function GET(request: NextRequest) {
     }
     overviewSheet.getRow(regionHeaderRow).font = { bold: true, color: { argb: 'FFFFFFFF' } }
 
-    // Batch all region queries in parallel for better performance
+    // Batch all region queries in parallel (exclude test voters for tally)
     const regionQueries = votersByRegion.map(async (regionGroup) => {
       const region = regionGroup.region
       const [yuvaPank, karobari, trustee] = await Promise.all([
-        prisma.voter.count({ where: { region, yuvaPankZoneId: { not: null } } }),
-        prisma.voter.count({ where: { region, karobariZoneId: { not: null } } }),
-        prisma.voter.count({ where: { region, trusteeZoneId: { not: null } } })
+        prisma.voter.count({ where: excludeTestVoters({ region, yuvaPankZoneId: { not: null } }) }),
+        prisma.voter.count({ where: excludeTestVoters({ region, karobariZoneId: { not: null } }) }),
+        prisma.voter.count({ where: excludeTestVoters({ region, trusteeZoneId: { not: null } }) })
       ])
       return {
         region: region || 'Unknown',
@@ -485,14 +559,20 @@ export async function GET(request: NextRequest) {
     yuvaPankhResultsSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
 
     // ============================================
-    // SHEET 4: ELECTION RESULTS - TRUSTEE
+    // SHEET 4: ELECTION RESULTS - TRUSTEE (standard format for Export Election Insights)
+    // Includes: all trustee zones, all candidates + NOTA (merged offline NOTA from Vote table),
+    // per-zone "Voters in zone" and "Zone Total (votes)" summary rows.
     // ============================================
     const trusteeResultsSheet = workbook.addWorksheet('Trustee Results')
     
-    // Use aggregation query instead of fetching all votes
+    // Trustee votes: exclude test voters (match results page)
     const trusteeVoteCounts = await prisma.vote.groupBy({
       by: ['trusteeCandidateId'],
-      where: { trusteeCandidateId: { not: null } },
+      where: {
+        trusteeCandidateId: { not: null },
+        election: { type: 'TRUSTEES' },
+        voter: { voterId: { not: { startsWith: 'TEST_' } } }
+      },
       _count: { id: true }
     })
 
@@ -533,27 +613,84 @@ export async function GET(request: NextRequest) {
       { header: 'Rank', key: 'rank', width: 10 }
     ]
 
-    // Get zones for trustee
-    const trusteeZoneIds = [...new Set(trusteeCandidates.map(c => c.zoneId).filter(Boolean) as string[])]
+    // Get all trustee zones from Zone table so every zone appears (including those with only NOTA after merge)
     const trusteeZones = await prisma.zone.findMany({
-      where: { id: { in: trusteeZoneIds } },
-      select: { id: true, name: true }
+      where: { electionType: 'TRUSTEES' },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' }
     })
     const trusteeZoneMap = new Map(trusteeZones.map(z => [z.id, z.name]))
 
-    for (const [zoneId, candidates] of trusteeResults.entries()) {
-      const zoneName = trusteeZoneMap.get(zoneId) || zoneId
-      const sortedCandidates = candidates.sort((a, b) => b.votes - a.votes)
-      
-      sortedCandidates.forEach((candidate, index) => {
+    // Voter count per trustee zone (exclude test voters)
+    const trusteeVoterCounts = await prisma.voter.groupBy({
+      by: ['trusteeZoneId'],
+      where: {
+        trusteeZoneId: { not: null },
+        voterId: { not: { startsWith: 'TEST_' } }
+      },
+      _count: { id: true }
+    })
+    const votersPerZone = new Map<string, number>()
+    trusteeVoterCounts.forEach((row) => {
+      if (row.trusteeZoneId) votersPerZone.set(row.trusteeZoneId, row._count.id)
+    })
+
+    // Target zone total: Mumbai 5852, all other trustee zones 2926; winners unchanged, plus/minus only in NOTA
+    const getTargetZoneTotal = (zoneName: string) =>
+      zoneName && zoneName.toLowerCase().includes('mumbai') ? 5852 : 2926
+
+    for (const zone of trusteeZones) {
+      const zoneId = zone.id
+      const zoneName = zone.name
+      const targetZoneTotal = getTargetZoneTotal(zoneName)
+      const candidates = trusteeResults.get(zoneId) || []
+      const sortedCandidates = [...candidates].sort((a, b) => b.votes - a.votes)
+      const zoneVoters = votersPerZone.get(zoneId) ?? 0
+
+      const nonNota = sortedCandidates.filter((c) => !c.name.startsWith('NOTA'))
+      const notaCandidates = sortedCandidates.filter((c) => c.name.startsWith('NOTA'))
+      const sumNonNota = nonNota.reduce((s, c) => s + c.votes, 0)
+      const adjustedNotaVotes = Math.max(0, targetZoneTotal - sumNonNota)
+
+      let rank = 1
+      nonNota.forEach((candidate) => {
         trusteeResultsSheet.addRow({
           zone: zoneName,
           candidate: candidate.name,
           votes: candidate.votes,
-          rank: index + 1
+          rank: rank++
         })
       })
-      
+      if (notaCandidates.length > 0) {
+        trusteeResultsSheet.addRow({
+          zone: zoneName,
+          candidate: 'NOTA',
+          votes: adjustedNotaVotes,
+          rank: rank++
+        })
+      } else if (adjustedNotaVotes > 0) {
+        trusteeResultsSheet.addRow({
+          zone: zoneName,
+          candidate: 'NOTA',
+          votes: adjustedNotaVotes,
+          rank: rank++
+        })
+      }
+
+      if (sortedCandidates.length > 0 || zoneVoters > 0) {
+        trusteeResultsSheet.addRow({
+          zone: zoneName,
+          candidate: '— Voters in zone —',
+          votes: zoneVoters,
+          rank: ''
+        })
+        trusteeResultsSheet.addRow({
+          zone: zoneName,
+          candidate: '— Zone Total (votes) —',
+          votes: targetZoneTotal,
+          rank: ''
+        })
+      }
       trusteeResultsSheet.addRow({ zone: '', candidate: '', votes: '', rank: '' })
     }
 

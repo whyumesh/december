@@ -354,6 +354,50 @@ export default function HomePage() {
                                     </CardContent>
                                 </Card>
                             )}
+                            {results && !isLoadingResults && results.declared === true && (
+                                <>
+                                    {/* Vote count summary – same source as result page (/api/admin/results) */}
+                                    <Card className="border-slate-200 bg-white mb-6">
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="flex items-center space-x-2 text-lg">
+                                                <BarChart3 className="h-5 w-5 text-slate-600" />
+                                                <span>Vote count</span>
+                                            </CardTitle>
+                                            <CardDescription>
+                                                Total voters and votes cast (matches official result page)
+                                            </CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                {results.yuvaPankh && (
+                                                    <div className="rounded-lg border border-green-100 bg-green-50/50 p-4">
+                                                        <p className="text-sm font-medium text-green-800">{results.yuvaPankh.name}</p>
+                                                        <p className="text-2xl font-semibold text-green-900 mt-1">
+                                                            {results.yuvaPankh.totalVotes.toLocaleString()}
+                                                            <span className="text-sm font-normal text-green-700"> votes</span>
+                                                        </p>
+                                                        <p className="text-xs text-green-700 mt-0.5">
+                                                            {results.yuvaPankh.totalVoters.toLocaleString()} voters
+                                                        </p>
+                                                    </div>
+                                                )}
+                                                {results.trustee && (
+                                                    <div className="rounded-lg border border-purple-100 bg-purple-50/50 p-4">
+                                                        <p className="text-sm font-medium text-purple-800">{results.trustee.name}</p>
+                                                        <p className="text-2xl font-semibold text-purple-900 mt-1">
+                                                            {results.trustee.totalVotes.toLocaleString()}
+                                                            <span className="text-sm font-normal text-purple-700"> votes</span>
+                                                        </p>
+                                                        <p className="text-xs text-purple-700 mt-0.5">
+                                                            {results.trustee.totalVoters.toLocaleString()} voters
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </>
+                            )}
                             {results && !isLoadingResults && results.declared === true && winners && (winners.yuvaPankh.zones.length > 0 || winners.trustee.zones.length > 0) && (
                                 <Card className="border-amber-200 bg-gradient-to-br from-amber-50 to-white">
                                     <CardHeader>

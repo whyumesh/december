@@ -39,6 +39,7 @@ import {
     XCircle,
     Building,
     Calendar,
+    Copy,
 } from "lucide-react";
 import Link from "next/link";
 import Logo from "@/components/Logo";
@@ -212,7 +213,42 @@ export default function AdminDashboard() {
     const [isLoadingResults, setIsLoadingResults] = useState(false);
     const [offlineVotes, setOfflineVotes] = useState<OfflineVoteStats>({ total: 0, merged: 0, unmerged: 0, byZone: [] });
     const [isMerging, setIsMerging] = useState(false);
+    const [isCopyingWinners, setIsCopyingWinners] = useState(false);
     const router = useRouter();
+
+    const formatWinnersAsText = (data: { yuvaPankh: Array<{ name: string; zoneName: string; zoneCode: string; rank: number; votes: number; election: string }>; trustee: Array<{ name: string; zoneName: string; zoneCode: string; rank: number; votes: number; election: string }> }) => {
+        const lines: string[] = ['ALL WINNERS - SKMMMS Election 2026', '='.repeat(50), ''];
+        if (data.yuvaPankh.length > 0) {
+            lines.push('--- Yuva Pankh Samiti ---');
+            data.yuvaPankh.forEach(w => {
+                lines.push(`${w.zoneName} (${w.zoneCode}) | Rank ${w.rank} | ${w.name} | ${w.votes} votes`);
+            });
+            lines.push('');
+        }
+        if (data.trustee.length > 0) {
+            lines.push('--- Trust Mandal ---');
+            data.trustee.forEach(w => {
+                lines.push(`${w.zoneName} (${w.zoneCode}) | Rank ${w.rank} | ${w.name} | ${w.votes} votes`);
+            });
+        }
+        return lines.join('\n');
+    };
+
+    const handleCopyWinnersList = async () => {
+        setIsCopyingWinners(true);
+        try {
+            const res = await fetch('/api/admin/winners-list');
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to load winners');
+            const text = formatWinnersAsText(data);
+            await navigator.clipboard.writeText(text);
+            alert('Winners list copied to clipboard.');
+        } catch (e) {
+            alert('Failed to copy winners list: ' + (e instanceof Error ? e.message : 'Unknown error'));
+        } finally {
+            setIsCopyingWinners(false);
+        }
+    };
 
     const fetchDashboardData = useCallback(async (isRefresh = false) => {
         try {
@@ -1073,6 +1109,16 @@ export default function AdminDashboard() {
                                     View Results
                             </Button>
                         </Link>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs"
+                            onClick={handleCopyWinnersList}
+                            disabled={isCopyingWinners}
+                        >
+                            {isCopyingWinners ? <RefreshCw className="h-3 w-3 mr-1 animate-spin" /> : <Copy className="h-3 w-3 mr-1" />}
+                            {isCopyingWinners ? 'Copying…' : 'Copy winners list'}
+                        </Button>
                         <Link href="/admin/election-results">
                             <Button
                                 variant="outline"

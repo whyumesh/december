@@ -41,6 +41,14 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    // Show OTP on terminal (always, so admin can use it if SMS is delayed or fails)
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    console.log('🔐 RESULT DECLARATION OTP (see terminal):')
+    console.log(`   Phone: ${normalizedPhone.slice(0, 2)}****${normalizedPhone.slice(-2)}`)
+    console.log(`   OTP Code: ${otpCode}`)
+    console.log(`   Valid for: 10 minutes`)
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+
     // Send OTP: prefer SMS India Hub (same as voter OTP), fallback to Twilio
     let sendResult: { success: boolean; message: string }
     const indiaHubResult = await sendOTPViaSMSIndiaHub(normalizedPhone, otpCode)
@@ -57,8 +65,6 @@ export async function POST(request: NextRequest) {
         message: sendResult.message 
       }, { status: 500 })
     }
-
-    console.log(`✅ Admin Results OTP sent to ${normalizedPhone.slice(0, 2)}****${normalizedPhone.slice(-2)}`)
 
     return NextResponse.json({ 
       success: true,
